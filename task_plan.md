@@ -1,6 +1,6 @@
 # red-run — Skill Library Task Plan
 
-Claude Code skills for penetration testing and CTF work, built from reference material in InternalAllTheThings, PayloadsAllTheThings, and HackTricks.
+Claude Code skills for penetration testing and CTF work. Skills are SKILL.md files that auto-trigger based on conversation context, support guided and autonomous modes, and install globally to `~/.claude/skills/`. Reference material lives in `~/docs/` (PayloadsAllTheThings, InternalAllTheThings, HackTricks).
 
 ## Phase 1: Survey & Taxonomy — COMPLETE
 
@@ -11,46 +11,61 @@ Claude Code skills for penetration testing and CTF work, built from reference ma
 - [x] Categorize topics into skill groups
 - [x] Document findings in `findings.md`
 
-## Phase 2: Skill Architecture — COMPLETE
+## Phase 2: Architecture — COMPLETE
 
-- [x] Define directory layout and naming conventions
-- [x] Define skill file format (front matter, sections, structure)
-- [x] Create template skill as the canonical pattern
-- [x] Document conventions in CLAUDE.md (covers layout, format, naming, opsec rating)
+### v1 (replaced)
+- [x] Defined static reference doc format (`skill.md`)
+- [x] Created template and 5 SQLi reference docs
+
+### v2 (current)
+- [ ] Restructure to Claude Code native SKILL.md format
+- [ ] Create new template at `skills/_template/SKILL.md`
+- [ ] Create orchestrator at `skills/orchestrator/SKILL.md`
+- [ ] Create `install.sh` (symlinks to `~/.claude/skills/red-run-*/`)
+- [ ] Create `uninstall.sh`
+- [ ] Convert 5 existing skill.md files to SKILL.md format
+- [ ] Delete old skill.md files and old template
+- [ ] Update CLAUDE.md, README.md
 
 ## Phase 3: Core Skills — Web Application (CURRENT)
 
-Priority: highest (broadest coverage across all three repos)
+Split strategy: by **technique** (not by DB engine). DB/engine variants as subsections. Discovery skill routes to techniques via decision tree.
 
-Split strategy: by **technique** (not by DB engine). DB/engine variants live as subsections within each skill. A discovery/triage skill acts as the entry point with a decision tree routing to specific technique skills.
+### SQL Injection
+- [ ] `sql-injection-union` — UNION-based, per-DB variants (convert from v1)
+- [ ] `sql-injection-error` — error-based, per-DB variants (convert from v1)
+- [ ] `sql-injection-blind` — boolean, time-based, OOB (convert from v1)
+- [ ] `sql-injection-stacked` — stacked queries, second-order (convert from v1)
 
-- [x] Web Vulnerability Discovery — entry point: content/parameter fuzzing, injection testing, response analysis decision tree (`web-vuln-discovery`)
-- [ ] SQL Injection — Union-based, per-DB variants (`sql-injection-union`) — WRITTEN, IN REVIEW
-- [ ] SQL Injection — Error-based, per-DB variants (`sql-injection-error`) — WRITTEN, IN REVIEW
-- [ ] SQL Injection — Blind: boolean, time-based, OOB (`sql-injection-blind`) — WRITTEN, IN REVIEW
-- [ ] SQL Injection — Stacked queries, second-order (`sql-injection-stacked`)
-- [ ] XSS — Reflected + filter bypass (`xss-reflected`)
-- [ ] XSS — Stored (`xss-stored`)
-- [ ] XSS — DOM-based (`xss-dom`)
-- [ ] SSTI — Jinja2 (`ssti-jinja2`)
-- [ ] SSTI — Twig (`ssti-twig`)
-- [ ] SSTI — Freemarker (`ssti-freemarker`)
-- [ ] SSRF — basic, blind, cloud metadata (`ssrf`)
-- [ ] File Inclusion — LFI, PHP wrappers, LFI-to-RCE, RFI (`lfi`)
-- [ ] File Upload — extension/content-type/magic byte bypass (`file-upload-bypass`)
-- [ ] Deserialization — Java (`deserialization-java`)
-- [ ] Deserialization — PHP (`deserialization-php`)
-- [ ] Deserialization — .NET (`deserialization-dotnet`)
-- [ ] XXE — classic, blind, OOB (`xxe`)
-- [ ] Command Injection — Linux/Windows + filter bypass (`command-injection`)
-- [ ] JWT Attacks — alg:none, key confusion, kid injection (`jwt-attacks`)
-- [ ] Request Smuggling — CL.TE, TE.CL, H2 downgrade (`request-smuggling`)
+### XSS
+- [ ] `xss-reflected` — reflected + filter bypass
+- [ ] `xss-stored` — stored XSS
+- [ ] `xss-dom` — DOM-based
+
+### SSTI
+- [ ] `ssti-jinja2` — Jinja2/Python
+- [ ] `ssti-twig` — Twig/PHP
+- [ ] `ssti-freemarker` — Freemarker/Java
+
+### Other Web
+- [ ] `ssrf` — basic, blind, cloud metadata
+- [ ] `lfi` — LFI, PHP wrappers, LFI-to-RCE, RFI
+- [ ] `file-upload-bypass` — extension/content-type/magic byte bypass
+- [ ] `deserialization-java` — Java (ysoserial, gadget chains)
+- [ ] `deserialization-php` — PHP (phar, __wakeup)
+- [ ] `deserialization-dotnet` — .NET (ysoserial.net)
+- [ ] `xxe` — classic, blind, OOB
+- [ ] `command-injection` — Linux/Windows + filter bypass
+- [ ] `jwt-attacks` — alg:none, key confusion, kid injection
+- [ ] `request-smuggling` — CL.TE, TE.CL, H2 downgrade
+
+### Discovery
+- [ ] `web-vuln-discovery` — entry point: fuzz, test, route to technique skills (convert from v1)
+- [ ] Revisit `web-vuln-discovery` after all web skills are complete
 
 ## Phase 4: Core Skills — Active Directory
 
-Priority: highest (exceptional depth in InternalAllTheThings)
-
-- [ ] AD Attack Discovery — entry point: enumerate domain, identify attack paths, decision tree routing to technique skills (`ad-attack-discovery`)
+- [ ] `ad-attack-discovery` — entry point: enumerate domain, identify attack paths, route to techniques
 - [ ] AD Enumeration (BloodHound, PowerView, LDAP)
 - [ ] Kerberoasting / AS-REP Roasting
 - [ ] Kerberos Delegation (unconstrained, constrained, RBCD)

@@ -25,24 +25,57 @@
 
 ## 2026-02-21 — Web Skills Session 1
 
+### Done
+- Authored 4 v1 reference skills (static `skill.md` format):
+  - `web-vuln-discovery` — content discovery, parameter fuzzing, decision tree
+  - `sql-injection-union` — UNION-based extraction, 5 DB engines
+  - `sql-injection-error` — error-based extraction, 4 DB engines
+  - `sql-injection-blind` — boolean, time-based, OOB blind extraction
+
 ### Decisions
 - Skills split by **technique**, not by DB engine or technology
 - DB/engine variants go as subsections within each technique skill
-- Added a **discovery/triage skill** (`web-vuln-discovery`) as the entry point — fuzzes for injection points, analyzes responses, and routes to the correct technique skill via a decision tree
-- Phase 3 expanded from 11 high-level items to 21 specific skills
+- Discovery/triage skills as entry points with decision trees routing to technique skills
+
+---
+
+## 2026-02-22 — Web Skills Session 2 + Architecture Redesign
 
 ### Done
-- Authored `web-vuln-discovery` — content discovery (ffuf), parameter discovery (arjun, paramspider), polyglot injection testing, full decision tree covering SQLi, SSTI, XSS, SSRF, command injection, LFI, XXE, file upload with response pattern → skill routing
-- Authored `sql-injection-union` — column counting (ORDER BY, UNION NULL), per-DB extraction (MySQL, MSSQL, PostgreSQL, Oracle, SQLite), DIOS payloads, info_schema alternatives, WAF bypass, sqlmap automation
-- Authored `sql-injection-error` — EXTRACTVALUE/UPDATEXML/GTID_SUBSET/EXP/FLOOR (MySQL), CONVERT/CAST + alternative functions (MSSQL), CAST + XML helpers (PostgreSQL), utl_inaddr/CTXSYS/XMLType (Oracle), output pagination for truncated errors
-- Authored `sql-injection-blind` — boolean-based (binary search, LIKE/REGEXP alternatives), time-based (SLEEP/WAITFOR/pg_sleep/DBMS_PIPE/RANDOMBLOB), OOB exfil (DNS via LOAD_FILE, xp_dirtree, COPY TO PROGRAM, UTL_HTTP), per-DB for all techniques
+- Authored `sql-injection-stacked` on `skills/web-sqli` branch (stacked queries + second-order injection)
+- SQLi v1 skill set complete (4 techniques: union, error, blind, stacked)
+
+### Architecture Redesign (v1 → v2)
+
+Decided to restructure from static reference docs to Claude Code native skills:
+
+**Problem with v1:** Static `skill.md` reference docs required manual invocation (`Read ~/claude/red-run/skills/...`). No auto-triggering, no guided/autonomous modes, no orchestration. A separate reference layer duplicated content from `~/docs/` and would go stale.
+
+**v2 architecture:**
+- **SKILL.md** is the only artifact per technique (Claude Code native format)
+- Skills **auto-trigger** via pushy `description` field — no slash commands needed
+- Two **modes**: guided (interactive, default) and autonomous (end-to-end)
+- **Orchestrator** skill: takes a target → recon → route to discovery → route to techniques → report
+- **Discovery** skills: identify vulnerabilities, route to technique skills via decision tree
+- **Technique** skills: exploit specific vuln classes with embedded critical payloads
+- `~/docs/` is a **dependency** (not copied) for deep reference content
+- Skills install **globally** to `~/.claude/skills/red-run-*/` via `install.sh` (symlinks)
+
+### Created
+- `skills/_template/SKILL.md` — new canonical template with mode handling, routing, deep reference sections
+- `install.sh` — symlink-based installer with `red-run-` prefix and `~/docs` dependency check
+- `uninstall.sh` — cleanup script
+- Updated `CLAUDE.md` with new architecture, format, install workflow
+- Updated `task_plan.md` — v2 architecture tasks, conversion checklist
 
 ### Status
-- 4 skills written, pending review
-- Next up: `sql-injection-stacked` on a `skills/web-sqli` branch, then XSS skills (reflected, stored, DOM) on `skills/web-xss`
-- **Branching policy adopted:** feature branch per skill batch, PR for review, no direct pushes to main (see CLAUDE.md Workflow section)
+- Infrastructure ready (template, install scripts)
+- 5 existing v1 skills need conversion to SKILL.md format
+- All remaining web skills (XSS, SSTI, SSRF, etc.) to be authored in SKILL.md format from scratch
+- Orchestrator skill still needs to be written
 
-### Source material used
-- PayloadsAllTheThings: SQL Injection/ (all 10 files), Hidden Parameters/, Server Side Template Injection/
-- HackTricks: web-vulnerabilities-methodology.md, timing-attacks.md, parameter-pollution.md, sql-injection/
-- InternalAllTheThings: databases/ (post-exploitation reference)
+### Next Steps
+1. Convert 5 existing skills: web-vuln-discovery, sql-injection-{union,error,blind,stacked}
+2. Write orchestrator skill
+3. Continue Phase 3 web skills in SKILL.md format (XSS next)
+4. Note: `sql-injection-stacked` is on `skills/web-sqli` branch — merge to main or cherry-pick before converting
