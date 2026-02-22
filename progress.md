@@ -74,8 +74,23 @@ Decided to restructure from static reference docs to Claude Code native skills:
 - All remaining web skills (XSS, SSTI, SSRF, etc.) to be authored in SKILL.md format from scratch
 - Orchestrator skill still needs to be written
 
+### Engagement Logging (planned)
+
+Skills need to track what happens during an engagement. Rough design:
+
+- **Engagement directory**: Created by orchestrator (or user) at engagement start. Probably `./engagement/` or user-specified path. Contains:
+  - `activity.md` — chronological log of all actions taken (recon scans, injection tests, exploitation attempts). Each entry timestamped. Append-only.
+  - `findings.md` — confirmed vulnerabilities. Each finding gets: title, severity, affected host/endpoint, description, reproduction steps, evidence (terminal output, screenshots), impact.
+  - `evidence/` — directory for screenshots, saved responses, captured credentials, etc.
+  - `scope.md` — target scope, credentials, constraints (written at engagement start)
+- **Every skill** logs to activity.md when it runs (what was tried, what worked, what didn't)
+- **Successful exploits** get a full finding entry with reproduction steps and evidence
+- **Orchestrator** initializes the engagement dir, maintains the activity log, and produces a summary at the end
+- This integrates with the existing `pentest-findings` skill for formal finding writeups
+
 ### Next Steps
 1. Convert 5 existing skills: web-vuln-discovery, sql-injection-{union,error,blind,stacked}
-2. Write orchestrator skill
-3. Continue Phase 3 web skills in SKILL.md format (XSS next)
-4. Note: `sql-injection-stacked` is on `skills/web-sqli` branch — merge to main or cherry-pick before converting
+2. Write orchestrator skill (including engagement dir initialization)
+3. Design engagement logging conventions and bake into template
+4. Continue Phase 3 web skills in SKILL.md format (XSS next)
+5. Note: `sql-injection-stacked` is on `skills/web-sqli` branch — merge to main or cherry-pick before converting

@@ -18,14 +18,21 @@ Claude Code skills for penetration testing and CTF work. Skills are SKILL.md fil
 - [x] Created template and 5 SQLi reference docs
 
 ### v2 (current)
-- [ ] Restructure to Claude Code native SKILL.md format
-- [ ] Create new template at `skills/_template/SKILL.md`
+- [x] Create new template at `skills/_template/SKILL.md`
+- [x] Create `install.sh` (symlinks to `~/.claude/skills/red-run-*/`)
+- [x] Create `uninstall.sh`
+- [x] Update CLAUDE.md
 - [ ] Create orchestrator at `skills/orchestrator/SKILL.md`
-- [ ] Create `install.sh` (symlinks to `~/.claude/skills/red-run-*/`)
-- [ ] Create `uninstall.sh`
 - [ ] Convert 5 existing skill.md files to SKILL.md format
 - [ ] Delete old skill.md files and old template
-- [ ] Update CLAUDE.md, README.md
+- [ ] Update README.md
+
+### Engagement logging
+- [ ] Define engagement directory structure and file conventions (activity log, findings, evidence)
+- [ ] Build engagement logging into the SKILL.md template — every skill should log discoveries, exploitation attempts, and successful exploits
+- [ ] Build engagement logging into the orchestrator — initialize engagement dir, maintain activity log, track findings
+- [ ] Define evidence format: successful exploits get reproduction steps, screenshots/output captures, impact summary
+- [ ] Document conventions in CLAUDE.md
 
 ## Phase 3: Core Skills — Web Application (CURRENT)
 
