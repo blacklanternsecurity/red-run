@@ -2,7 +2,7 @@
 
 Claude Code skills for penetration testing and CTF work, built from reference material in InternalAllTheThings, PayloadsAllTheThings, and HackTricks.
 
-## Phase 1: Survey & Taxonomy (CURRENT)
+## Phase 1: Survey & Taxonomy — COMPLETE
 
 - [x] Survey InternalAllTheThings
 - [x] Survey PayloadsAllTheThings
@@ -11,33 +11,46 @@ Claude Code skills for penetration testing and CTF work, built from reference ma
 - [x] Categorize topics into skill groups
 - [x] Document findings in `findings.md`
 
-## Phase 2: Skill Architecture
+## Phase 2: Skill Architecture — COMPLETE
 
 - [x] Define directory layout and naming conventions
 - [x] Define skill file format (front matter, sections, structure)
 - [x] Create template skill as the canonical pattern
-- [ ] Document conventions in a CONTRIBUTING or CLAUDE.md
+- [x] Document conventions in CLAUDE.md (covers layout, format, naming, opsec rating)
 
-## Phase 3: Core Skills — Web Application
+## Phase 3: Core Skills — Web Application (CURRENT)
 
 Priority: highest (broadest coverage across all three repos)
 
-- [ ] SQL Injection (per-DB variants: MySQL, MSSQL, PostgreSQL, Oracle, SQLite)
-- [ ] XSS (DOM, stored, reflected, filter bypass, CSP bypass)
-- [ ] SSTI (per-engine: Jinja2, Twig, Freemarker, Pebble, ERB)
-- [ ] SSRF (cloud metadata, protocol smuggling, redirect chains)
-- [ ] File Inclusion (LFI/RFI, PHP wrappers, LFI-to-RCE)
-- [ ] File Upload (bypass by extension, content type, magic bytes)
-- [ ] Deserialization (Java, PHP, Python, .NET, Ruby, Node.js)
-- [ ] XXE (classic, blind, OOB)
-- [ ] Command Injection (Linux, Windows, filter bypass)
-- [ ] Authentication Bypass (JWT, OAuth, SAML, 2FA)
-- [ ] Request Smuggling (CL.TE, TE.CL, HTTP/2 downgrade)
+Split strategy: by **technique** (not by DB engine). DB/engine variants live as subsections within each skill. A discovery/triage skill acts as the entry point with a decision tree routing to specific technique skills.
+
+- [x] Web Vulnerability Discovery — entry point: content/parameter fuzzing, injection testing, response analysis decision tree (`web-vuln-discovery`)
+- [ ] SQL Injection — Union-based, per-DB variants (`sql-injection-union`) — WRITTEN, IN REVIEW
+- [ ] SQL Injection — Error-based, per-DB variants (`sql-injection-error`) — WRITTEN, IN REVIEW
+- [ ] SQL Injection — Blind: boolean, time-based, OOB (`sql-injection-blind`) — WRITTEN, IN REVIEW
+- [ ] SQL Injection — Stacked queries, second-order (`sql-injection-stacked`)
+- [ ] XSS — Reflected + filter bypass (`xss-reflected`)
+- [ ] XSS — Stored (`xss-stored`)
+- [ ] XSS — DOM-based (`xss-dom`)
+- [ ] SSTI — Jinja2 (`ssti-jinja2`)
+- [ ] SSTI — Twig (`ssti-twig`)
+- [ ] SSTI — Freemarker (`ssti-freemarker`)
+- [ ] SSRF — basic, blind, cloud metadata (`ssrf`)
+- [ ] File Inclusion — LFI, PHP wrappers, LFI-to-RCE, RFI (`lfi`)
+- [ ] File Upload — extension/content-type/magic byte bypass (`file-upload-bypass`)
+- [ ] Deserialization — Java (`deserialization-java`)
+- [ ] Deserialization — PHP (`deserialization-php`)
+- [ ] Deserialization — .NET (`deserialization-dotnet`)
+- [ ] XXE — classic, blind, OOB (`xxe`)
+- [ ] Command Injection — Linux/Windows + filter bypass (`command-injection`)
+- [ ] JWT Attacks — alg:none, key confusion, kid injection (`jwt-attacks`)
+- [ ] Request Smuggling — CL.TE, TE.CL, H2 downgrade (`request-smuggling`)
 
 ## Phase 4: Core Skills — Active Directory
 
 Priority: highest (exceptional depth in InternalAllTheThings)
 
+- [ ] AD Attack Discovery — entry point: enumerate domain, identify attack paths, decision tree routing to technique skills (`ad-attack-discovery`)
 - [ ] AD Enumeration (BloodHound, PowerView, LDAP)
 - [ ] Kerberoasting / AS-REP Roasting
 - [ ] Kerberos Delegation (unconstrained, constrained, RBCD)

@@ -20,3 +20,28 @@
 - HackTricks has the broadest scope (binary exploitation, macOS, mobile, AI security, forensics) but some sections are thin
 - Cloud content is split: InternalAllTheThings has Azure (144K) and AWS (80K); HackTricks main repo has none (lives in HackTricks Cloud, separate repo)
 - Notable gaps across all repos: GCP, wireless, physical security
+
+---
+
+## 2026-02-21 — Web Skills Session 1
+
+### Decisions
+- Skills split by **technique**, not by DB engine or technology
+- DB/engine variants go as subsections within each technique skill
+- Added a **discovery/triage skill** (`web-vuln-discovery`) as the entry point — fuzzes for injection points, analyzes responses, and routes to the correct technique skill via a decision tree
+- Phase 3 expanded from 11 high-level items to 21 specific skills
+
+### Done
+- Authored `web-vuln-discovery` — content discovery (ffuf), parameter discovery (arjun, paramspider), polyglot injection testing, full decision tree covering SQLi, SSTI, XSS, SSRF, command injection, LFI, XXE, file upload with response pattern → skill routing
+- Authored `sql-injection-union` — column counting (ORDER BY, UNION NULL), per-DB extraction (MySQL, MSSQL, PostgreSQL, Oracle, SQLite), DIOS payloads, info_schema alternatives, WAF bypass, sqlmap automation
+- Authored `sql-injection-error` — EXTRACTVALUE/UPDATEXML/GTID_SUBSET/EXP/FLOOR (MySQL), CONVERT/CAST + alternative functions (MSSQL), CAST + XML helpers (PostgreSQL), utl_inaddr/CTXSYS/XMLType (Oracle), output pagination for truncated errors
+- Authored `sql-injection-blind` — boolean-based (binary search, LIKE/REGEXP alternatives), time-based (SLEEP/WAITFOR/pg_sleep/DBMS_PIPE/RANDOMBLOB), OOB exfil (DNS via LOAD_FILE, xp_dirtree, COPY TO PROGRAM, UTL_HTTP), per-DB for all techniques
+
+### Status
+- 4 skills written, pending review
+- Next up: `sql-injection-stacked`, then XSS skills (reflected, stored, DOM)
+
+### Source material used
+- PayloadsAllTheThings: SQL Injection/ (all 10 files), Hidden Parameters/, Server Side Template Injection/
+- HackTricks: web-vulnerabilities-methodology.md, timing-attacks.md, parameter-pollution.md, sql-injection/
+- InternalAllTheThings: databases/ (post-exploitation reference)
