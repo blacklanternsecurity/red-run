@@ -78,11 +78,12 @@ Split strategy: by **technique** (not by DB engine). DB/engine variants as subse
 - [x] `request-smuggling` — (570 lines) CL.TE, TE.CL, TE.TE obfuscation, H2.CL/H2.TE/h2c smuggling, response desync, cache poisoning, WebSocket smuggling, connection state attacks, hop-by-hop abuse
 
 ### Authorization & Authentication
-- [ ] `idor` — horizontal/vertical access control bypass, UUID enumeration, parameter tampering, API IDOR
+- [x] `idor` — (569 lines) horizontal/vertical access control bypass, UUID/ObjectId prediction, parameter tampering, API IDOR (REST/GraphQL/batch), encoding bypass, method override, automated enumeration
 - [ ] `csrf` — token bypass, SameSite bypass, state-changing attacks, JSON CSRF, file upload CSRF
-- [ ] `cors-misconfiguration` — origin reflection, null origin, wildcard abuse, credential exfiltration
+- [x] `cors-misconfiguration` — (565 lines) origin reflection, null origin (sandboxed iframe), regex bypass (unescaped dot/missing anchor/special chars), subdomain trust, wildcard abuse, cache poisoning, CORS+IDOR chain, XSSI/JSONP
 - [ ] `oauth-attacks` — redirect URI manipulation, state bypass, token disclosure, code injection, account takeover
-- [ ] `account-takeover` — password reset poisoning, 2FA bypass, email parameter bugs, username collision
+- [ ] `password-reset-poisoning` — host header poisoning, token leakage via referer, email parameter manipulation, token prediction
+- [ ] `2fa-bypass` — response manipulation, status code bypass, backup code brute-force, race conditions, session fixation after 2FA
 - [x] `nosql-injection` — (519 lines) MongoDB operator injection ($ne/$gt/$regex/$where), auth bypass, blind character extraction with automation scripts, $where JS execution, $lookup cross-collection, Mongoose RCE (CVE-2024-53900), GraphQL filter injection, MongoLite $func
 - [ ] `race-condition` — limit-overrun, HTTP/2 single-packet attack, turbo intruder, TOCTOU
 

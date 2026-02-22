@@ -1,5 +1,28 @@
 # red-run — Session Log
 
+## 2026-02-22 — IDOR + CORS Misconfiguration Skills
+
+### Done
+
+- Built `idor` skill (569 lines) — horizontal/vertical access control bypass, UUID v1/MongoDB ObjectId prediction, API-specific patterns (REST/GraphQL/batch), encoding bypass, parameter pollution, method override, automated enumeration with ffuf/Python
+- Built `cors-misconfiguration` skill (565 lines) — origin reflection, null origin (sandboxed iframe + data URI), regex bypass (unescaped dot, missing anchors, special characters), subdomain trust chain, wildcard abuse, CORS+IDOR chain, XSSI/JSONP bypass, cache poisoning
+- Updated `web-vuln-discovery` — added IDOR and CORS detection probes to Step 3, routing tables to Step 4, deep references
+- Updated `task_plan.md`, `README.md`, `progress.md`
+
+### Inventory
+
+- Total skills: 25 (24 web + 1 orchestrator)
+- Phase 3 remaining: 5 skills (csrf, oauth-attacks, password-reset-poisoning, 2fa-bypass, race-condition)
+
+### Next Steps
+
+- Batch 2: `csrf` + `oauth-attacks`
+- Batch 3: `password-reset-poisoning` + `2fa-bypass`
+- Batch 4: `race-condition`
+- Then: final `web-vuln-discovery` review
+
+---
+
 ## 2026-02-22 — Request Smuggling + Web Coverage Audit
 
 ### Done
