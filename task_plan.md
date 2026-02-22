@@ -79,9 +79,9 @@ Split strategy: by **technique** (not by DB engine). DB/engine variants as subse
 
 ### Authorization & Authentication
 - [x] `idor` — (569 lines) horizontal/vertical access control bypass, UUID/ObjectId prediction, parameter tampering, API IDOR (REST/GraphQL/batch), encoding bypass, method override, automated enumeration
-- [ ] `csrf` — token bypass, SameSite bypass, state-changing attacks, JSON CSRF, file upload CSRF
+- [x] `csrf` — (609 lines) token bypass (remove/empty/untied/static), SameSite bypass (Lax GET/method override, None, 2-min window), Referer suppression, JSON CSRF (text/plain, sendBeacon), file upload CSRF, login CSRF, WebSocket CSRF, clickjacking chain
 - [x] `cors-misconfiguration` — (565 lines) origin reflection, null origin (sandboxed iframe), regex bypass (unescaped dot/missing anchor/special chars), subdomain trust, wildcard abuse, cache poisoning, CORS+IDOR chain, XSSI/JSONP
-- [ ] `oauth-attacks` — redirect URI manipulation, state bypass, token disclosure, code injection, account takeover
+- [x] `oauth-attacks` — (610 lines) redirect URI manipulation (path traversal/open redirect chain/parameter pollution/special chars), state bypass (CSRF account linking), code theft (reuse/race condition/client binding), token leakage (Referer/postMessage/implicit flow), OIDC (email claim abuse/nonce bypass/discovery SSRF), PKCE bypass, scope escalation, ROPC 2FA bypass, ATO chains
 - [ ] `password-reset-poisoning` — host header poisoning, token leakage via referer, email parameter manipulation, token prediction
 - [ ] `2fa-bypass` — response manipulation, status code bypass, backup code brute-force, race conditions, session fixation after 2FA
 - [x] `nosql-injection` — (519 lines) MongoDB operator injection ($ne/$gt/$regex/$where), auth bypass, blind character extraction with automation scripts, $where JS execution, $lookup cross-collection, Mongoose RCE (CVE-2024-53900), GraphQL filter injection, MongoLite $func

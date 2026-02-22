@@ -9,14 +9,17 @@
 - Updated `web-vuln-discovery` — added IDOR and CORS detection probes to Step 3, routing tables to Step 4, deep references
 - Updated `task_plan.md`, `README.md`, `progress.md`
 
+- Built `csrf` skill (609 lines) — token bypass (remove/empty/untied/static), SameSite bypass (Lax GET, method override, 2-min window), Referer suppression and regex bypass, JSON CSRF (text/plain, sendBeacon), file upload CSRF, login CSRF, WebSocket CSRF (CSWSH), clickjacking chain, multi-action PoC chaining
+- Built `oauth-attacks` skill (610 lines) — redirect URI manipulation (path traversal, open redirect chain, parameter pollution, special chars), state bypass (CSRF account linking), code theft (reuse, race condition, client binding), token leakage (Referer, postMessage, implicit flow), OIDC (email claim abuse, nonce bypass, discovery SSRF), PKCE bypass/downgrade, scope escalation, ROPC 2FA bypass, account takeover chains
+- Updated `web-vuln-discovery` — added CSRF and OAuth detection probes to Step 3, routing tables to Step 4, deep references
+
 ### Inventory
 
-- Total skills: 25 (24 web + 1 orchestrator)
-- Phase 3 remaining: 5 skills (csrf, oauth-attacks, password-reset-poisoning, 2fa-bypass, race-condition)
+- Total skills: 27 (26 web + 1 orchestrator)
+- Phase 3 remaining: 3 skills (password-reset-poisoning, 2fa-bypass, race-condition)
 
 ### Next Steps
 
-- Batch 2: `csrf` + `oauth-attacks`
 - Batch 3: `password-reset-poisoning` + `2fa-bypass`
 - Batch 4: `race-condition`
 - Then: final `web-vuln-discovery` review
