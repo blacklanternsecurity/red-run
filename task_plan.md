@@ -75,12 +75,51 @@ Split strategy: by **technique** (not by DB engine). DB/engine variants as subse
 - [x] `xxe` — (466 lines) classic file read, blind/OOB (HTTP/FTP), error-based (remote + local DTD), XInclude, file format injection (SVG/DOCX/XLSX/SOAP/RSS), WAF bypass, XXE-to-SSRF
 - [x] `command-injection` — (486 lines) Linux/Windows operators, 5 filter bypass categories, blind (time/DNS/file), argument injection, polyglots
 - [x] `jwt-attacks` — (533 lines) alg:none, null signature, HS256 brute force (hashcat/jwt_tool), RS256→HS256 key confusion, header injection (kid path traversal/SQLi/command injection, jwk embedding, jku spoofing, x5u/x5c), claim tampering, cross-service relay, RSA key recovery
-- [ ] `request-smuggling` — CL.TE, TE.CL, H2 downgrade
+- [x] `request-smuggling` — (570 lines) CL.TE, TE.CL, TE.TE obfuscation, H2.CL/H2.TE/h2c smuggling, response desync, cache poisoning, WebSocket smuggling, connection state attacks, hop-by-hop abuse
+
+### Authorization & Authentication
+- [ ] `idor` — horizontal/vertical access control bypass, UUID enumeration, parameter tampering, API IDOR
+- [ ] `csrf` — token bypass, SameSite bypass, state-changing attacks, JSON CSRF, file upload CSRF
+- [ ] `cors-misconfiguration` — origin reflection, null origin, wildcard abuse, credential exfiltration
+- [ ] `oauth-attacks` — redirect URI manipulation, state bypass, token disclosure, code injection, account takeover
+- [ ] `account-takeover` — password reset poisoning, 2FA bypass, email parameter bugs, username collision
+- [x] `nosql-injection` — (519 lines) MongoDB operator injection ($ne/$gt/$regex/$where), auth bypass, blind character extraction with automation scripts, $where JS execution, $lookup cross-collection, Mongoose RCE (CVE-2024-53900), GraphQL filter injection, MongoLite $func
+- [ ] `race-condition` — limit-overrun, HTTP/2 single-packet attack, turbo intruder, TOCTOU
 
 ### Discovery
 - [x] `web-vuln-discovery` — entry point: fuzz, test, route to technique skills (converted)
 - [ ] Update `web-vuln-discovery` routing table as each new technique skill is created
 - [ ] Final review of `web-vuln-discovery` after all web skills are complete
+
+## Phase 3b: Extended Web Skills
+
+Identified during the Phase 3 coverage audit. Important techniques with good source material
+in ~/docs/ but lower priority than core Phase 3. Build as capacity allows; may be interleaved
+with later phases.
+
+### Injection & Protocol
+- [ ] `ldap-injection` — filter injection, wildcard auth bypass, blind extraction
+- [ ] `xpath-injection` — filter termination, blind exploitation, OOB extraction
+- [ ] `xslt-injection` — EXSLT RCE (PHP/Java/.NET), file read via document()
+- [ ] `ssi-esi-injection` — SSI directives (echo/exec/include), ESI abuse on CDNs
+- [ ] `crlf-injection` — header injection, response splitting, session fixation, cache poisoning
+- [ ] `graphql-attacks` — introspection abuse, batching for rate-limit bypass, mutation exploitation
+- [ ] `websocket-attacks` — handshake bypass, message manipulation, cross-site WebSocket hijacking
+
+### Client-Side & Browser
+- [ ] `prototype-pollution` — client-side gadget chains, server-side RCE via gadgets, property traversal
+- [ ] `client-side-template-injection` — AngularJS sandbox escape, Vue.js gadgets, React context leaks
+- [ ] `clickjacking` — frame overlay, invisible buttons, X-Frame-Options bypass, form hijacking
+- [ ] `open-redirect` — path-based, parameter-based, domain validation bypass, javascript:/data: protocols
+- [ ] `xs-leak` — XS-search, timing attacks, frame counting, cache probing, CSS injection
+- [ ] `postmessage-exploitation` — cross-origin messaging abuse, SOP bypass, sensitive data leakage
+
+### Logic & Bypass
+- [ ] `http-parameter-pollution` — WAF bypass via duplicate params, backend parsing inconsistencies
+- [ ] `web-cache-poisoning` — header manipulation, path discrepancy, URL normalization, cache deception
+- [ ] `rate-limit-bypass` — header manipulation, IP rotation, HTTP/2 multiplexing, distributed requests
+- [ ] `csv-formula-injection` — DDE payload, formula prefix detection, MS Office formula execution
+- [ ] `proxy-waf-bypass` — path normalization, hop-by-hop abuse, HTTP method override, verb tampering
 
 ## Phase 4: Core Skills — Active Directory
 
@@ -135,3 +174,16 @@ Split strategy: by **technique** (not by DB engine). DB/engine variants as subse
 - [ ] Wireless attacks (limited source material)
 - [ ] Physical/hardware (limited source material)
 - [ ] GCP cloud (gap across all three repos)
+
+### Niche / Reference-Only (build if needed during engagements)
+- [ ] Captcha bypass
+- [ ] Subdomain/domain takeover
+- [ ] Email injection
+- [ ] Insecure randomness / weak token prediction
+- [ ] ORM injection (ORM-specific query manipulation)
+- [ ] ZIP slip (archive path traversal — may fold into lfi)
+- [ ] SOAP/JAX-WS attacks
+- [ ] gRPC-Web testing
+- [ ] ReDoS (regex denial of service)
+- [ ] Unicode normalization bypass
+- [ ] Reverse tab nabbing

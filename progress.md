@@ -1,5 +1,45 @@
 # red-run — Session Log
 
+## 2026-02-22 — Request Smuggling + Web Coverage Audit
+
+### Done
+- Created `skills/web/request-smuggling/SKILL.md` (570 lines)
+  - Step 1: Assess architecture (front-end/back-end identification, HTTP version, connection reuse)
+  - Step 2: Detect CL.TE (detection probe + timing-based)
+  - Step 3: Detect TE.CL (detection probe + timing-based)
+  - Step 4: Detect TE.TE (10 obfuscation variants)
+  - Step 5: Exploit — request hijacking (capture victim requests, access control bypass, header injection)
+  - Step 6: HTTP/2 downgrade smuggling (H2.CL, H2.TE, CRLF injection, h2c smuggling)
+  - Step 7: Advanced — response desync, cache poisoning, WebSocket smuggling, connection state attacks, hop-by-hop abuse
+  - Step 8: Escalate/Pivot
+- Updated `web-vuln-discovery` with request smuggling detection probes and routing table (4 patterns)
+- Ran comprehensive web coverage audit across all three ~/docs/ repos
+  - Enumerated every web technique in PayloadsAllTheThings (60+ dirs), hacktricks/pentesting-web (120+ files), InternalAllTheThings
+  - Classified each as COVERED, GAP, or OUT OF SCOPE
+- Identified 7 Tier 1 (critical) gaps: IDOR, CSRF, CORS, NoSQL injection, OAuth, account takeover, race conditions
+- Identified ~19 Tier 2 (important) gaps: LDAP/XPath/XSLT injection, SSI/ESI, CRLF, GraphQL, WebSocket, prototype pollution, CSTI, clickjacking, open redirect, XS-leaks, postMessage, HPP, cache poisoning, rate limit bypass, CSV injection, proxy/WAF bypass
+- Expanded Phase 3 with 7 new Tier 1 skills (authorization & authentication subsection)
+- Created Phase 3b for 19 Tier 2 skills (extended web skills)
+- Added niche/reference-only topics to Backlog
+- Added extended/backlog phase convention to CLAUDE.md
+
+### Source Material Used
+- PayloadsAllTheThings: Request Smuggling/README.md, CRLF Injection/README.md, HTTP Parameter Pollution/README.md, Web Sockets/README.md, Reverse Proxy Misconfigurations/README.md, Web Cache Deception/README.md
+- HackTricks: http-request-smuggling/ (5 files), http-response-smuggling-desync.md, h2c-smuggling.md, http-connection-request-smuggling.md, http-connection-contamination.md, crlf-0d-0a.md, parameter-pollution.md, abusing-hop-by-hop-headers.md
+
+### Decisions
+- Request smuggling is a single skill covering HTTP/1.1 and HTTP/2 variants — they share detection methodology and the escalation from detection to exploitation is a single workflow
+- TE.TE treated as a detection variant (obfuscation to force CL.TE or TE.CL) rather than a separate exploitation technique
+- WebSocket smuggling, connection state attacks, and hop-by-hop abuse included as advanced subsections rather than separate skills — they're smuggling-adjacent and share the same architectural prerequisite
+- CRLF injection gets its own Phase 3b skill (standalone header injection without smuggling context) vs. the request-smuggling skill which uses CRLF as one H2 technique
+- Phase 3b keeps extended web skills visible in the plan but clearly separated from core priorities
+- Backlog convention documented in CLAUDE.md so future phases follow the same pattern
+
+### Next Steps
+- Build Phase 3 Tier 1 skills: IDOR, CSRF, CORS, NoSQL injection, OAuth, account takeover, race conditions
+- Update web-vuln-discovery routing for each new skill
+- Final web-vuln-discovery review after all Phase 3 skills complete
+
 ## 2026-02-22 — State Management + Orchestrator
 
 ### Done
