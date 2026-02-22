@@ -289,4 +289,38 @@ engagement/
 1. Continue Phase 3 web skills: command-injection or xxe next
 2. Write orchestrator skill
 3. Update README.md
-4. Remaining web skills: file-upload-bypass, deserialization (java/php/dotnet), xxe, command-injection, JWT, request-smuggling
+4. Remaining web skills: file-upload-bypass, deserialization (java/php/dotnet), xxe, JWT, request-smuggling
+
+---
+
+## 2026-02-22 — Command Injection Skill
+
+### Done
+- Authored `command-injection` skill (486 lines) covering:
+  - Injection operators: 8 Linux operators + 6 Windows operators with behavior descriptions
+  - Context-aware injection: breaking out of double quotes, single quotes, backticks
+  - Polyglot payloads: cross-context payloads that work regardless of quoting
+  - Filter bypass — 5 categories: space bypass (${IFS}, brace expansion, tab, redirection, ANSI-C), command blacklist bypass (quote splitting, backslash, variable expansion, empty substitution), character restrictions (hex, octal, xxd, base64, env variable substrings), wildcard-based bypass (/???/??t), newline/whitespace injection
+  - Blind injection: time-based (sleep, ping), DNS exfiltration (host, dig, curl, wget), file-based (write to webroot)
+  - Argument injection: curl, wget, ssh, tar, find, rsync, sendmail flag injection + fullwidth Unicode bypass
+  - Windows-specific: case insensitivity, variable substring, PowerShell, caret escaping
+  - commix automation
+- Verified web-vuln-discovery routing table already covers command injection with 3 patterns
+- Updated task_plan.md and progress.md
+
+### Source Material Used
+- PayloadsAllTheThings: Command Injection/README.md (operators, bypass, polyglots, argument injection, blind), Intruder/ (450+ payload wordlists)
+- HackTricks: command-injection.md (PHP/Node.js patterns, real-world examples), bypass-bash-restrictions/README.md (extensive filter bypass)
+
+### Decisions
+- Single skill covering both Linux and Windows — operators overlap significantly, filter bypass is platform-specific but fits in subsections
+- Argument injection included as Step 5 — often overlooked but critical when shell metacharacters are properly escaped
+- Polyglot payloads included because real-world injection context is often unknown
+- DNS exfiltration highlighted as faster alternative to time-based for blind injection
+- Noted `%0a` (newline) as the "most commonly missed by filters" operator — useful tactical advice
+
+### Next Steps
+1. Update README.md (engagement logging + current skill inventory)
+2. Continue Phase 3 web skills: xxe or file-upload-bypass next
+3. Write orchestrator skill
+4. Remaining: file-upload-bypass, deserialization (java/php/dotnet), xxe, JWT, request-smuggling

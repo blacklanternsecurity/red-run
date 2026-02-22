@@ -63,7 +63,7 @@ Split strategy: by **technique** (not by DB engine). DB/engine variants as subse
 - [ ] `deserialization-php` — PHP (phar, __wakeup)
 - [ ] `deserialization-dotnet` — .NET (ysoserial.net)
 - [ ] `xxe` — classic, blind, OOB
-- [ ] `command-injection` — Linux/Windows + filter bypass
+- [x] `command-injection` — (486 lines) Linux/Windows operators, 5 filter bypass categories, blind (time/DNS/file), argument injection, polyglots
 - [ ] `jwt-attacks` — alg:none, key confusion, kid injection
 - [ ] `request-smuggling` — CL.TE, TE.CL, H2 downgrade
 
