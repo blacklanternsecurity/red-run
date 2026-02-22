@@ -215,7 +215,44 @@ Each v1 skill.md was restructured into v2 SKILL.md with:
 - Included r3dir.me as a serverless redirect alternative to hosting your own redirector
 
 ### Next Steps
-1. LFI skill next
-2. Write orchestrator skill
-3. Design engagement logging conventions
+1. ~~Design engagement logging conventions~~ — done in session 7
+2. LFI skill next
+3. Write orchestrator skill (including engagement dir initialization)
+4. Remaining web skills: file-upload-bypass, deserialization, XXE, command-injection, JWT, request-smuggling
+
+---
+
+## 2026-02-22 — Engagement Logging Conventions
+
+### Done
+- Designed engagement logging standard and implemented across all skills
+- Updated `skills/_template/SKILL.md` — added `## Engagement Logging` section between Mode and Prerequisites
+- Updated `CLAUDE.md` — added `### Engagement Logging` under Architecture with full directory structure, behavior rules, and orchestrator responsibilities; updated body structure list (now 7 items)
+- Batch-updated all 11 existing SKILL.md files with per-skill Engagement Logging sections:
+  - Each section is ~15 lines with skill-specific milestone examples and evidence filename examples
+  - Consistent format: auto-detect `./engagement/`, guided asks / autonomous creates, milestone-based activity logging, numbered findings, evidence to `evidence/`
+- Updated `task_plan.md` — checked off 5/6 engagement logging tasks (orchestrator integration remains)
+
+### Design Decisions
+- **Per-skill section** over CLAUDE.md-only or hybrid — self-contained, explicit, Claude follows it reliably even deep in a skill workflow
+- **Auto-detect + offer to create** — skills check for `./engagement/`, guided mode asks, autonomous mode creates. No engagement dir = no logging (graceful degradation)
+- **Milestone-based logging** — log at significant events (test confirmed, data extracted, finding discovered, skill pivot), not every command. Keeps activity.md useful without being overwhelming.
+- **Light findings format** — numbered entries with severity, target, technique, impact, evidence path, repro command. Formal report-quality writeups come from the `pentest-findings` skill separately.
+- **Activity log format**: `### [HH:MM] skill-name → target` with bullet points. Date headers (`## YYYY-MM-DD`) group entries by day.
+- **Evidence filenames**: descriptive, skill-prefixed (e.g., `sqli-union-schema-dump.txt`, `ssrf-aws-credentials.json`)
+- **Section placement**: after Mode, before Prerequisites — behavioral directive that affects all subsequent steps
+
+### Engagement Directory Structure
+```
+engagement/
+├── scope.md          # Target scope, credentials, rules of engagement
+├── activity.md       # Chronological action log (append-only)
+├── findings.md       # Confirmed vulnerabilities (working tracker)
+└── evidence/         # Saved output, responses, dumps
+```
+
+### Next Steps
+1. LFI skill next (will include engagement logging from the start)
+2. Write orchestrator skill — needs special logging: creates engagement dir, initializes scope.md, maintains activity.md across skill transitions, produces summary
+3. Update README.md
 4. Remaining web skills: file-upload-bypass, deserialization, XXE, command-injection, JWT, request-smuggling

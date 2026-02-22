@@ -28,11 +28,12 @@ Claude Code skills for penetration testing and CTF work. Skills are SKILL.md fil
 - [ ] Update README.md
 
 ### Engagement logging
-- [ ] Define engagement directory structure and file conventions (activity log, findings, evidence)
-- [ ] Build engagement logging into the SKILL.md template — every skill should log discoveries, exploitation attempts, and successful exploits
+- [x] Define engagement directory structure and file conventions (activity log, findings, evidence) — `./engagement/` with `activity.md`, `findings.md`, `scope.md`, `evidence/`
+- [x] Build engagement logging into the SKILL.md template — `## Engagement Logging` section after Mode, auto-detect + offer to create
 - [ ] Build engagement logging into the orchestrator — initialize engagement dir, maintain activity log, track findings
-- [ ] Define evidence format: successful exploits get reproduction steps, screenshots/output captures, impact summary
-- [ ] Document conventions in CLAUDE.md
+- [x] Define evidence format: milestone-based activity entries, numbered findings with severity/target/technique/impact/evidence/repro
+- [x] Document conventions in CLAUDE.md — `### Engagement Logging` under Architecture
+- [x] Batch update all 11 existing skills with Engagement Logging section
 
 ## Phase 3: Core Skills — Web Application (CURRENT)
 
