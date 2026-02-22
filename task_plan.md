@@ -124,11 +124,19 @@ with later phases.
 
 ## Phase 4: Core Skills — Active Directory
 
+### Source Material Survey (do first)
+- [ ] Survey `~/docs/InternalAllTheThings` AD content — enumerate every technique file, assess depth and payload coverage
+- [ ] Survey `~/docs/hacktricks/src/windows-hardening/active-directory-methodology/` — cross-reference with InternalAllTheThings, identify unique content
+- [ ] Survey `~/docs/PayloadsAllTheThings` for any AD-adjacent content (LDAP injection already in Phase 3b)
+- [ ] Define concrete skill splits — decide which bullet points below become standalone skills vs. subsections, based on source material depth
+- [ ] Define batching — group skills for build sessions after survey is complete
+
+### Preliminary Skill List (refine after survey)
 - [ ] `ad-attack-discovery` — entry point: enumerate domain, identify attack paths, route to techniques
 - [ ] AD Enumeration (BloodHound, PowerView, LDAP)
 - [ ] Kerberoasting / AS-REP Roasting
 - [ ] Kerberos Delegation (unconstrained, constrained, RBCD)
-- [ ] ADCS Certificate Abuse (ESC1–ESC15)
+- [ ] ADCS Certificate Abuse (ESC1–ESC15) — likely 2-3 skills given 15 ESC files in InternalAllTheThings
 - [ ] NTLM Relay & Coercion
 - [ ] ACL/ACE Abuse (WriteDACL, GenericAll, GenericWrite)
 - [ ] Pass-the-Hash / Over-Pass-the-Hash
