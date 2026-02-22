@@ -360,3 +360,36 @@ engagement/
 1. Continue Phase 3 web skills: file-upload-bypass or jwt-attacks next
 2. Write orchestrator skill
 3. Remaining: file-upload-bypass, deserialization (java/php/dotnet), JWT, request-smuggling
+
+## 2026-02-22 — File Upload Bypass Skill
+
+### Done
+- Created `skills/web/file-upload-bypass/SKILL.md` (506 lines)
+- 8 steps: Assess → Extension Bypass → Content-Type & Magic Byte → Server Config Exploitation → Image Polyglots & Metadata → Archive & Indirect → Webshell Payloads → Escalate/Pivot
+- Updated `web-vuln-discovery` routing table with config file upload pattern
+- Updated task_plan.md, README.md
+
+### Source Material
+- PayloadsAllTheThings: Upload Insecure Files (extensions, MIME types, .htaccess, web.config, polyglot generators, ImageMagick CVEs, ZIP traversal)
+- HackTricks: file-upload (magic bytes, race conditions, path traversal, filename injection)
+
+### Coverage
+- **Extension bypass**: alternative extensions per language (PHP/ASP/JSP/CFM/Perl), double extensions, null byte, case variation, special characters (space/newline/dot/slash), NTFS ADS, filename length overflow, RTLO
+- **Content-Type & magic bytes**: MIME manipulation, GIF/JPEG/PNG/PDF signatures, combined bypass technique
+- **Server config**: .htaccess (AddType + self-contained shell), web.config (handler registration + embedded ASP), uWSGI .ini (exec/http magic operators)
+- **Image polyglots**: EXIF injection via exiftool, simple append, PLTE chunk and GIF color table encoding (described with ~/docs/ reference to generator scripts)
+- **Archive/indirect**: ZIP path traversal (Python script), symlink technique, filename injection (SQLi/XSS/CMDi/path traversal in uploaded names), race conditions, ImageMagick CVE-2022-44268 + CVE-2016-3714
+- **Webshell payloads**: PHP (standard/minimal/blocked alternatives), ASP, ASPX, JSP — one-liner format
+
+### Decisions
+- Kept as single skill (same rationale as XXE — techniques are tried in a progressive order, not identified at discovery)
+- Trimmed polyglot image generator scripts to descriptions + ~/docs/ references for actual code (saves ~15 lines, generators are multi-file)
+- web.config condensed to essential handler registration + embedded ASP (full requestFiltering referenced via ~/docs/)
+- Race conditions described as technique rather than full Python script — testers use Burp turbo-intruder in practice
+- Included ImageMagick CVEs because they're common in upload-heavy apps (file read + RCE)
+- Webshell payloads in single fenced block per language to keep compact
+
+### Next Steps
+1. Continue Phase 3 web skills: deserialization or JWT attacks next
+2. Write orchestrator skill
+3. Remaining: deserialization (java/php/dotnet), JWT, request-smuggling

@@ -58,7 +58,7 @@ Split strategy: by **technique** (not by DB engine). DB/engine variants as subse
 ### Other Web
 - [x] `ssrf` — basic, blind, cloud metadata, filter bypass, gopher/dict/file protocol exploitation
 - [x] `lfi` — LFI (536 lines), PHP wrappers (filter/data/input/zip/phar), 8 LFI-to-RCE methods, filter bypass, platform-specific paths, RFI
-- [ ] `file-upload-bypass` — extension/content-type/magic byte bypass
+- [x] `file-upload-bypass` — (506 lines) extension bypass (alternative/double/null byte/case/special chars/NTFS ADS), content-type & magic byte bypass, server config exploitation (.htaccess/web.config/uWSGI), image polyglots & EXIF injection, ZIP traversal, race conditions, ImageMagick CVEs, webshell payloads (PHP/ASP/JSP)
 - [ ] `deserialization-java` — Java (ysoserial, gadget chains)
 - [ ] `deserialization-php` — PHP (phar, __wakeup)
 - [ ] `deserialization-dotnet` — .NET (ysoserial.net)
