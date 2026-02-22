@@ -25,10 +25,18 @@
 - Phase 3 technique skills: COMPLETE (all 27 web technique skills built)
 - Remaining: final `web-vuln-discovery` review
 
+- Final `web-vuln-discovery` review — cross-checked all 27 technique skills against Step 3 (probes), Step 4 (routing), and Deep Reference. Found 3 gaps:
+  - Added `file-upload-bypass` detection probes to Step 3 (was the only skill without probes)
+  - Added `sql-injection-stacked` routing entries to Step 4 (stacked queries + second-order)
+  - Added `file-upload-bypass` deep reference paths (PayloadsAllTheThings + HackTricks)
+
+### Phase 3 Status: COMPLETE
+
+All 27 web technique skills built. Discovery skill reviewed and verified.
+
 ### Next Steps
 
-- Final `web-vuln-discovery` review (ensure all 27 technique skills are properly routed)
-- Then: Phase 3b extended web skills or Phase 4 (AD)
+- Phase 3b extended web skills or Phase 4 (AD)
 
 ---
 

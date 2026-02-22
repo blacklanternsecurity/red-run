@@ -90,7 +90,7 @@ Split strategy: by **technique** (not by DB engine). DB/engine variants as subse
 ### Discovery
 - [x] `web-vuln-discovery` — entry point: fuzz, test, route to technique skills (converted)
 - [x] Update `web-vuln-discovery` routing table as each new technique skill is created
-- [ ] Final review of `web-vuln-discovery` after all web skills are complete
+- [x] Final review of `web-vuln-discovery` after all web skills are complete
 
 ## Phase 3b: Extended Web Skills
 
