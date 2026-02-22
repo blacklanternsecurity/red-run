@@ -252,7 +252,41 @@ engagement/
 ```
 
 ### Next Steps
-1. LFI skill next (will include engagement logging from the start)
+1. ~~LFI skill~~ — done in session 8
 2. Write orchestrator skill — needs special logging: creates engagement dir, initializes scope.md, maintains activity.md across skill transitions, produces summary
 3. Update README.md
 4. Remaining web skills: file-upload-bypass, deserialization, XXE, command-injection, JWT, request-smuggling
+
+---
+
+## 2026-02-22 — Engagement Logging + LFI Skill
+
+### Done
+- Designed and implemented engagement logging convention (see session above)
+- Authored `lfi` skill (536 lines) — largest skill in the library, covering:
+  - Basic traversal + 8 filter bypass techniques (URL encoding, double encoding, UTF-8 overlong, non-recursive stripping, null byte, path truncation, mixed separators, backslash encoding)
+  - PHP wrappers: php://filter (source code extraction + bypass variants), data://, php://input, expect://, zip://, phar://
+  - 8 LFI-to-RCE methods: PHP filter chain RCE (most reliable), log poisoning (Apache/Nginx/SSH/FTP/mail), session poisoning, /proc/self/environ, PHP_SESSION_UPLOAD_PROGRESS race condition, PEARCMD.php gadget, temp file race condition, PHAR deserialization
+  - Platform-specific sensitive files: Linux (23 paths) + Windows (14 paths)
+  - RFI section: basic, SMB-based (bypasses allow_url_include on Windows), data://
+  - Engagement logging section included from the start (first skill with it baked in from creation)
+- Verified web-vuln-discovery routing table already covers LFI with 3 patterns
+- Updated task_plan.md and progress.md
+
+### Source Material Used
+- PayloadsAllTheThings: File Inclusion/README.md (traversal basics, filter bypass), Wrappers.md (PHP wrappers comprehensive), LFI-to-RCE.md (10+ escalation methods), Intruders/ (7,984 payload wordlists)
+- HackTricks: file-inclusion/README.md (methodology, blind LFI paths, HTML-to-PDF traversal), lfi2rce-via-php-filters.md (filter chain RCE), via-php_session_upload_progress.md (race condition), phar-deserialization.md
+
+### Decisions
+- Single skill for LFI + RFI — RFI is a small section since it's disabled by default since PHP 5.2
+- 8 LFI-to-RCE methods prioritized by reliability: filter chain RCE first (no file write, no race condition), then log poisoning (most common), then increasingly exotic methods
+- PHP filter chain RCE gets prominent placement as the "most reliable modern LFI-to-RCE technique" — it works without allow_url_include and without file writes
+- Embedded platform-specific file paths directly (37 paths) rather than referencing wordlists — users need the top targets immediately, not a 4,500-line wordlist
+- Included PEARCMD.php gadget since it's common in Docker PHP images and often overlooked
+- PHAR deserialization marked as PHP < 8.0 only — PHP 8.0+ removed auto-deserialization
+
+### Next Steps
+1. Continue Phase 3 web skills: command-injection or xxe next
+2. Write orchestrator skill
+3. Update README.md
+4. Remaining web skills: file-upload-bypass, deserialization (java/php/dotnet), xxe, command-injection, JWT, request-smuggling
