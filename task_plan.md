@@ -85,11 +85,11 @@ Split strategy: by **technique** (not by DB engine). DB/engine variants as subse
 - [x] `password-reset-poisoning` — (533 lines) host header poisoning (Host/X-Forwarded-Host/double host/absolute URL), token leakage via Referer, email parameter injection (duplication/CRLF Cc/Bcc/separator/JSON array), token weakness analysis (sequential/timestamp/hash/UUID v1), brute-force with rate limit bypass, response manipulation, username enumeration, dangling markup
 - [x] `2fa-bypass` — (585 lines) response manipulation (status code/body/redirect), direct navigation bypass, null/empty/array code submission, OTP brute-force with rate limit bypass (IP rotation/session rotation/code resend/HTTP/2 single-packet), backup code attacks, session fixation, remember-me token abuse, OAuth/SSO/ROPC bypass, CSRF on 2FA disable, race conditions
 - [x] `nosql-injection` — (519 lines) MongoDB operator injection ($ne/$gt/$regex/$where), auth bypass, blind character extraction with automation scripts, $where JS execution, $lookup cross-collection, Mongoose RCE (CVE-2024-53900), GraphQL filter injection, MongoLite $func
-- [ ] `race-condition` — limit-overrun, HTTP/2 single-packet attack, turbo intruder, TOCTOU
+- [x] `race-condition` — (719 lines) limit-overrun (coupon/balance/vote/invite), HTTP/2 single-packet attack, HTTP/1.1 last-byte sync, Turbo Intruder templates (single-gate/multi-endpoint/connection warming), asyncio+httpx PoCs, authentication races (password reset token reuse/2FA code reuse/registration confirmation/email change verification), rate limit bypass (HTTP/2 multiplexing/GraphQL alias batching/session rotation), partial construction races, race window expansion, session locking workaround, WebSocket races, TOCTOU (database-level)
 
 ### Discovery
 - [x] `web-vuln-discovery` — entry point: fuzz, test, route to technique skills (converted)
-- [ ] Update `web-vuln-discovery` routing table as each new technique skill is created
+- [x] Update `web-vuln-discovery` routing table as each new technique skill is created
 - [ ] Final review of `web-vuln-discovery` after all web skills are complete
 
 ## Phase 3b: Extended Web Skills

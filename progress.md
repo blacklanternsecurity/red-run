@@ -16,15 +16,19 @@
 - Built `password-reset-poisoning` skill (533 lines) — host header poisoning (Host/X-Forwarded-Host/double host/absolute URL), token leakage via Referer, email parameter injection (duplication/CRLF/separator/JSON array), token weakness analysis (sequential/timestamp/hash/UUID v1), brute-force with rate limit bypass, response manipulation, username enumeration, dangling markup, unicode normalization
 - Built `2fa-bypass` skill (585 lines) — response manipulation (status code/body/redirect), direct navigation bypass, null/empty/array code submission, OTP brute-force with rate limit bypass (IP rotation/session rotation/code resend/HTTP/2 single-packet), backup code attacks, session fixation, remember-me token abuse, OAuth/SSO/ROPC bypass, CSRF on 2FA disable, race conditions
 
+- Built `race-condition` skill (719 lines) — limit-overrun (coupon/balance/vote/invite), HTTP/2 single-packet attack (Burp Repeater + Turbo Intruder), HTTP/1.1 last-byte sync, asyncio+httpx PoCs, connection warming, multi-endpoint races (email change + verification), authentication races (password reset token reuse, 2FA code reuse, registration confirmation, email change verification), rate limit bypass (HTTP/2 multiplexing, GraphQL alias batching, session rotation), advanced (partial construction, race window expansion, session fixation chain, database TOCTOU, WebSocket races), session locking workaround
+- Updated `web-vuln-discovery` — added race condition detection probes to Step 3, routing table to Step 4 (4 patterns), deep references
+
 ### Inventory
 
-- Total skills: 29 (28 web + 1 orchestrator)
-- Phase 3 remaining: 1 skill (race-condition)
+- Total skills: 30 (29 web + 1 orchestrator)
+- Phase 3 technique skills: COMPLETE (all 27 web technique skills built)
+- Remaining: final `web-vuln-discovery` review
 
 ### Next Steps
 
-- Batch 4: `race-condition`
-- Then: final `web-vuln-discovery` review
+- Final `web-vuln-discovery` review (ensure all 27 technique skills are properly routed)
+- Then: Phase 3b extended web skills or Phase 4 (AD)
 
 ---
 
