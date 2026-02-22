@@ -393,3 +393,37 @@ engagement/
 1. Continue Phase 3 web skills: deserialization or JWT attacks next
 2. Write orchestrator skill
 3. Remaining: deserialization (java/php/dotnet), JWT, request-smuggling
+
+---
+
+## 2026-02-22 — Deserialization Skills (Java/PHP/.NET)
+
+### Done
+- Authored 3 deserialization skills:
+  - `deserialization-java` (404 lines) — ysoserial gadget chains (CommonsCollections 1-7, CommonsBeanutils1, URLDNS for blind, ROME, Groovy1), Runtime.exec() workarounds (bash brace encoding, ysoserial-modified, download-and-execute), JNDI injection via marshalsec, Log4Shell CVE-2021-44228 (detection payloads, 4 WAF bypass variants, data exfiltration, RCE via LDAP referral + deserialization gadgets for modern JDK), JSF ViewState (MyFaces default keys), framework-specific (WebLogic T3, JBoss invoker servlets, Jenkins CLI)
+  - `deserialization-php` (365 lines) — magic methods table (__wakeup through __debugInfo), basic object injection with property modification, type juggling via deserialization (boolean true bypass, magic hash collisions), private/protected property encoding with null bytes, PHPGGC framework chains (Monolog/Laravel/Symfony/Guzzle/SwiftMailer/Doctrine/WordPress/CakePHP/Yii), Laravel APP_KEY exploitation (crypto-killer), phar:// deserialization (metadata auto-unserialize, JPEG/GIF/PNG polyglots, PHPGGC phar output), autoload exploitation (class name to file path mapping, cross-webapp gadget loading)
+  - `deserialization-dotnet` (408 lines) — dangerous formatters table (BinaryFormatter/LosFormatter/ObjectStateFormatter/SoapFormatter/NetDataContractSerializer/JSON.NET/JavaScriptSerializer/XmlSerializer/DataContractSerializer), ViewState attacks (Blacklist3r/BadSecrets for known machine keys, ysoserial.exe ViewState plugin with signing/encryption, machine key format), JSON.NET TypeNameHandling exploitation (ObjectDataProvider RCE payload, WindowsIdentity bridge gadget), BinaryFormatter/SoapFormatter/NetDataContractSerializer ysoserial.net commands, .NET Remoting exploitation, framework-specific (SharePoint CVE-2025-53770, Sitecore CVE-2025-53690, Telerik CVE-2019-18935), blind detection (time-based, DNS, file write)
+- Updated `web-vuln-discovery`:
+  - Added deserialization test payloads to Step 3 (Java rO0AB, PHP O: prefix, .NET AAEAAAD)
+  - Added deserialization routing table to Step 4 (4 patterns routing to 3 skills)
+  - Added deserialization reference docs to Deep Reference section
+- Updated task_plan.md, README.md
+- Added global tool prerequisites list to backlog (per user request — do last after all skills written)
+
+### Source Material Used
+- PayloadsAllTheThings: Insecure Deserialization/Java.md (ysoserial chains, JNDI, JSF ViewState), PHP.md (magic methods, POP chains, PHPGGC, type juggling, Laravel), DotNET.md (formatters, ysoserial.net, ViewState)
+- HackTricks: deserialization/ directory (Java transformers, JNDI/Log4Shell, SignedObject, JSF ViewState, PHP autoload classes, phar deserialization, .NET ObjectDataProvider/JSON.NET)
+- Web research for .NET: ysoserial.net gadget matrix, ViewState exploitation, JSON.NET TypeNameHandling, .NET Remoting, SharePoint/Sitecore/Telerik CVEs
+
+### Decisions
+- Three separate skills (Java/PHP/.NET) rather than one monolithic deserialization skill — the tools, payloads, and exploitation chains are completely distinct per language
+- Java skill includes Log4Shell as a subsection of JNDI injection — it's the most common JNDI deserialization vector and testers encounter it constantly
+- PHP skill includes type juggling — it's a natural companion to deserialization since both exploit unserialize() entry points
+- .NET skill leads with ViewState — it's the most common .NET deserialization attack surface in practice
+- All three skills ~400 lines (well under 500 budget) — deserialization skills don't need as many embedded payloads since the tools (ysoserial, PHPGGC, ysoserial.net) generate them
+- Discovery routing includes error message detection as a 4th pattern — deserialization errors often reveal the formatter/language
+
+### Next Steps
+1. Continue Phase 3 web skills: JWT attacks next, then request smuggling
+2. Write orchestrator skill
+3. Global tool prerequisites list (backlog — after all skills complete)
