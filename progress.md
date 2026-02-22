@@ -1,5 +1,35 @@
 # red-run — Session Log
 
+## 2026-02-22 — JWT Attacks Skill
+
+### Done
+- Created `skills/web/jwt-attacks/SKILL.md` (533 lines)
+  - Step 1: Assess — locate JWTs, decode, identify algorithm, find public keys, note claims
+  - Step 2: Algorithm None (CVE-2015-9235) — none/None/NONE/nOnE variants
+  - Step 3: Null Signature (CVE-2020-28042) — strip signature, keep algorithm
+  - Step 4: Brute Force Weak Secret — hashcat mode 16500, jwt_tool dictionary, jwt-secrets wordlist
+  - Step 5: Key Confusion RS256→HS256 (CVE-2016-5431) — jwt_tool, manual openssl, Burp JWT Editor workflow, RSA key recovery from two tokens
+  - Step 6: Header Injection — kid (path traversal to /dev/null, SQLi to force known key, command injection), jwk embedding (CVE-2018-0114), jku spoofing (attacker JWKS + URL bypass), x5u/x5c certificate injection
+  - Step 7: Claim Tampering — role/admin escalation, user impersonation, expiration bypass, cross-service relay
+  - Step 8: Escalate/Pivot — routes to ssrf, sql-injection-union/blind, command-injection
+- Updated `web-vuln-discovery` routing table (now 363 lines):
+  - Added JWT detection payloads to Step 3
+  - Added JWT routing table to Step 4 (4 patterns)
+  - Added JWT reference doc to Deep Reference
+- Updated task_plan.md, README.md
+
+### Source Material Used
+- `~/docs/PayloadsAllTheThings/JSON Web Token/README.md`
+- `~/docs/hacktricks/src/pentesting-web/hacking-jwt-json-web-tokens.md`
+
+### Decisions
+- Single `jwt-attacks` skill covers all JWT attack types since they share the same target (JWT tokens) and tools (jwt_tool, hashcat, Burp JWT Editor)
+- 533 lines — slightly over the 500-line budget but JWT has many distinct attack vectors that all need embedded payloads
+- OPSEC rated as low — token manipulation is client-side, brute forcing is offline
+
+### Next Steps
+- `request-smuggling` — last remaining Phase 3 web skill
+
 ## 2026-02-21 — Bootstrap
 
 ### Done
