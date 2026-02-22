@@ -25,7 +25,7 @@ Claude Code skills for penetration testing and CTF work. Skills are SKILL.md fil
 - [ ] Create orchestrator at `skills/orchestrator/SKILL.md`
 - [x] Convert 5 existing skill.md files to SKILL.md format
 - [x] Delete old skill.md files and old template
-- [ ] Update README.md
+- [x] Update README.md — v2 architecture, skill inventory, engagement logging, installation
 
 ### Engagement logging
 - [x] Define engagement directory structure and file conventions (activity log, findings, evidence) — `./engagement/` with `activity.md`, `findings.md`, `scope.md`, `evidence/`
