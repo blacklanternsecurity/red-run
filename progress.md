@@ -324,3 +324,39 @@ engagement/
 2. Continue Phase 3 web skills: xxe or file-upload-bypass next
 3. Write orchestrator skill
 4. Remaining: file-upload-bypass, deserialization (java/php/dotnet), xxe, JWT, request-smuggling
+
+---
+
+## 2026-02-22 — XXE Skill
+
+### Done
+- Authored `xxe` skill (466 lines after trimming from 665) covering:
+  - Classic XXE: basic file read (Linux/Windows), PHP wrappers (filter base64, expect RCE), Java directory listing, useful file targets
+  - XXE to SSRF: internal resource access, AWS cloud metadata (IMDSv1), NTLM hash capture via UNC path
+  - Blind/OOB XXE: detection ping (general + parameter entity), external DTD exfiltration (HTTP), PHP base64 OOB, FTP exfiltration (multi-line files), xxeserv/230-OOB tooling
+  - Error-based XXE: remote DTD error technique, local/system DTD (fonts.dtd, docbookx.dtd, cim20.dtd), dtd-finder for injectable DTD discovery
+  - XInclude: for when DOCTYPE is not controllable
+  - File format XXE: SVG upload (reflected + OOB), DOCX/XLSX/PPTX injection (extract/edit/repackage workflow), SOAP CDATA wrapping, RSS/Atom feeds, oxml_xxe tool
+  - WAF/filter bypass: UTF-16/UTF-7 encoding with BOM reference, HTML numeric entities, Content-Type switching (JSON→XML), PUBLIC keyword bypass
+  - Parser-specific notes: PHP libxml2 defaults, Java DocumentBuilder (vulnerable by default), Python lxml, .NET XmlReader/XmlDocument version behavior
+  - XXEinjector, xxeserv, oxml_xxe tool references
+- Verified web-vuln-discovery routing table already covers XXE with 3 patterns (lines 256-262)
+- Updated task_plan.md, progress.md, README.md
+
+### Source Material Used
+- PayloadsAllTheThings: XXE Injection/README.md (classic, blind, OOB, error-based, local DTD, XInclude, PHP/Java techniques, SVG, XLSX, SOAP), Files/ (example payloads), Intruders/ (XXE_Fuzzing.txt, xml-attacks.txt)
+- HackTricks: xxe-xee-xml-external-entity.md (Java XMLDecoder RCE, jar: protocol, lxml bypass, XLIFF, JMF SSRF, SAML surface, Windows local DTD)
+
+### Decisions
+- 665 lines — largest skill in the library. XXE has more distinct attack categories than any other technique: classic, blind OOB (HTTP + FTP), error-based (remote + local DTD), XInclude, 5 file formats, 4 encoding bypasses
+- Error-based via local DTD gets prominent coverage because it's the only option when egress is blocked — included 3 specific DTDs (fonts.dtd, docbookx.dtd, cim20.dtd) with ready-to-use payloads
+- FTP exfiltration highlighted for Java specifically because HTTP-based OOB breaks on newlines in Java
+- XInclude separated as its own step because it's conceptually different (no DOCTYPE control)
+- Excluded Billion Laughs DoS — destructive, against project principles
+- Excluded XSLT exploitation — different enough to warrant its own skill if needed
+- Excluded Java XMLDecoder — full deserialization, better suited for deserialization-java skill
+
+### Next Steps
+1. Continue Phase 3 web skills: file-upload-bypass or jwt-attacks next
+2. Write orchestrator skill
+3. Remaining: file-upload-bypass, deserialization (java/php/dotnet), JWT, request-smuggling
