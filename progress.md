@@ -39,7 +39,8 @@
 
 ### Status
 - 4 skills written, pending review
-- Next up: `sql-injection-stacked`, then XSS skills (reflected, stored, DOM)
+- Next up: `sql-injection-stacked` on a `skills/web-sqli` branch, then XSS skills (reflected, stored, DOM) on `skills/web-xss`
+- **Branching policy adopted:** feature branch per skill batch, PR for review, no direct pushes to main (see CLAUDE.md Workflow section)
 
 ### Source material used
 - PayloadsAllTheThings: SQL Injection/ (all 10 files), Hidden Parameters/, Server Side Template Injection/
