@@ -1,5 +1,44 @@
 # red-run — Session Log
 
+## 2026-02-22 — State Management + Orchestrator
+
+### Done
+- Designed `engagement/state.md` format — compact, machine-readable engagement state snapshot
+  - Sections: Targets, Credentials, Access, Vulns, Pivot Map, Blocked
+  - One-liner per item, ~200 line budget, current state not history
+  - Skills read on activation, write on completion
+- Created `skills/orchestrator/SKILL.md` (356 lines)
+  - Step 1: Scope & engagement setup (initializes scope.md, state.md, activity.md, findings.md)
+  - Step 2: Recon (nmap, httpx, netexec)
+  - Step 3: Attack surface mapping → routes to discovery skills
+  - Step 4: Vulnerability discovery & exploitation → routes to technique skills
+  - Step 5: Vulnerability chaining — reads state.md Pivot Map, chains vulns for impact
+    - Info→Access, Access→Deeper Access, Lateral Movement, Privilege Escalation chains
+    - Decision logic: check unexploited vulns, unchained access, untested creds, blocked items
+  - Step 6: Post-exploitation evidence collection
+  - Step 7: Reporting — engagement summary, routes to pentest-findings
+- Added `## State Management` section to skill template
+- Batch-updated all 20 web skills (6 parallel agents):
+  - Added State Management section (read state.md before starting, write back on completion)
+  - Added state.md update reminder in each skill's Escalate/Pivot step
+  - web-vuln-discovery got discovery-specific variant (focus on new targets, record tested endpoints)
+- Updated CLAUDE.md:
+  - Added state.md to engagement directory structure
+  - Added State Management subsection with format, rules, section table
+  - Updated body structure list (now 8 items including State Management)
+- Updated README.md engagement directory section with state.md
+- Updated task_plan.md — checked off orchestrator, engagement logging, added state management items
+
+### Decisions
+- State.md is a snapshot, not a log — keeps it compact for re-ingestion
+- ~200 line budget keeps it readable without burning context
+- Orchestrator owns chaining logic — reads state.md Pivot Map to decide next actions
+- Discovery skills get a slightly different State Management section (focus on tested endpoints)
+- Every skill reads state.md first, writes last — ensures cross-skill continuity
+
+### Next Steps
+- `request-smuggling` — last remaining Phase 3 web skill
+
 ## 2026-02-22 — JWT Attacks Skill
 
 ### Done

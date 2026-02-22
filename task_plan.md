@@ -22,7 +22,7 @@ Claude Code skills for penetration testing and CTF work. Skills are SKILL.md fil
 - [x] Create `install.sh` (symlinks to `~/.claude/skills/red-run-*/`)
 - [x] Create `uninstall.sh`
 - [x] Update CLAUDE.md
-- [ ] Create orchestrator at `skills/orchestrator/SKILL.md`
+- [x] Create orchestrator at `skills/orchestrator/SKILL.md`
 - [x] Convert 5 existing skill.md files to SKILL.md format
 - [x] Delete old skill.md files and old template
 - [x] Update README.md — v2 architecture, skill inventory, engagement logging, installation
@@ -30,10 +30,20 @@ Claude Code skills for penetration testing and CTF work. Skills are SKILL.md fil
 ### Engagement logging
 - [x] Define engagement directory structure and file conventions (activity log, findings, evidence) — `./engagement/` with `activity.md`, `findings.md`, `scope.md`, `evidence/`
 - [x] Build engagement logging into the SKILL.md template — `## Engagement Logging` section after Mode, auto-detect + offer to create
-- [ ] Build engagement logging into the orchestrator — initialize engagement dir, maintain activity log, track findings
+- [x] Build engagement logging into the orchestrator — initialize engagement dir, maintain activity log, track findings
 - [x] Define evidence format: milestone-based activity entries, numbered findings with severity/target/technique/impact/evidence/repro
 - [x] Document conventions in CLAUDE.md — `### Engagement Logging` under Architecture
 - [x] Batch update all 11 existing skills with Engagement Logging section
+
+### State management
+- [x] Define `engagement/state.md` format — Targets, Credentials, Access, Vulns, Pivot Map, Blocked
+- [x] Add `## State Management` section to SKILL.md template
+- [x] Build state.md initialization into orchestrator
+- [x] Add vulnerability chaining logic to orchestrator (Step 5)
+- [x] Batch update all 20 web skills with State Management section
+- [x] Update web-vuln-discovery with discovery-specific state management
+- [x] Document state management conventions in CLAUDE.md
+- [x] Update README.md engagement directory structure
 
 ## Phase 3: Core Skills — Web Application (CURRENT)
 
