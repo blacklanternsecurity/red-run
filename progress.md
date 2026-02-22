@@ -13,14 +13,16 @@
 - Built `oauth-attacks` skill (610 lines) — redirect URI manipulation (path traversal, open redirect chain, parameter pollution, special chars), state bypass (CSRF account linking), code theft (reuse, race condition, client binding), token leakage (Referer, postMessage, implicit flow), OIDC (email claim abuse, nonce bypass, discovery SSRF), PKCE bypass/downgrade, scope escalation, ROPC 2FA bypass, account takeover chains
 - Updated `web-vuln-discovery` — added CSRF and OAuth detection probes to Step 3, routing tables to Step 4, deep references
 
+- Built `password-reset-poisoning` skill (533 lines) — host header poisoning (Host/X-Forwarded-Host/double host/absolute URL), token leakage via Referer, email parameter injection (duplication/CRLF/separator/JSON array), token weakness analysis (sequential/timestamp/hash/UUID v1), brute-force with rate limit bypass, response manipulation, username enumeration, dangling markup, unicode normalization
+- Built `2fa-bypass` skill (585 lines) — response manipulation (status code/body/redirect), direct navigation bypass, null/empty/array code submission, OTP brute-force with rate limit bypass (IP rotation/session rotation/code resend/HTTP/2 single-packet), backup code attacks, session fixation, remember-me token abuse, OAuth/SSO/ROPC bypass, CSRF on 2FA disable, race conditions
+
 ### Inventory
 
-- Total skills: 27 (26 web + 1 orchestrator)
-- Phase 3 remaining: 3 skills (password-reset-poisoning, 2fa-bypass, race-condition)
+- Total skills: 29 (28 web + 1 orchestrator)
+- Phase 3 remaining: 1 skill (race-condition)
 
 ### Next Steps
 
-- Batch 3: `password-reset-poisoning` + `2fa-bypass`
 - Batch 4: `race-condition`
 - Then: final `web-vuln-discovery` review
 
