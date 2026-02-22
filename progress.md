@@ -185,7 +185,37 @@ Each v1 skill.md was restructured into v2 SKILL.md with:
 - Included real-world CVE targets (XWiki CVE-2025-24893) to provide actionable context
 
 ### Next Steps
-1. Continue Phase 3 web skills: SSRF next
+1. ~~Continue Phase 3 web skills: SSRF next~~ — done in this session
 2. Write orchestrator skill
 3. Design engagement logging conventions
 4. Remaining web skills: LFI, file-upload-bypass, deserialization, XXE, command-injection, JWT, request-smuggling
+
+---
+
+## 2026-02-22 — SSRF Skill
+
+### Done
+- Authored `ssrf` skill (503 lines) covering:
+  - Basic SSRF: localhost access, internal network scanning, file:// protocol
+  - Filter bypass: IPv6, domain redirects, CIDR, IP encoding (decimal/hex/octal/mixed), URL encoding, URL parsing discrepancy, HTTP redirects, DNS rebinding, PHP filter_var(), JAR scheme, enclosed alphanumeric
+  - Cloud metadata: AWS (IMDSv1, IMDSv2, ECS, Lambda, Elastic Beanstalk), GCP (with header bypass via gopher), Azure, Digital Ocean, Oracle, Alibaba, Hetzner, Kubernetes ETCD, Docker, Rancher
+  - Protocol exploitation: gopher:// (Redis webshell, FastCGI RCE, MySQL, SMTP relay, Zabbix), dict:// (Redis), file://
+  - Blind SSRF: OOB detection, time-based, blind SSRF chains (Elasticsearch, Jenkins, Docker, Redis, Consul, Solr), upgrade to XSS via SVG
+  - Escalation paths: AWS credentials → S3/IAM, Redis → webshell, FastCGI → RCE, Docker API → container escape
+- Verified web-vuln-discovery routing table already covers SSRF with 3 response patterns (localhost content, blind callback, cloud metadata)
+
+### Source Material Used
+- PayloadsAllTheThings: README.md (filter bypass, URL schemes, blind exploitation), SSRF-Cloud-Instances.md (AWS/GCP/Azure/DO/Oracle/Alibaba/Hetzner/k8s/Docker), SSRF-Advanced-Exploitation.md (Redis, FastCGI, MySQL, SMTP, WSGI, Zabbix, DNS AXFR via gopher)
+- HackTricks: ssrf-server-side-request-forgery/README.md (methodology overview), cloud-ssrf.md, url-format-bypass.md
+
+### Decisions
+- Single skill for all SSRF variants (basic, blind, cloud) since they share the same injection point and bypass techniques — splitting by cloud provider would fragment the workflow
+- 503 lines — largest skill so far due to the breadth of bypass techniques and cloud provider coverage
+- Included both gopher:// and dict:// exploitation paths for Redis since they have different capabilities (gopher is more flexible, dict is simpler)
+- Included r3dir.me as a serverless redirect alternative to hosting your own redirector
+
+### Next Steps
+1. LFI skill next
+2. Write orchestrator skill
+3. Design engagement logging conventions
+4. Remaining web skills: file-upload-bypass, deserialization, XXE, command-injection, JWT, request-smuggling

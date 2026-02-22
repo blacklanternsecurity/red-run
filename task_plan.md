@@ -55,7 +55,7 @@ Split strategy: by **technique** (not by DB engine). DB/engine variants as subse
 - [x] `ssti-freemarker` — Freemarker/Java (+ Velocity, Pebble, SpEL, Thymeleaf, Groovy, Java EL)
 
 ### Other Web
-- [ ] `ssrf` — basic, blind, cloud metadata
+- [x] `ssrf` — basic, blind, cloud metadata, filter bypass, gopher/dict/file protocol exploitation
 - [ ] `lfi` — LFI, PHP wrappers, LFI-to-RCE, RFI
 - [ ] `file-upload-bypass` — extension/content-type/magic byte bypass
 - [ ] `deserialization-java` — Java (ysoserial, gadget chains)
