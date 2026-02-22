@@ -1,6 +1,6 @@
 # red-run — Skill Library Task Plan
 
-Claude Code skills for penetration testing and CTF work, built from reference material in InternalAllTheThings, PayloadsAllTheThings, and HackTricks.
+Claude Code skills for penetration testing and CTF work. Skills are SKILL.md files that auto-trigger based on conversation context, support guided and autonomous modes, and install globally to `~/.claude/skills/`. Reference material lives in `~/docs/` (PayloadsAllTheThings, InternalAllTheThings, HackTricks).
 
 ## Phase 1: Survey & Taxonomy — COMPLETE
 
@@ -11,50 +11,132 @@ Claude Code skills for penetration testing and CTF work, built from reference ma
 - [x] Categorize topics into skill groups
 - [x] Document findings in `findings.md`
 
-## Phase 2: Skill Architecture — COMPLETE
+## Phase 2: Architecture — COMPLETE
 
-- [x] Define directory layout and naming conventions
-- [x] Define skill file format (front matter, sections, structure)
-- [x] Create template skill as the canonical pattern
-- [x] Document conventions in CLAUDE.md (covers layout, format, naming, opsec rating)
+### v1 (replaced)
+- [x] Defined static reference doc format (`skill.md`)
+- [x] Created template and 5 SQLi reference docs
+
+### v2 (current)
+- [x] Create new template at `skills/_template/SKILL.md`
+- [x] Create `install.sh` (symlinks to `~/.claude/skills/red-run-*/`)
+- [x] Create `uninstall.sh`
+- [x] Update CLAUDE.md
+- [x] Create orchestrator at `skills/orchestrator/SKILL.md`
+- [x] Convert 5 existing skill.md files to SKILL.md format
+- [x] Delete old skill.md files and old template
+- [x] Update README.md — v2 architecture, skill inventory, engagement logging, installation
+
+### Engagement logging
+- [x] Define engagement directory structure and file conventions (activity log, findings, evidence) — `./engagement/` with `activity.md`, `findings.md`, `scope.md`, `evidence/`
+- [x] Build engagement logging into the SKILL.md template — `## Engagement Logging` section after Mode, auto-detect + offer to create
+- [x] Build engagement logging into the orchestrator — initialize engagement dir, maintain activity log, track findings
+- [x] Define evidence format: milestone-based activity entries, numbered findings with severity/target/technique/impact/evidence/repro
+- [x] Document conventions in CLAUDE.md — `### Engagement Logging` under Architecture
+- [x] Batch update all 11 existing skills with Engagement Logging section
+
+### State management
+- [x] Define `engagement/state.md` format — Targets, Credentials, Access, Vulns, Pivot Map, Blocked
+- [x] Add `## State Management` section to SKILL.md template
+- [x] Build state.md initialization into orchestrator
+- [x] Add vulnerability chaining logic to orchestrator (Step 5)
+- [x] Batch update all 20 web skills with State Management section
+- [x] Update web-vuln-discovery with discovery-specific state management
+- [x] Document state management conventions in CLAUDE.md
+- [x] Update README.md engagement directory structure
 
 ## Phase 3: Core Skills — Web Application (CURRENT)
 
-Priority: highest (broadest coverage across all three repos)
+Split strategy: by **technique** (not by DB engine). DB/engine variants as subsections. Discovery skill routes to techniques via decision tree.
 
-Split strategy: by **technique** (not by DB engine). DB/engine variants live as subsections within each skill. A discovery/triage skill acts as the entry point with a decision tree routing to specific technique skills.
+### SQL Injection
+- [x] `sql-injection-union` — UNION-based, per-DB variants (converted)
+- [x] `sql-injection-error` — error-based, per-DB variants (converted)
+- [x] `sql-injection-blind` — boolean, time-based, OOB (converted)
+- [x] `sql-injection-stacked` — stacked queries, second-order (converted)
 
-- [x] Web Vulnerability Discovery — entry point: content/parameter fuzzing, injection testing, response analysis decision tree (`web-vuln-discovery`)
-- [ ] SQL Injection — Union-based, per-DB variants (`sql-injection-union`) — WRITTEN, IN REVIEW
-- [ ] SQL Injection — Error-based, per-DB variants (`sql-injection-error`) — WRITTEN, IN REVIEW
-- [ ] SQL Injection — Blind: boolean, time-based, OOB (`sql-injection-blind`) — WRITTEN, IN REVIEW
-- [ ] SQL Injection — Stacked queries, second-order (`sql-injection-stacked`)
-- [ ] XSS — Reflected + filter bypass (`xss-reflected`)
-- [ ] XSS — Stored (`xss-stored`)
-- [ ] XSS — DOM-based (`xss-dom`)
-- [ ] SSTI — Jinja2 (`ssti-jinja2`)
-- [ ] SSTI — Twig (`ssti-twig`)
-- [ ] SSTI — Freemarker (`ssti-freemarker`)
-- [ ] SSRF — basic, blind, cloud metadata (`ssrf`)
-- [ ] File Inclusion — LFI, PHP wrappers, LFI-to-RCE, RFI (`lfi`)
-- [ ] File Upload — extension/content-type/magic byte bypass (`file-upload-bypass`)
-- [ ] Deserialization — Java (`deserialization-java`)
-- [ ] Deserialization — PHP (`deserialization-php`)
-- [ ] Deserialization — .NET (`deserialization-dotnet`)
-- [ ] XXE — classic, blind, OOB (`xxe`)
-- [ ] Command Injection — Linux/Windows + filter bypass (`command-injection`)
-- [ ] JWT Attacks — alg:none, key confusion, kid injection (`jwt-attacks`)
-- [ ] Request Smuggling — CL.TE, TE.CL, H2 downgrade (`request-smuggling`)
+### XSS
+- [x] `xss-reflected` — reflected + filter/WAF/CSP bypass
+- [x] `xss-stored` — stored + blind XSS
+- [x] `xss-dom` — DOM-based (sources, sinks, postMessage, DOM clobbering)
+
+### SSTI
+- [x] `ssti-jinja2` — Jinja2/Python (+ Mako, Tornado, Django)
+- [x] `ssti-twig` — Twig/PHP (+ Smarty, Blade, Latte)
+- [x] `ssti-freemarker` — Freemarker/Java (+ Velocity, Pebble, SpEL, Thymeleaf, Groovy, Java EL)
+
+### Other Web
+- [x] `ssrf` — basic, blind, cloud metadata, filter bypass, gopher/dict/file protocol exploitation
+- [x] `lfi` — LFI (536 lines), PHP wrappers (filter/data/input/zip/phar), 8 LFI-to-RCE methods, filter bypass, platform-specific paths, RFI
+- [x] `file-upload-bypass` — (506 lines) extension bypass (alternative/double/null byte/case/special chars/NTFS ADS), content-type & magic byte bypass, server config exploitation (.htaccess/web.config/uWSGI), image polyglots & EXIF injection, ZIP traversal, race conditions, ImageMagick CVEs, webshell payloads (PHP/ASP/JSP)
+- [x] `deserialization-java` — (404 lines) ysoserial gadget chains (CommonsCollections/CommonsBeanutils/URLDNS), JNDI injection + Log4Shell (CVE-2021-44228 with WAF bypass), JSF ViewState, framework-specific (WebLogic T3/JBoss/Jenkins), Runtime.exec() workarounds
+- [x] `deserialization-php` — (365 lines) magic methods (__wakeup/__destruct/__toString), POP chains, PHPGGC (Monolog/Laravel/Symfony/Guzzle), phar:// deserialization + polyglots (JPEG/GIF/PNG), autoload exploitation, type juggling auth bypass, Laravel APP_KEY forgery
+- [x] `deserialization-dotnet` — (408 lines) ysoserial.net (TypeConfuseDelegate/ObjectDataProvider/WindowsIdentity), dangerous formatters (BinaryFormatter/LosFormatter/SoapFormatter), ViewState attacks (machine keys + Blacklist3r/BadSecrets), JSON.NET TypeNameHandling, .NET Remoting, framework-specific (SharePoint/Sitecore/Telerik)
+- [x] `xxe` — (466 lines) classic file read, blind/OOB (HTTP/FTP), error-based (remote + local DTD), XInclude, file format injection (SVG/DOCX/XLSX/SOAP/RSS), WAF bypass, XXE-to-SSRF
+- [x] `command-injection` — (486 lines) Linux/Windows operators, 5 filter bypass categories, blind (time/DNS/file), argument injection, polyglots
+- [x] `jwt-attacks` — (533 lines) alg:none, null signature, HS256 brute force (hashcat/jwt_tool), RS256→HS256 key confusion, header injection (kid path traversal/SQLi/command injection, jwk embedding, jku spoofing, x5u/x5c), claim tampering, cross-service relay, RSA key recovery
+- [x] `request-smuggling` — (570 lines) CL.TE, TE.CL, TE.TE obfuscation, H2.CL/H2.TE/h2c smuggling, response desync, cache poisoning, WebSocket smuggling, connection state attacks, hop-by-hop abuse
+
+### Authorization & Authentication
+- [x] `idor` — (569 lines) horizontal/vertical access control bypass, UUID/ObjectId prediction, parameter tampering, API IDOR (REST/GraphQL/batch), encoding bypass, method override, automated enumeration
+- [x] `csrf` — (609 lines) token bypass (remove/empty/untied/static), SameSite bypass (Lax GET/method override, None, 2-min window), Referer suppression, JSON CSRF (text/plain, sendBeacon), file upload CSRF, login CSRF, WebSocket CSRF, clickjacking chain
+- [x] `cors-misconfiguration` — (565 lines) origin reflection, null origin (sandboxed iframe), regex bypass (unescaped dot/missing anchor/special chars), subdomain trust, wildcard abuse, cache poisoning, CORS+IDOR chain, XSSI/JSONP
+- [x] `oauth-attacks` — (610 lines) redirect URI manipulation (path traversal/open redirect chain/parameter pollution/special chars), state bypass (CSRF account linking), code theft (reuse/race condition/client binding), token leakage (Referer/postMessage/implicit flow), OIDC (email claim abuse/nonce bypass/discovery SSRF), PKCE bypass, scope escalation, ROPC 2FA bypass, ATO chains
+- [x] `password-reset-poisoning` — (533 lines) host header poisoning (Host/X-Forwarded-Host/double host/absolute URL), token leakage via Referer, email parameter injection (duplication/CRLF Cc/Bcc/separator/JSON array), token weakness analysis (sequential/timestamp/hash/UUID v1), brute-force with rate limit bypass, response manipulation, username enumeration, dangling markup
+- [x] `2fa-bypass` — (585 lines) response manipulation (status code/body/redirect), direct navigation bypass, null/empty/array code submission, OTP brute-force with rate limit bypass (IP rotation/session rotation/code resend/HTTP/2 single-packet), backup code attacks, session fixation, remember-me token abuse, OAuth/SSO/ROPC bypass, CSRF on 2FA disable, race conditions
+- [x] `nosql-injection` — (519 lines) MongoDB operator injection ($ne/$gt/$regex/$where), auth bypass, blind character extraction with automation scripts, $where JS execution, $lookup cross-collection, Mongoose RCE (CVE-2024-53900), GraphQL filter injection, MongoLite $func
+- [x] `race-condition` — (719 lines) limit-overrun (coupon/balance/vote/invite), HTTP/2 single-packet attack, HTTP/1.1 last-byte sync, Turbo Intruder templates (single-gate/multi-endpoint/connection warming), asyncio+httpx PoCs, authentication races (password reset token reuse/2FA code reuse/registration confirmation/email change verification), rate limit bypass (HTTP/2 multiplexing/GraphQL alias batching/session rotation), partial construction races, race window expansion, session locking workaround, WebSocket races, TOCTOU (database-level)
+
+### Discovery
+- [x] `web-vuln-discovery` — entry point: fuzz, test, route to technique skills (converted)
+- [x] Update `web-vuln-discovery` routing table as each new technique skill is created
+- [x] Final review of `web-vuln-discovery` after all web skills are complete
+
+## Phase 3b: Extended Web Skills
+
+Identified during the Phase 3 coverage audit. Important techniques with good source material
+in ~/docs/ but lower priority than core Phase 3. Build as capacity allows; may be interleaved
+with later phases.
+
+### Injection & Protocol
+- [ ] `ldap-injection` — filter injection, wildcard auth bypass, blind extraction
+- [ ] `xpath-injection` — filter termination, blind exploitation, OOB extraction
+- [ ] `xslt-injection` — EXSLT RCE (PHP/Java/.NET), file read via document()
+- [ ] `ssi-esi-injection` — SSI directives (echo/exec/include), ESI abuse on CDNs
+- [ ] `crlf-injection` — header injection, response splitting, session fixation, cache poisoning
+- [ ] `graphql-attacks` — introspection abuse, batching for rate-limit bypass, mutation exploitation
+- [ ] `websocket-attacks` — handshake bypass, message manipulation, cross-site WebSocket hijacking
+
+### Client-Side & Browser
+- [ ] `prototype-pollution` — client-side gadget chains, server-side RCE via gadgets, property traversal
+- [ ] `client-side-template-injection` — AngularJS sandbox escape, Vue.js gadgets, React context leaks
+- [ ] `clickjacking` — frame overlay, invisible buttons, X-Frame-Options bypass, form hijacking
+- [ ] `open-redirect` — path-based, parameter-based, domain validation bypass, javascript:/data: protocols
+- [ ] `xs-leak` — XS-search, timing attacks, frame counting, cache probing, CSS injection
+- [ ] `postmessage-exploitation` — cross-origin messaging abuse, SOP bypass, sensitive data leakage
+
+### Logic & Bypass
+- [ ] `http-parameter-pollution` — WAF bypass via duplicate params, backend parsing inconsistencies
+- [ ] `web-cache-poisoning` — header manipulation, path discrepancy, URL normalization, cache deception
+- [ ] `rate-limit-bypass` — header manipulation, IP rotation, HTTP/2 multiplexing, distributed requests
+- [ ] `csv-formula-injection` — DDE payload, formula prefix detection, MS Office formula execution
+- [ ] `proxy-waf-bypass` — path normalization, hop-by-hop abuse, HTTP method override, verb tampering
 
 ## Phase 4: Core Skills — Active Directory
 
-Priority: highest (exceptional depth in InternalAllTheThings)
+### Source Material Survey (do first)
+- [ ] Survey `~/docs/InternalAllTheThings` AD content — enumerate every technique file, assess depth and payload coverage
+- [ ] Survey `~/docs/hacktricks/src/windows-hardening/active-directory-methodology/` — cross-reference with InternalAllTheThings, identify unique content
+- [ ] Survey `~/docs/PayloadsAllTheThings` for any AD-adjacent content (LDAP injection already in Phase 3b)
+- [ ] Define concrete skill splits — decide which bullet points below become standalone skills vs. subsections, based on source material depth
+- [ ] Define batching — group skills for build sessions after survey is complete
 
-- [ ] AD Attack Discovery — entry point: enumerate domain, identify attack paths, decision tree routing to technique skills (`ad-attack-discovery`)
+### Preliminary Skill List (refine after survey)
+- [ ] `ad-attack-discovery` — entry point: enumerate domain, identify attack paths, route to techniques
 - [ ] AD Enumeration (BloodHound, PowerView, LDAP)
 - [ ] Kerberoasting / AS-REP Roasting
 - [ ] Kerberos Delegation (unconstrained, constrained, RBCD)
-- [ ] ADCS Certificate Abuse (ESC1–ESC15)
+- [ ] ADCS Certificate Abuse (ESC1–ESC15) — likely 2-3 skills given 15 ESC files in InternalAllTheThings
 - [ ] NTLM Relay & Coercion
 - [ ] ACL/ACE Abuse (WriteDACL, GenericAll, GenericWrite)
 - [ ] Pass-the-Hash / Over-Pass-the-Hash
@@ -96,6 +178,21 @@ Priority: highest (exceptional depth in InternalAllTheThings)
 
 ## Backlog
 
+- [ ] Global tool prerequisites list — enumerate every tool mentioned across all skills, add to README as install checklist (do last, after all skills written)
+- [ ] Learning - how to updating skills, keep them current with the latest methods, update them prior to closing an engagement based on knowledge gained from that engagement, targeted research mode)
 - [ ] Wireless attacks (limited source material)
 - [ ] Physical/hardware (limited source material)
 - [ ] GCP cloud (gap across all three repos)
+
+### Niche / Reference-Only (build if needed during engagements)
+- [ ] Captcha bypass
+- [ ] Subdomain/domain takeover
+- [ ] Email injection
+- [ ] Insecure randomness / weak token prediction
+- [ ] ORM injection (ORM-specific query manipulation)
+- [ ] ZIP slip (archive path traversal — may fold into lfi)
+- [ ] SOAP/JAX-WS attacks
+- [ ] gRPC-Web testing
+- [ ] ReDoS (regex denial of service)
+- [ ] Unicode normalization bypass
+- [ ] Reverse tab nabbing
