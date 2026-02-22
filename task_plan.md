@@ -23,8 +23,8 @@ Claude Code skills for penetration testing and CTF work. Skills are SKILL.md fil
 - [x] Create `uninstall.sh`
 - [x] Update CLAUDE.md
 - [ ] Create orchestrator at `skills/orchestrator/SKILL.md`
-- [ ] Convert 5 existing skill.md files to SKILL.md format
-- [ ] Delete old skill.md files and old template
+- [x] Convert 5 existing skill.md files to SKILL.md format
+- [x] Delete old skill.md files and old template
 - [ ] Update README.md
 
 ### Engagement logging
@@ -39,20 +39,20 @@ Claude Code skills for penetration testing and CTF work. Skills are SKILL.md fil
 Split strategy: by **technique** (not by DB engine). DB/engine variants as subsections. Discovery skill routes to techniques via decision tree.
 
 ### SQL Injection
-- [ ] `sql-injection-union` — UNION-based, per-DB variants (convert from v1)
-- [ ] `sql-injection-error` — error-based, per-DB variants (convert from v1)
-- [ ] `sql-injection-blind` — boolean, time-based, OOB (convert from v1)
-- [ ] `sql-injection-stacked` — stacked queries, second-order (convert from v1)
+- [x] `sql-injection-union` — UNION-based, per-DB variants (converted)
+- [x] `sql-injection-error` — error-based, per-DB variants (converted)
+- [x] `sql-injection-blind` — boolean, time-based, OOB (converted)
+- [x] `sql-injection-stacked` — stacked queries, second-order (converted)
 
 ### XSS
-- [ ] `xss-reflected` — reflected + filter bypass
-- [ ] `xss-stored` — stored XSS
-- [ ] `xss-dom` — DOM-based
+- [x] `xss-reflected` — reflected + filter/WAF/CSP bypass
+- [x] `xss-stored` — stored + blind XSS
+- [x] `xss-dom` — DOM-based (sources, sinks, postMessage, DOM clobbering)
 
 ### SSTI
-- [ ] `ssti-jinja2` — Jinja2/Python
-- [ ] `ssti-twig` — Twig/PHP
-- [ ] `ssti-freemarker` — Freemarker/Java
+- [x] `ssti-jinja2` — Jinja2/Python (+ Mako, Tornado, Django)
+- [x] `ssti-twig` — Twig/PHP (+ Smarty, Blade, Latte)
+- [x] `ssti-freemarker` — Freemarker/Java (+ Velocity, Pebble, SpEL, Thymeleaf, Groovy, Java EL)
 
 ### Other Web
 - [ ] `ssrf` — basic, blind, cloud metadata
@@ -67,8 +67,9 @@ Split strategy: by **technique** (not by DB engine). DB/engine variants as subse
 - [ ] `request-smuggling` — CL.TE, TE.CL, H2 downgrade
 
 ### Discovery
-- [ ] `web-vuln-discovery` — entry point: fuzz, test, route to technique skills (convert from v1)
-- [ ] Revisit `web-vuln-discovery` after all web skills are complete
+- [x] `web-vuln-discovery` — entry point: fuzz, test, route to technique skills (converted)
+- [ ] Update `web-vuln-discovery` routing table as each new technique skill is created
+- [ ] Final review of `web-vuln-discovery` after all web skills are complete
 
 ## Phase 4: Core Skills — Active Directory
 

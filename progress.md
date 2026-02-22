@@ -89,8 +89,103 @@ Skills need to track what happens during an engagement. Rough design:
 - This integrates with the existing `pentest-findings` skill for formal finding writeups
 
 ### Next Steps
-1. Convert 5 existing skills: web-vuln-discovery, sql-injection-{union,error,blind,stacked}
+1. ~~Convert 5 existing skills~~ — done in session 3
 2. Write orchestrator skill (including engagement dir initialization)
 3. Design engagement logging conventions and bake into template
 4. Continue Phase 3 web skills in SKILL.md format (XSS next)
-5. Note: `sql-injection-stacked` is on `skills/web-sqli` branch — merge to main or cherry-pick before converting
+5. ~~Note: `sql-injection-stacked` is on `skills/web-sqli` branch~~ — created fresh on `arch/skill-format-v2`
+
+---
+
+## 2026-02-22 — Skill Conversion Session (v1 → v2)
+
+### Done
+- Converted all 5 existing v1 skills to SKILL.md format:
+  - `sql-injection-error` (240 lines) — rewrote prototype, now self-contained with embedded payloads
+  - `sql-injection-union` (287 lines) — full 5-DB coverage, DIOS, WAF bypass
+  - `sql-injection-blind` (302 lines) — boolean, time-based, OOB for all DBs
+  - `sql-injection-stacked` (306 lines) — created fresh from v1 content on `skills/web-sqli` branch
+  - `web-vuln-discovery` (299 lines) — content/param discovery, full routing decision tree
+- Deleted all 5 old `skill.md` files and old `skills/_template/skill.md`
+- Total: 1,434 lines of SKILL.md content across 5 skills
+
+### Conversion Pattern Applied
+Each v1 skill.md was restructured into v2 SKILL.md with:
+- **Pushy description**: explicit trigger phrases, OPSEC level, tools, negative conditions
+- **Mode section**: guided (default) vs autonomous with specific behavioral guidance
+- **Step-based flow**: Assess → Confirm → Exploit → Post-Exploit → Escalate/Pivot
+- **Embedded payloads**: top 2-3 functions per DBMS (80% coverage)
+- **Deep Reference**: `~/docs/` paths for WAF bypass, edge cases, long tail
+- **Inter-skill routing**: bold skill names with context to pass along
+- **OPSEC notes**: cleanup, detection signatures, log artifacts
+- **Troubleshooting**: preserved from v1 with WAF bypass and sqlmap automation
+
+### Decisions
+- Created `sql-injection-stacked` fresh on `arch/skill-format-v2` rather than cherry-picking from `skills/web-sqli` — cleaner than merging branches, and the v2 format is significantly different anyway
+- Updated Burp Collaborator domain references from `burpcollaborator.net` to `oastify.com` (current Burp Suite domain)
+- Kept OPSEC notes and detection info as brief sections rather than full Detection/Cleanup headings — matches template structure
+
+### Next Steps
+1. ~~Start new web skills: XSS~~ — done in this session
+2. Write orchestrator skill at `skills/orchestrator/SKILL.md`
+3. Design engagement logging conventions and integrate into template
+4. Update README.md for v2 architecture
+5. Continue Phase 3 web skills: SSTI (jinja2, twig, freemarker) next
+6. `skills/web-sqli` branch can be closed/deleted — its content has been superseded
+
+---
+
+## 2026-02-22 — XSS Skills
+
+### Done
+- Authored 3 XSS skills fresh in SKILL.md format:
+  - `xss-reflected` (343 lines) — reflection context identification, basic → filter bypass → WAF bypass → CSP bypass progression, impact demonstration, AngularJS/SVG/Markdown contexts
+  - `xss-stored` (282 lines) — stored + blind XSS, XSS Hunter/callback setup, self-XSS escalation, PDF generation XSS, SVG upload XSS
+  - `xss-dom` (355 lines) — comprehensive sources/sinks reference, 6 exploitation examples (hash, param, eval, postMessage, window.name, jQuery), DOM clobbering, DOMPurify bypass, tooling (DOM Invader, domloggerpp)
+- Verified web-vuln-discovery routing table already covers all 3 XSS skills
+- Total XSS content: 980 lines
+
+### Source Material Used
+- PayloadsAllTheThings: README.md, Filter Bypass, Common WAF Bypass, CSP Bypass, Angular XSS
+- HackTricks: dom-xss.md (sources/sinks tables, DOM clobbering, window.name abuse, template literal innerHTML gaps)
+
+### Decisions
+- Reflected skill covers CSP bypass (JSONP, data: URI, base tag) since CSP is the main obstacle to reflected XSS exploitation
+- Stored skill covers blind XSS (separate injection and trigger contexts) since blind is just a variant of stored
+- DOM skill is the most detailed (355 lines) because DOM XSS requires understanding JavaScript data flow, not just payload injection
+- Used `console.log()` convention for stored XSS testing (avoids alert popup fatigue)
+
+### Next Steps
+1. ~~SSTI skills: jinja2, twig, freemarker~~ — done in session 5
+2. Orchestrator skill
+3. Engagement logging
+4. Remaining web skills: SSRF, LFI, file-upload-bypass, deserialization, XXE, command-injection, JWT, request-smuggling
+
+---
+
+## 2026-02-22 — SSTI Skills
+
+### Done
+- Authored 3 SSTI skills fresh in SKILL.md format:
+  - `ssti-jinja2` (345 lines) — Jinja2 + Mako + Tornado + Django. Covers: lipsum/cycler/joiner/namespace context-free payloads, MRO chain with warning loop, filter bypass (underscore, dot, brackets, quotes, `{{}}`), blind/error/time/OOB variants, Fenjing for automated WAF bypass
+  - `ssti-twig` (322 lines) — Twig + Smarty + Blade + Latte. Covers: filter/map/sort/reduce RCE (modern Twig), registerUndefinedFilterCallback (Twig <= 1.19), call_user_func, error-based + boolean-based + CVE-2022-23614 sandbox bypass, obfuscation via block+charset
+  - `ssti-freemarker` (382 lines) — Freemarker + Velocity + SpEL + Thymeleaf + Pebble + Groovy + Java EL + Jinjava. Covers: Execute class, sandbox bypass (< 2.3.30), Velocity reflection chains, SpEL T() operator + character-by-character bypass, Thymeleaf expression inlining + preprocessing, Pebble old/new version payloads, XWiki CVE-2025-24893
+- Verified web-vuln-discovery routing table already covers all 3 SSTI skills with Jinja2/Twig disambiguation logic
+- Total SSTI content: 1,049 lines
+
+### Source Material Used
+- PayloadsAllTheThings: Python.md (Jinja2 filter bypass, Mako context-free chains, Tornado), PHP.md (Twig code execution, Smarty, obfuscation), Java.md (Freemarker, Velocity, Pebble, SpEL, Groovy, Jinjava), README.md (universal detection, polyglot, methodology)
+- HackTricks: ssti-server-side-template-injection/README.md (all engines overview, XWiki CVE-2025-24893, Thymeleaf, Spring View Manipulation), jinja2-ssti.md (filter bypass, sandbox escape, WAF bypass with Fenjing)
+
+### Decisions
+- Jinja2 skill covers all Python engines (Mako, Tornado, Django) since Mako/Tornado are simple (direct code execution, no sandbox) and Django is limited (info disclosure only)
+- Twig skill covers all PHP engines (Smarty, Blade, Latte) since Smarty/Latte have simple direct execution and Blade exploitation requires misconfiguration
+- Freemarker skill is the largest (382 lines) because Java has the most diverse engine landscape — 8 engines with distinct syntaxes and exploitation chains
+- Included blind/error-based/boolean-based SSTI variants for each engine family (per the reference material's 2026 research on "Successful Errors" techniques)
+- Included real-world CVE targets (XWiki CVE-2025-24893) to provide actionable context
+
+### Next Steps
+1. Continue Phase 3 web skills: SSRF next
+2. Write orchestrator skill
+3. Design engagement logging conventions
+4. Remaining web skills: LFI, file-upload-bypass, deserialization, XXE, command-injection, JWT, request-smuggling
