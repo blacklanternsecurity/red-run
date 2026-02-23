@@ -1,5 +1,33 @@
 # red-run — Session Log
 
+## 2026-02-23 — Phase 5 Batch 3: Linux Foundation Skills
+
+### Done
+
+- Built 3 Linux Foundation privesc skills (Batch 3) on `skills/privesc` branch:
+  - `linux-discovery` (599 lines) — 12-step enumeration workflow: system info (kernel, OS, architecture, environment), user context with group-to-vector routing table (docker→file-path-abuse, lxd→file-path-abuse, disk→file-path-abuse, sudo/wheel→sudo-suid-capabilities), sudo configuration assessment (CVE version matching table for Baron Samedit/CVE-2019-14287/CVE-2025-32463, pattern matching for NOPASSWD/env_keep/SETENV/GTFOBins, doas config), SUID/SGID/capabilities enumeration (find commands, GTFOBins quick reference table for 10 common binaries, critical capabilities table), scheduled task enumeration (cron files, systemd timers, pspy process monitoring with manual alternative), file/directory permissions (world-writable files/dirs, critical file checks for passwd/shadow/sudoers/SSH keys/profile scripts/NFS exports, library hijacking paths with RPATH/missing .so detection, Python library paths, writable PATH directories), credential hunting (history files, config files, database strings, backups, git repos, cloud creds, Docker config, SSH agent), network/services (listening services, internal-only, Unix sockets with docker socket check), security controls (SELinux, AppArmor, ASLR, ptrace scope, seccomp, container detection, kernel protections, compiler availability), kernel exploit assessment (DirtyPipe/DirtyCow/GameOver(lay) version checks, exploit-suggester tools), automated tools section (LinPEAS with stealth/all/password modes, LinEnum, lse, unix-privesc-check, SUDO_KILLER, pspy), routing decision tree to 4 technique skills ranked by reliability/OPSEC.
+  - `linux-sudo-suid-capabilities` (610 lines) — 7-step workflow: assess sudo config, sudo NOPASSWD exploitation (30+ GTFOBins escapes organized by category: editors, pagers, interpreters, file utilities, archive utilities, network tools, system tools, file read/write), environment variable abuse (LD_PRELOAD with full C payload and compilation, LD_LIBRARY_PATH hijack, PYTHONPATH/PERL5LIB injection, BASH_ENV injection), sudo CVE exploitation (CVE-2021-3156 Baron Samedit with version check and vuln test, CVE-2019-14287 UID -1 bypass, sudo_inject token reuse with ptrace scope check), SUID binary exploitation (GTFOBins SUID patterns with bash -p, custom binary analysis with strings/strace/ltrace, 3 exploitation patterns: PATH hijack for system() calls, shared object injection for missing libraries with constructor C code, file read/write for credential theft, SGID exploitation), Linux capabilities exploitation (15+ capabilities: CAP_SETUID direct root in Python/Perl/Node/Ruby/PHP, CAP_SETGID group escalation, CAP_DAC_OVERRIDE sudoers/passwd write, CAP_DAC_READ_SEARCH shadow/SSH key read + shocker container escape, CAP_SYS_ADMIN mount abuse + bind mount, CAP_SYS_PTRACE GDB injection + Python ptrace shellcode, CAP_SYS_MODULE kernel module with reverse shell Makefile, CAP_CHOWN/FOWNER ownership/permission changes, CAP_SETFCAP capability chaining, CAP_NET_RAW sniffing), escalation routing.
+  - `linux-cron-service-abuse` (662 lines) — 8-step workflow: assess cron/service landscape, cron job exploitation (writable script hijack with 3 payload options: SUID bash/reverse shell/stealthy append, PATH manipulation, writable cron directory injection for /etc/cron.d and user crontab), wildcard injection (tar checkpoint with full shell.sh payload, chown/chmod --reference, rsync -e shell, 7z @file exfiltration, zip -T/-TT test injection), systemd exploitation (writable service file ExecStart/ExecStartPre modification, writable timer with OnCalendar, systemd PATH hijack, service binary replacement), D-Bus exploitation (busctl/gdbus/dbus-send enumeration, command injection via string parameters with bash/gdbus/busctl/Python examples, PolicyKit bypass CVE-2021-4034 PwnKit + CVE-2021-3560 timing attack with loop, recent D-Bus CVEs table 2024-2025), Unix socket exploitation (socat/nc/curl injection, Docker socket exploitation), init script/xinetd/at job/anacron exploitation, cleanup reminders and escalation routing.
+- Updated README.md: 9 privesc skills (was 6), updated line counts, status line (55 skills, ~27,600 lines), Planned section (2 remaining instead of 5).
+- Updated task_plan.md: Batch 3 skills marked complete with line counts and technique summaries.
+
+### Inventory
+
+- Total skills: 55 (29 web + 16 AD + 9 privesc + 1 orchestrator)
+- Total lines: ~27,600
+- Phase 5 Batch 3: COMPLETE (3/3 skills built, 1,871 lines)
+- Remaining: Batch 4 (2 Linux extended)
+
+### Next: Build Batch 4 (Linux Extended — 2 skills)
+
+**Branch**: `skills/privesc`
+
+**Batch 4 skills to build:**
+1. `linux-file-path-abuse` — Writable /etc/passwd, NFS no_root_squash, shared library hijacking, wildcard injection, Docker/LXD group escape
+2. `linux-kernel-exploits` — DirtyPipe, DirtyCow, GameOver(lay), exploit-suggester, restricted shell escape, BYOVD
+
+---
+
 ## 2026-02-23 — Phase 5 Batch 2: Windows Extended Skills
 
 ### Done
