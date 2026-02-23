@@ -68,7 +68,7 @@ Keep entries compact — one line per item. State.md is a snapshot, not a log.
 
 ## Prerequisites
 
-- Confirmed SQL injection point (see **web-vuln-discovery**)
+- Confirmed SQL injection point (see **web-discovery**)
 - Query output rendered somewhere in the HTTP response
 - UNION keyword not blocked by WAF (if blocked, try **sql-injection-error** or **sql-injection-blind**)
 
@@ -271,12 +271,12 @@ When routing, pass along: injection point, DBMS, column count, current mode, and
 For WAF bypass, alternative aggregation functions, and edge cases:
 
 ```
-Read ~/docs/PayloadsAllTheThings/SQL Injection/MySQL Injection.md
-Read ~/docs/PayloadsAllTheThings/SQL Injection/MSSQL Injection.md
-Read ~/docs/PayloadsAllTheThings/SQL Injection/PostgreSQL Injection.md
-Read ~/docs/PayloadsAllTheThings/SQL Injection/OracleSQL Injection.md
-Read ~/docs/PayloadsAllTheThings/SQL Injection/SQLite Injection.md
-Read ~/docs/hacktricks/src/pentesting-web/sql-injection/README.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/SQL Injection/MySQL Injection.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/SQL Injection/MSSQL Injection.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/SQL Injection/PostgreSQL Injection.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/SQL Injection/OracleSQL Injection.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/SQL Injection/SQLite Injection.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/sql-injection/README.md
 ```
 
 ## Troubleshooting

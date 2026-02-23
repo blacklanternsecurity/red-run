@@ -87,7 +87,7 @@ export KRB5CCNAME=user.ccache
 ## Step 1: Enumerate Delegation
 
 Identify delegation-configured accounts. Skip if already provided by
-**ad-attack-discovery** or conversation context.
+**ad-discovery** or conversation context.
 
 ### Unconstrained Delegation
 
@@ -450,12 +450,12 @@ new pivot paths.
 For additional delegation techniques, edge cases, and advanced scenarios:
 
 ```
-Read ~/docs/InternalAllTheThings/docs/active-directory/ad-adds-kerberos-delegation-unconstrained.md
-Read ~/docs/InternalAllTheThings/docs/active-directory/ad-adds-kerberos-delegation-constrained.md
-Read ~/docs/InternalAllTheThings/docs/active-directory/ad-adds-kerberos-delegation-rbcd.md
-Read ~/docs/hacktricks/src/windows-hardening/active-directory-methodology/unconstrained-delegation.md
-Read ~/docs/hacktricks/src/windows-hardening/active-directory-methodology/constrained-delegation.md
-Read ~/docs/hacktricks/src/windows-hardening/active-directory-methodology/resource-based-constrained-delegation.md
+Read $RED_RUN_DOCS/InternalAllTheThings/docs/active-directory/ad-adds-kerberos-delegation-unconstrained.md
+Read $RED_RUN_DOCS/InternalAllTheThings/docs/active-directory/ad-adds-kerberos-delegation-constrained.md
+Read $RED_RUN_DOCS/InternalAllTheThings/docs/active-directory/ad-adds-kerberos-delegation-rbcd.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/active-directory-methodology/unconstrained-delegation.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/active-directory-methodology/constrained-delegation.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/active-directory-methodology/resource-based-constrained-delegation.md
 ```
 
 ## Troubleshooting

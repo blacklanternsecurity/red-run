@@ -333,12 +333,12 @@ When routing, pass along: source, sink, data flow path, working payload, current
 For comprehensive source/sink lists, DOM clobbering, and advanced techniques:
 
 ```
-Read ~/docs/hacktricks/src/pentesting-web/xss-cross-site-scripting/dom-xss.md
-Read ~/docs/hacktricks/src/pentesting-web/xss-cross-site-scripting/dom-clobbering.md
-Read ~/docs/hacktricks/src/pentesting-web/xss-cross-site-scripting/iframes-in-xss-and-csp.md
-Read ~/docs/hacktricks/src/pentesting-web/xss-cross-site-scripting/shadow-dom.md
-Read ~/docs/hacktricks/src/pentesting-web/xss-cross-site-scripting/steal-info-js.md
-Read ~/docs/PayloadsAllTheThings/XSS Injection/README.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/xss-cross-site-scripting/dom-xss.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/xss-cross-site-scripting/dom-clobbering.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/xss-cross-site-scripting/iframes-in-xss-and-csp.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/xss-cross-site-scripting/shadow-dom.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/xss-cross-site-scripting/steal-info-js.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/XSS Injection/README.md
 ```
 
 ## Troubleshooting

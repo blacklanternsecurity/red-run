@@ -89,7 +89,7 @@ certipy find -k -no-pass -dc-ip DC_IP -vulnerable
 ## Step 1: Enumerate Vulnerable Templates
 
 Run ADCS enumeration to identify vulnerable templates. If the orchestrator or
-`ad-attack-discovery` already provided results, skip to the relevant ESC.
+`ad-discovery` already provided results, skip to the relevant ESC.
 
 ### Certipy (Linux — preferred)
 
@@ -417,8 +417,8 @@ After obtaining a certificate and authenticating:
 For additional payloads, edge cases, and LDAP filter queries:
 
 ```
-Read ~/docs/hacktricks/src/windows-hardening/active-directory-methodology/ad-certificates/domain-escalation.md
-Read ~/docs/InternalAllTheThings/docs/active-directory/ad-adcs-certificate-services.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/active-directory-methodology/ad-certificates/domain-escalation.md
+Read $RED_RUN_DOCS/InternalAllTheThings/docs/active-directory/ad-adcs-certificate-services.md
 ```
 
 ## Troubleshooting

@@ -344,11 +344,11 @@ mode, and any payloads that already succeeded.
 For additional gadget chains, framework-specific techniques, and edge cases:
 
 ```
-Read ~/docs/PayloadsAllTheThings/Insecure Deserialization/PHP.md
-Read ~/docs/hacktricks/src/pentesting-web/deserialization/php-deserialization-+-autoload-classes.md
-Read ~/docs/hacktricks/src/pentesting-web/file-inclusion/phar-deserialization.md
-Read ~/docs/hacktricks/src/network-services-pentesting/pentesting-web/laravel.md
-Read ~/docs/PayloadsAllTheThings/Type Juggling/README.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/Insecure Deserialization/PHP.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/deserialization/php-deserialization-+-autoload-classes.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/file-inclusion/phar-deserialization.md
+Read $RED_RUN_DOCS/hacktricks/src/network-services-pentesting/pentesting-web/laravel.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/Type Juggling/README.md
 ```
 
 ## Troubleshooting
