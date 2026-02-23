@@ -1,5 +1,45 @@
 # red-run — Session Log
 
+## 2026-02-23 — Phase 4 AD Batch 5: Trust & Persistence Skills (FINAL CORE AD BATCH)
+
+### Done
+
+- Built 3 AD Batch 5 skills (Trust & Persistence) on `skills/ad` branch:
+  - `trust-attacks` (464 lines) — Trust enumeration (nltest/PowerView/AD Module/NetExec with 5 critical trust properties: SIDFilteringQuarantined, SelectiveAuthentication, ForestTransitive, TrustDirection, TGTDelegation), cross-domain group membership enumeration. SID history injection child→parent via golden ticket + extra SID (Mimikatz AES256 preferred, Rubeus diamond ticket for OPSEC, Impacket ticketer.py, raiseChild.py automation). Inter-realm TGT forging (trust key extraction via lsadump::trust, referral ticket creation + service ticket request in target domain, trust account authentication for Kerberoasting). Cross-forest abuse (trust account auth + Kerberoasting, cross-forest RBCD via S4U, SID filtering bypass assessment). PAM trust exploitation (shadow principal enumeration + group membership manipulation via bloodyAD/Set-ADObject). PAC validation considerations (CVE-2024-26248/29056 enforcement mode vs compatibility mode). Trust type decision tree routing by trust type and SID filtering status.
+  - `sccm-exploitation` (510 lines) — SCCM enumeration (sccmhunter find/show/http, SharpSCCM, 3 unauthenticated MP HTTP endpoints). NAA extraction 3 methods: CRED-2 policy request (addcomputer.py + sccmwtf + policysecretunobfuscate.py), CRED-3 WMI/DPAPI (SharpSCCM local secrets / SharpDPAPI), CRED-4 WMI repository (SharpDPAPI search / SharpSCCM disk). MP relay to MSSQL TAKEOVER-1 (ntlmrelayx SOCKS + PetitPotam coercion, RBAC_Admins SQL insertion for admin, OSD policy secret extraction via stored procs + PXEthief decryption). Client push relay ELEVATE-2 (SharpSCCM invoke client-push + ntlmrelayx). PXE boot harvesting CRED-1 (pxethiefy/SharpPXE + Hashcat 31100). Database extraction CRED-5 (Mimikatz misc::sccm / SQLRecon). Application deployment (MalSCCM full chain: locate→inspect→group→app→deploy→checkin→cleanup, SharpSCCM exec). Share looting (CMLoot SCCMContentLib$). Decision tree by access level. OPSEC comparison table for all 11 techniques.
+  - `ad-persistence` (600 lines) — Golden Certificate (CA key extraction 3 methods, forge with certipy/ForgeCert/Certify + SID embedding for KB5014754, certificate renewal + enrollment agent as persistence tokens). DCShadow (dual mimikatz, 4 attribute modification examples: SIDHistory/primaryGroupID/Description/AdminSDHolder ntSecurityDescriptor, /stack batching, delegated DCShadow via Set-DCShadowPermissions). Skeleton Key (misc::skeleton, PPL bypass via !processprotect + mimidrv.sys, /letaes for AES compatibility, must apply to all DCs, lost on reboot). Custom SSP (mimilib.dll persistent via Security Packages registry + memssp in-memory non-persistent). Security descriptor backdoors (WMI via Set-RemoteWMI, WinRM via Set-RemotePSRemoting, registry DAMP for remote hash retrieval). ADFS Golden SAML (DKM key from AD contact object, ADFSDump WID, ADFSpoof/Shimit/WhiskeySAML, O365 forging, 2FA bypass). SID history persistence 3 methods (DCShadow/golden ticket/direct). Persistence decision tree with 9 techniques ranked by stealth and reboot survival. Verification steps for each mechanism.
+
+### Conventions Applied
+
+- `trust-attacks`: Kerberos-first for enumeration and tool execution. Trust ticket attacks use AES256 when available. Diamond ticket recommended over golden for OPSEC. PAC validation enforcement documented for 2025+ environments.
+- `sccm-exploitation`: Kerberos-first for enumeration. OPSEC exception documented for relay attacks (TAKEOVER-1, ELEVATE-2) — inherently NTLM. Attack path decision tree routes by access level (domain user → local admin → relay position → SCCM admin → DB access).
+- `ad-persistence`: Kerberos-first for remote operations. Skeleton key OPSEC exception (LSASS injection, local to DC). Golden certificate uses PKINIT for authentication. ADFS Golden SAML is federation-layer (not Kerberos). All techniques include cleanup/removal steps.
+- All skills include Mode, Engagement Logging, State Management sections per template
+- Discovery skill (`ad-attack-discovery`) already routes to all 3 Batch 5 skills (lines 437-439: trusts → trust-attacks, SCCM → sccm-exploitation, post-DA → ad-persistence)
+- Updated README name/tagline to reference "redteam runbook" origin
+
+### Inventory
+
+- Total skills: 46 (29 web + 16 AD + 1 orchestrator)
+- Total lines: ~22,500
+- Phase 4 core: COMPLETE (all 5 batches, 16 AD skills built)
+- Phase 4 Batch 5: COMPLETE (3/3 skills built, 1574 lines)
+- Remaining: Phase 4b (6 extended AD skills), then Phase 5 (Privilege Escalation)
+
+### Next: Phase 4b Extended AD Skills (6 skills) or Phase 5
+
+**Phase 4b candidates:**
+1. `adidns-poisoning` — Dynamic DNS record injection, wildcard records, WPAD hijack
+2. `dcom-lateral-movement` — DCOM-based remote execution (MMC20, ShellWindows, ShellBrowserWindow)
+3. `rodc-exploitation` — RODC enumeration, Kerberos Key List Attack
+4. `ad-named-cves` — NoPAC, PrintNightmare, ZeroLogon, PrivExchange, MS14-068
+5. `mssql-ad-abuse` — Linked server hopping, xp_cmdshell, impersonation chains, UNC path injection
+6. `deployment-targets` — MDT bootstrap creds, WSUS update poisoning, SCOM RunAs decryption
+
+**Phase 5**: Privilege Escalation (Windows, Linux, macOS)
+
+---
+
 ## 2026-02-23 — Phase 4 AD Batch 4: Relay & Credentials Skills
 
 ### Done
