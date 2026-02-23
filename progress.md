@@ -80,6 +80,17 @@ All 27 web technique skills built. Discovery skill reviewed and verified.
 - Timeroasting, RODC, and deployment targets (MDT/WSUS) have thin coverage — appropriate for Phase 4b.
 - Tool ecosystem dominated by Rubeus, Impacket, mimikatz, bloodyAD, Certipy, NetExec — these will appear across almost every skill.
 
+### OPSEC Convention: Kerberos-First Authentication
+
+- Added convention to CLAUDE.md: all AD skills default to Kerberos auth via ccache to avoid NTLM-specific detections (Event 4776, CrowdStrike Identity Module PTH signatures)
+- Each AD skill's Prerequisites section includes: `getTGT.py` → `export KRB5CCNAME` → tool flags (`-k -no-pass` for Impacket, `--use-kcache` for NetExec, `-k` for Certipy/bloodyAD)
+- Over-Pass-the-Hash path included for when only an NTLM hash is available
+- Exceptions documented: password-spraying (testing creds), auth-coercion-relay (NTLM is the attack), ad-attack-discovery (may start unauthenticated)
+
+### Next Steps
+
+- Build Batch 1: `ad-attack-discovery`, `kerberos-roasting`, `password-spraying`, `pass-the-hash`
+
 ---
 
 ## 2026-02-22 — Request Smuggling + Web Coverage Audit
