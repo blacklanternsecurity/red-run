@@ -266,6 +266,7 @@ Build workflow: Same as Batch 1. Survey source material (parallel agents) → wr
 
 ## Backlog
 
+- [ ] **MCP engagement state server** — Replace state.md with a SQLite-backed MCP tool server for selective state queries. Saves context by returning only relevant data (e.g., `get_credentials(host="10.0.0.5")` instead of reading 200 lines). Atomic writes prevent concurrent skill conflicts. Tools: get_summary, get/add credentials, access, vulns, pivots, blocked checks. Skills fall back to state.md when MCP unavailable. activity.md/findings.md/evidence/ stay as files. SQLite, not Postgres. Requires updating all skill State Management sections to prefer MCP tools. Good for engagements with >5 targets where state.md gets unwieldy.
 - [ ] Global tool prerequisites list — enumerate every tool mentioned across all skills, add to README as install checklist (do last, after all skills written)
 - [ ] Learning - how to update skills, keep them current with the latest methods, revise them prior to closing an engagement based on knowledge gained from that engagement, targeted research mode)
 - [ ] Wireless attacks (limited source material)
