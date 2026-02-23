@@ -41,7 +41,7 @@ Claude Code skills for penetration testing and CTF work. Skills are SKILL.md fil
 - [x] Build state.md initialization into orchestrator
 - [x] Add vulnerability chaining logic to orchestrator (Step 5)
 - [x] Batch update all 20 web skills with State Management section
-- [x] Update web-vuln-discovery with discovery-specific state management
+- [x] Update web-discovery with discovery-specific state management
 - [x] Document state management conventions in CLAUDE.md
 - [x] Update README.md engagement directory structure
 
@@ -88,9 +88,9 @@ Split strategy: by **technique** (not by DB engine). DB/engine variants as subse
 - [x] `race-condition` — (719 lines) limit-overrun (coupon/balance/vote/invite), HTTP/2 single-packet attack, HTTP/1.1 last-byte sync, Turbo Intruder templates (single-gate/multi-endpoint/connection warming), asyncio+httpx PoCs, authentication races (password reset token reuse/2FA code reuse/registration confirmation/email change verification), rate limit bypass (HTTP/2 multiplexing/GraphQL alias batching/session rotation), partial construction races, race window expansion, session locking workaround, WebSocket races, TOCTOU (database-level)
 
 ### Discovery
-- [x] `web-vuln-discovery` — entry point: fuzz, test, route to technique skills (converted)
-- [x] Update `web-vuln-discovery` routing table as each new technique skill is created
-- [x] Final review of `web-vuln-discovery` after all web skills are complete
+- [x] `web-discovery` — entry point: fuzz, test, route to technique skills (converted)
+- [x] Update `web-discovery` routing table as each new technique skill is created
+- [x] Final review of `web-discovery` after all web skills are complete
 
 ## Phase 3b: Extended Web Skills
 
@@ -134,7 +134,7 @@ with later phases.
 ### Skill List (16 skills: 1 discovery + 15 technique)
 
 **Batch 1: Foundation** — used on every AD engagement
-- [x] `ad-attack-discovery` — (511 lines) domain enum (BloodHound, PowerView, LDAP, netexec), 3 access levels (unauth/username/creds), attack surface mapping, routing table to all 15 technique skills
+- [x] `ad-discovery` — (511 lines) domain enum (BloodHound, PowerView, LDAP, netexec), 3 access levels (unauth/username/creds), attack surface mapping, routing table to all 15 technique skills
 - [x] `kerberos-roasting` — (436 lines) Kerberoasting (SPN-based TGS extraction) + AS-REP Roasting (pre-auth disabled) + Timeroasting (subsection) + targeted kerberoasting (ACL abuse) + kerberoasting without domain account (Charlie Clark technique)
 - [x] `password-spraying` — (508 lines) lockout policy enum, smart password generation, Kerberos pre-auth spray (kerbrute/SpearSpray), NTLM spray (NetExec multi-protocol), OWA spray, empty password/STATUS_PASSWORD_MUST_CHANGE technique. OPSEC exception documented.
 - [x] `pass-the-hash` — (473 lines) Pass-the-Key (AES256, lowest OPSEC), Over-Pass-the-Hash (NTLM→TGT), Pass-the-Ticket (ccache/kirbi), Direct PTH (last resort), lateral movement tools, OPSEC comparison table
@@ -187,36 +187,9 @@ Identified during survey. Important but lower-priority techniques or specialized
 
 Build workflow: Survey source material for all 3 skills (parallel agents) → write skills → update task_plan.md/progress.md/README.md → commit + push. Follow existing template at `skills/_template/SKILL.md`. No Kerberos-first convention (that's AD-only). Skills go in `skills/privesc/`.
 
-- [ ] `windows-privesc-discovery` — Enumeration hub + routing to 5 Windows technique skills.
-  - **Enumeration tools**: WinPEAS (comprehensive automated), PowerUp (PowerSploit module), Seatbelt (GhostPack), Watson (missing KBs), WES-NG (systeminfo-based), PrivescCheck (PowerShell), JAWS (PowerShell), Sherlock (legacy)
-  - **Enumeration categories**: System info (OS version, architecture, hotfixes), users/groups (whoami /priv, net user, local admins), running processes/services (tasklist, sc query, wmic), network (netstat, ipconfig, arp, route), installed software, scheduled tasks, writable directories, registry (AlwaysInstallElevated, AutoLogon, Winlogon), antivirus/EDR detection
-  - **Routing table**: Maps findings → technique skills. Token privs → windows-token-impersonation, service misconfig → windows-service-dll-abuse, UAC context → windows-uac-bypass, stored creds → windows-credential-harvesting, old kernel → windows-kernel-exploits
-  - **Structure**: Step 1 (system info), Step 2 (user context + privileges), Step 3 (service/process enum), Step 4 (scheduled tasks + autorun), Step 5 (network + shares), Step 6 (credential hunting quick scan), Step 7 (routing decision tree)
-  - **Source files**: `~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/README.md` (1,961 lines — master index), `~/docs/InternalAllTheThings/docs/redteam/escalation/windows-privilege-escalation.md` (1,565 lines — tool-heavy checklist), `~/docs/hacktricks/src/windows-hardening/checklist-windows-privilege-escalation.md`
-  - **Target**: ~400-500 lines
-
-- [ ] `windows-token-impersonation` — Potato family + dangerous Windows privileges.
-  - **Potato family decision tree**: Check `whoami /priv` → SeImpersonatePrivilege or SeAssignPrimaryTokenPrivilege present → select Potato variant by Windows version:
-    - **JuicyPotato**: Windows Server 2008-2016, Win 7-10 (pre-1809). CLSID required (per-OS table). `JuicyPotato.exe -l 1337 -p cmd.exe -a "/c whoami" -t * -c {CLSID}`
-    - **RoguePotato**: Win 10 1809+, Server 2019. Needs controlled machine for OXID resolution. `RoguePotato.exe -r ATTACKER_IP -e "cmd.exe /c whoami" -l 9999`
-    - **PrintSpoofer**: Win 10, Server 2016-2019. Simplest. `PrintSpoofer.exe -i -c cmd.exe`
-    - **GodPotato**: .NET 4.x, broad version support. `GodPotato.exe -cmd "cmd /c whoami"`
-    - **SweetPotato**: Combines multiple techniques. `SweetPotato.exe -p cmd.exe -a "/c whoami"`
-    - **EfsPotato**: Uses MS-EFSR (PetitPotam local). `EfsPotato.exe whoami`
-    - **JuicyPotatoNG**: COM-based, Win 10 1809+. `JuicyPotatoNG.exe -t * -p cmd.exe -a "/c whoami"`
-  - **Other dangerous privileges**: SeDebugPrivilege (token duplication from SYSTEM process, LSASS access via mimikatz), SeBackupPrivilege (read any file — SAM/SYSTEM/ntds.dit via robocopy or diskshadow), SeTakeOwnership (take ownership of any object → modify DACL), SeManageVolume (arbitrary file write via USN journal or IFM), SeLoadDriverPrivilege (load vulnerable driver → kernel R/W → SYSTEM token), SeRestorePrivilege (write any file — DLL hijack system service)
-  - **FullPowers**: Recovers default service privileges when they've been stripped. `FullPowers.exe -c "cmd.exe /c whoami /priv"`
-  - **Structure**: Step 1 (check privileges), Step 2 (Potato variant selector), Step 3 (Potato exploitation), Step 4 (other privilege abuse), Step 5 (escalate/pivot)
-  - **Source files**: `~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/juicypotato.md` (162), `roguepotato-and-printspoofer.md` (253), `privilege-escalation-abusing-tokens.md` (202), `seimpersonate-from-high-to-system.md` (183), `sedebug-+-seimpersonate-copy-token.md` (220), `semanagevolume-perform-volume-maintenance-tasks.md` (87), `access-tokens.md` (113), `~/docs/InternalAllTheThings/docs/redteam/escalation/windows-privilege-escalation.md` (token impersonation section with CLSID tables)
-  - **Target**: ~500-550 lines
-
-- [ ] `windows-service-dll-abuse` — Service misconfigurations + DLL hijacking.
-  - **Service exploitation**: Unquoted service paths (wmic/sc/PowerUp enumeration → space-in-path binary placement), weak service permissions (sc sdshow analysis, accesschk.exe, service binary overwrite, binpath modification via `sc config svc binpath=`), service registry ACL abuse (writable ImagePath), service binary replacement (stop → replace → start)
-  - **DLL hijacking**: DLL search order (application dir → system → windows → PATH), writable PATH directory injection, known DLL hijacking targets (common applications/services), DLL side-loading (trusted binary + malicious DLL), DLL proxying (forward exports to legit DLL while executing payload), COM DLL hijacking (InprocServer32 registry modification). Enumeration: Process Monitor (filter: NAME NOT FOUND + .dll), PowerUp Find-ProcessDLLHijack, automated scanning
-  - **Auto-updater/IPC abuse**: Third-party update mechanisms, writable update directories, IPC channel interception
-  - **Structure**: Step 1 (enumerate services — running, stopped, permissions), Step 2 (unquoted path check), Step 3 (weak permission exploitation), Step 4 (DLL hijack enumeration), Step 5 (DLL hijack exploitation), Step 6 (escalate/pivot)
-  - **Source files**: `~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/dll-hijacking/README.md` (536), `dll-hijacking/writable-sys-path-dll-hijacking-privesc.md` (87), `service-triggers.md` (148), `abusing-auto-updaters-and-ipc.md` (234), `acls-dacls-sacls-aces.md` (156), `~/docs/InternalAllTheThings/docs/redteam/escalation/windows-privilege-escalation.md` (service/DLL sections)
-  - **Target**: ~450-500 lines
+- [x] `windows-discovery` — (489 lines) Enumeration hub: WinPEAS/PowerUp/Seatbelt/Watson/WES-NG/PrivescCheck, 9-step workflow (system info → user context → services → scheduled tasks → network → credential hunting → security controls → automated tools → routing), privilege-to-skill routing table, security controls detection (AV/AppLocker/PPL/Credential Guard)
+- [x] `windows-token-impersonation` — (440 lines) Potato family decision tree by OS version (JuicyPotato/PrintSpoofer/GodPotato/RoguePotato/EfsPotato/SigmaPotato/JuicyPotatoNG/PrintNotifyPotato), dangerous privilege exploitation (SeDebug token theft, SeBackup SAM extraction, SeRestore file write, SeTakeOwnership, SeLoadDriver BYOVD, SeManageVolume raw disk), FullPowers for stripped service accounts, CLSID reference
+- [x] `windows-service-dll-abuse` — (532 lines) Unquoted service paths, weak service permissions (accesschk/sc config binpath), service registry ACL abuse, service triggers (named pipe/ETW/RPC), DLL search order hijacking with Process Monitor, DLL proxying (DLLirant/Spartacus), COM DLL hijacking, writable PATH injection, DLL payload templates (C/mingw/msfvenom), auto-updater/IPC abuse
 
 **Batch 2: Windows Extended** — secondary vectors + credential access
 - [ ] `windows-uac-bypass` — UAC bypass techniques (auto-elevating binaries, fodhelper, eventvwr, sdclt, silentcleanup, cmstp, DiskCleanup), COM hijacking (CLSID registry abuse), AlwaysInstallElevated (MSI payload via WiX/msfvenom), autorun exploitation (startup folders, registry Run/RunOnce). Source: HT uac.md (275), com-hijacking.md (149), create-msi-with-wix.md (72), autorun.md (354).
@@ -224,7 +197,7 @@ Build workflow: Survey source material for all 3 skills (parallel agents) → wr
 - [ ] `windows-kernel-exploits` — Kernel CVEs (MS17-010 EternalBlue, MS16-032, MS15-051, CVE-2019-1388, KiTrap0D), exploit-suggester workflow (Watson/WES-NG/windows-exploit-suggester), BYOVD/LoLDrivers (vulnerable driver loading for kernel R/W), privileged file write (DiagHub, UsoDLLLoader, WerTrigger, WerMgr), privileged file delete (MSI rollback), named pipe impersonation, PrintNightmare local (CVE-2021-1675), leaked handle exploitation. Source: HT kernel-race.md (138), arbitrary-kernel-rw.md (123), leaked-handle.md (696), named-pipe.md (172+125) + IATT kernel/printer sections.
 
 **Batch 3: Linux Foundation** — standard Linux privesc workflow
-- [ ] `linux-privesc-discovery` — Enumeration (LinPEAS, LinEnum, linux-smart-enumeration, unix-privesc-check, pspy, SUDO_KILLER, linux-exploit-suggester), system info, kernel version, users/groups, network, running processes, installed software, writable directories, routing to 4 technique skills. Source: HT README.md (2,137 lines) + IATT (868 lines).
+- [ ] `linux-discovery` — Enumeration (LinPEAS, LinEnum, linux-smart-enumeration, unix-privesc-check, pspy, SUDO_KILLER, linux-exploit-suggester), system info, kernel version, users/groups, network, running processes, installed software, writable directories, routing to 4 technique skills. Source: HT README.md (2,137 lines) + IATT (868 lines).
 - [ ] `linux-sudo-suid-capabilities` — Sudo misconfig (NOPASSWD, LD_PRELOAD/LD_LIBRARY_PATH with sudo, sudo_inject, CVE-2021-3156 Baron Samedit, CVE-2019-14287 -u#-1, doas), SUID/SGID binary exploitation (GTFOBins, custom SUID binaries, shared object injection), Linux capabilities (CAP_SYS_ADMIN, CAP_DAC_READ_SEARCH, CAP_SETUID, CAP_NET_BIND, CAP_SYS_PTRACE, CAP_NET_RAW, 20+ capabilities with exploitation examples). Source: HT linux-capabilities.md (1,700 lines), euid-ruid-suid.md (216) + IATT sudo/SUID/capabilities sections.
 - [ ] `linux-cron-service-abuse` — Cron job exploitation (writable scripts, PATH manipulation, wildcard injection in cron, pspy monitoring), systemd timer abuse, D-Bus enumeration and command injection (gdbus, busctl, dbus-send, PolicyKit bypass), Unix socket command injection, writable init scripts/systemd units. Source: HT d-bus.md (540 lines), socket-command-injection.md (89), wildcards.md (255) + IATT cron/systemd sections.
 

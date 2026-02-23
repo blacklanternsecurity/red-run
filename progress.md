@@ -1,5 +1,39 @@
 # red-run — Session Log
 
+## 2026-02-23 — Phase 5 Batch 1: Windows Foundation Skills
+
+### Done
+
+- Built 3 Windows Foundation privesc skills (Batch 1) on `skills/privesc` branch:
+  - `windows-privesc-discovery` (489 lines) — 9-step enumeration workflow: system info (systeminfo/ver), user context (whoami /priv /groups with privilege-to-skill routing table), services (sc query/accesschk/wmic for unquoted paths + weak perms), scheduled tasks (schtasks + autorun + AlwaysInstallElevated), network (netstat/ipconfig + internal-only listeners), credential hunting (cmdkey/registry/unattend/PS history/HiveNightmare check), security controls (AV detection/PPL/Credential Guard/UAC level/AppLocker), automated tools (WinPEAS/PowerUp/Seatbelt/PrivescCheck/JAWS), routing decision tree mapping findings to 5 technique skills
+  - `windows-token-impersonation` (440 lines) — Potato family decision tree by OS version: JuicyPotato (pre-1809 with CLSID), PrintSpoofer (simplest, needs Spooler), GodPotato/SigmaPotato (broadest support), RoguePotato (fake OXID resolver), EfsPotato (MS-EFSR pipe fallback chain), JuicyPotatoNG (modern DCOM), PrintNotifyPotato (works with Spooler disabled). FullPowers for stripped service accounts. Dangerous privilege exploitation: SeDebug (token theft from SYSTEM process + LSASS dump), SeBackup (SAM/SYSTEM hive extraction via reg save), SeRestore (arbitrary file write for DLL/binary replace), SeTakeOwnership (ownership → DACL chain), SeLoadDriver (vulnerable kernel driver loading), SeManageVolume (raw volume read bypassing NTFS). Potato variant decision tree diagram.
+  - `windows-service-dll-abuse` (532 lines) — Service exploitation: unquoted paths (wmic/PowerUp enumeration + path hijacking), weak permissions (accesschk enumeration + sc config binpath), service registry ACL abuse (ImagePath modification), service binary replacement. Service triggers: named pipe/ETW/RPC/GPO/IP-available trigger types with firing commands. DLL hijacking: search order documentation, Process Monitor filter setup, PowerUp DLL checks, writable PATH enumeration. DLL exploitation: 4 DLL payload templates (basic/user-creation/threaded/msfvenom), DLL proxying (DLLirant/Spartacus), COM DLL hijacking (InprocServer32 HKCU write), writable system PATH injection. Auto-updater/IPC abuse section. 8-step workflow.
+- Updated README.md:
+  - Added Privilege Escalation skills table (3 skills)
+  - Added "Running Claude Code for pentesting" section (Trail of Bits config, VM recommendation)
+  - Added baseline skills customization note
+  - Updated status line (49 skills, ~24,000 lines)
+  - Updated Planned section (8 remaining privesc skills)
+- Updated task_plan.md — marked Batch 1 skills complete with line counts
+
+### Inventory
+
+- Total skills: 49 (29 web + 16 AD + 3 privesc + 1 orchestrator)
+- Total lines: ~24,000
+- Phase 5 Batch 1: COMPLETE (3/3 skills built, 1,461 lines)
+- Remaining: Batch 2 (3 Windows extended), Batch 3 (3 Linux foundation), Batch 4 (2 Linux extended)
+
+### Next: Build Batch 2 (Windows Extended — 3 skills)
+
+**Branch**: `skills/privesc`
+
+**Batch 2 skills to build:**
+1. `windows-uac-bypass` (~350-400 lines) — UAC bypass techniques, COM hijacking, AlwaysInstallElevated, autorun
+2. `windows-credential-harvesting` (~400-450 lines) — HiveNightmare, DPAPI, PS history, unattend, browser creds, vaults
+3. `windows-kernel-exploits` (~400-450 lines) — Kernel CVEs, exploit-suggesters, BYOVD, named pipe impersonation, restricted shell
+
+---
+
 ## 2026-02-23 — Phase 5 Source Material Survey: Privilege Escalation
 
 ### Done
