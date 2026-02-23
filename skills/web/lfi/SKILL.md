@@ -474,27 +474,6 @@ bypass technique, current mode.
 - Temp file race conditions generate high request volume
 - Cleanup: remove any webshells written via log poisoning or PEARCMD
 
-## Deep Reference
-
-For comprehensive payloads, wordlists, and advanced techniques:
-
-```
-Read $RED_RUN_DOCS/PayloadsAllTheThings/File Inclusion/README.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/File Inclusion/Wrappers.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/File Inclusion/LFI-to-RCE.md
-Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/file-inclusion/README.md
-Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/file-inclusion/lfi2rce-via-php-filters.md
-```
-
-For path wordlists:
-
-```
-Read $RED_RUN_DOCS/PayloadsAllTheThings/File Inclusion/Intruders/Traversal.txt
-Read $RED_RUN_DOCS/PayloadsAllTheThings/File Inclusion/Intruders/JHADDIX_LFI.txt
-Read $RED_RUN_DOCS/PayloadsAllTheThings/File Inclusion/Intruders/Linux-files.txt
-Read $RED_RUN_DOCS/PayloadsAllTheThings/File Inclusion/Intruders/Windows-files.txt
-```
-
 ## Troubleshooting
 
 ### Traversal Returns Empty / Error

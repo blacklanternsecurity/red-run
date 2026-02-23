@@ -445,19 +445,6 @@ exploited, and current mode.
 Update `engagement/state.md` with delegation findings, obtained access, and
 new pivot paths.
 
-## Deep Reference
-
-For additional delegation techniques, edge cases, and advanced scenarios:
-
-```
-Read $RED_RUN_DOCS/InternalAllTheThings/docs/active-directory/ad-adds-kerberos-delegation-unconstrained.md
-Read $RED_RUN_DOCS/InternalAllTheThings/docs/active-directory/ad-adds-kerberos-delegation-constrained.md
-Read $RED_RUN_DOCS/InternalAllTheThings/docs/active-directory/ad-adds-kerberos-delegation-rbcd.md
-Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/active-directory-methodology/unconstrained-delegation.md
-Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/active-directory-methodology/constrained-delegation.md
-Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/active-directory-methodology/resource-based-constrained-delegation.md
-```
-
 ## Troubleshooting
 
 ### KDC_ERR_ETYPE_NOTSUPP
