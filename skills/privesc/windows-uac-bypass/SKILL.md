@@ -523,20 +523,6 @@ After achieving high integrity:
 When routing, pass along: hostname, OS version, current integrity level (high),
 current mode.
 
-## Deep Reference
-
-For additional UAC bypass techniques, UACMe bypass index, or edge cases:
-
-```
-Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/authentication-credentials-uac-and-efs/uac-user-account-control.md
-Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/windows-local-privilege-escalation/com-hijacking.md
-Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/windows-local-privilege-escalation/privilege-escalation-with-autorun-binaries.md
-Read $RED_RUN_DOCS/InternalAllTheThings/docs/redteam/escalation/windows-privilege-escalation.md
-```
-
-**UACMe project** (comprehensive bypass collection): https://github.com/hfiref0x/UACME
-Contains 70+ bypass methods indexed by Windows build number.
-
 ## Troubleshooting
 
 ### "Always Notify" UAC blocks auto-elevate bypasses

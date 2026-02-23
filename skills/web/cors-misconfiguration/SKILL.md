@@ -511,16 +511,6 @@ working PoC, current mode, and what data is accessible.
 - `Vary: Origin` absence makes cache poisoning possible but also means your
   test may affect cached responses for other users — test carefully
 
-## Deep Reference
-
-For expanded payloads, edge cases, and additional bypass techniques:
-
-```
-Read $RED_RUN_DOCS/PayloadsAllTheThings/CORS Misconfiguration/README.md
-Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/cors-bypass.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/CORS Misconfiguration/Exploits/README.md
-```
-
 ## Troubleshooting
 
 ### No CORS Headers in Response

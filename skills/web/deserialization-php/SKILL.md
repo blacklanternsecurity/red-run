@@ -339,18 +339,6 @@ mode, and any payloads that already succeeded.
 - Laravel encrypted cookies hide payload content but cookie size may be
   anomalous
 
-## Deep Reference
-
-For additional gadget chains, framework-specific techniques, and edge cases:
-
-```
-Read $RED_RUN_DOCS/PayloadsAllTheThings/Insecure Deserialization/PHP.md
-Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/deserialization/php-deserialization-+-autoload-classes.md
-Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/file-inclusion/phar-deserialization.md
-Read $RED_RUN_DOCS/hacktricks/src/network-services-pentesting/pentesting-web/laravel.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/Type Juggling/README.md
-```
-
 ## Troubleshooting
 
 ### PHPGGC Chain Throws Error
