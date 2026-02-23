@@ -518,15 +518,15 @@ payload, front-end/back-end stack identified, current mode.
 For expanded payloads, edge cases, and proxy-specific techniques:
 
 ```
-Read ~/docs/PayloadsAllTheThings/Request Smuggling/README.md
-Read ~/docs/hacktricks/src/pentesting-web/http-request-smuggling/README.md
-Read ~/docs/hacktricks/src/pentesting-web/http-request-smuggling/request-smuggling-in-http-2-downgrades.md
-Read ~/docs/hacktricks/src/pentesting-web/http-request-smuggling/browser-http-request-smuggling.md
-Read ~/docs/hacktricks/src/pentesting-web/h2c-smuggling.md
-Read ~/docs/hacktricks/src/pentesting-web/http-response-smuggling-desync.md
-Read ~/docs/hacktricks/src/pentesting-web/http-connection-request-smuggling.md
-Read ~/docs/hacktricks/src/pentesting-web/http-connection-contamination.md
-Read ~/docs/PayloadsAllTheThings/CRLF Injection/README.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/Request Smuggling/README.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/http-request-smuggling/README.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/http-request-smuggling/request-smuggling-in-http-2-downgrades.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/http-request-smuggling/browser-http-request-smuggling.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/h2c-smuggling.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/http-response-smuggling-desync.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/http-connection-request-smuggling.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/http-connection-contamination.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/CRLF Injection/README.md
 ```
 
 ## Troubleshooting

@@ -489,9 +489,9 @@ current mode, and impact assessment.
 For expanded payloads, edge cases, and framework-specific techniques:
 
 ```
-Read ~/docs/PayloadsAllTheThings/Account Takeover/README.md
-Read ~/docs/hacktricks/src/pentesting-web/reset-password.md
-Read ~/docs/hacktricks/src/pentesting-web/account-takeover.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/Account Takeover/README.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/reset-password.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/account-takeover.md
 ```
 
 ## Troubleshooting

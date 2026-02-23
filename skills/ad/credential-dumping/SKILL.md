@@ -532,14 +532,14 @@ Update `engagement/state.md` with all extracted credentials and access.
 For additional extraction techniques, tool options, and edge cases:
 
 ```
-Read ~/docs/InternalAllTheThings/docs/active-directory/credentials-dcsync.md
-Read ~/docs/InternalAllTheThings/docs/active-directory/credentials-ntds.md
-Read ~/docs/InternalAllTheThings/docs/active-directory/credentials-sam.md
-Read ~/docs/InternalAllTheThings/docs/active-directory/credentials-laps.md
-Read ~/docs/InternalAllTheThings/docs/active-directory/credentials-gmsa.md
-Read ~/docs/hacktricks/src/windows-hardening/active-directory-methodology/dcsync.md
-Read ~/docs/hacktricks/src/windows-hardening/active-directory-methodology/laps.md
-Read ~/docs/hacktricks/src/windows-hardening/active-directory-methodology/golden-dmsa-gmsa.md
+Read $RED_RUN_DOCS/InternalAllTheThings/docs/active-directory/credentials-dcsync.md
+Read $RED_RUN_DOCS/InternalAllTheThings/docs/active-directory/credentials-ntds.md
+Read $RED_RUN_DOCS/InternalAllTheThings/docs/active-directory/credentials-sam.md
+Read $RED_RUN_DOCS/InternalAllTheThings/docs/active-directory/credentials-laps.md
+Read $RED_RUN_DOCS/InternalAllTheThings/docs/active-directory/credentials-gmsa.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/active-directory-methodology/dcsync.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/active-directory-methodology/laps.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/active-directory-methodology/golden-dmsa-gmsa.md
 ```
 
 ## Troubleshooting

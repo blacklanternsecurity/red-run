@@ -362,9 +362,9 @@ syntax variant used, current mode.
 For comprehensive payloads, sandbox bypass, and engine-specific techniques:
 
 ```
-Read ~/docs/PayloadsAllTheThings/Server Side Template Injection/Java.md
-Read ~/docs/hacktricks/src/pentesting-web/ssti-server-side-template-injection/README.md
-Read ~/docs/PayloadsAllTheThings/Server Side Template Injection/README.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/Server Side Template Injection/Java.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/ssti-server-side-template-injection/README.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/Server Side Template Injection/README.md
 ```
 
 ## Troubleshooting

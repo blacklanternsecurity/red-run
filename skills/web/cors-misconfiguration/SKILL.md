@@ -516,9 +516,9 @@ working PoC, current mode, and what data is accessible.
 For expanded payloads, edge cases, and additional bypass techniques:
 
 ```
-Read ~/docs/PayloadsAllTheThings/CORS Misconfiguration/README.md
-Read ~/docs/hacktricks/src/pentesting-web/cors-bypass.md
-Read ~/docs/PayloadsAllTheThings/CORS Misconfiguration/Exploits/README.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/CORS Misconfiguration/README.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/cors-bypass.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/CORS Misconfiguration/Exploits/README.md
 ```
 
 ## Troubleshooting
