@@ -417,8 +417,8 @@ After obtaining a certificate and authenticating:
 For additional payloads, edge cases, and LDAP filter queries:
 
 ```
-Read ~/docs/hacktricks/src/windows-hardening/active-directory-methodology/ad-certificates/domain-escalation.md
-Read ~/docs/InternalAllTheThings/docs/active-directory/ad-adcs-certificate-services.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/active-directory-methodology/ad-certificates/domain-escalation.md
+Read $RED_RUN_DOCS/InternalAllTheThings/docs/active-directory/ad-adcs-certificate-services.md
 ```
 
 ## Troubleshooting

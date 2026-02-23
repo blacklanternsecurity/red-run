@@ -680,12 +680,12 @@ When routing, pass along: the confirmed race endpoint, synchronization technique
 For expanded techniques, additional Turbo Intruder templates, and edge cases:
 
 ```
-Read ~/docs/PayloadsAllTheThings/Race Condition/README.md
-Read ~/docs/hacktricks/src/pentesting-web/race-condition.md
-Read ~/docs/PayloadsAllTheThings/Business Logic Errors/README.md
-Read ~/docs/hacktricks/src/pentesting-web/rate-limit-bypass.md
-Read ~/docs/hacktricks/src/pentesting-web/2fa-bypass.md
-Read ~/docs/hacktricks/src/pentesting-web/reset-password.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/Race Condition/README.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/race-condition.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/Business Logic Errors/README.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/rate-limit-bypass.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/2fa-bypass.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/reset-password.md
 ```
 
 ## Troubleshooting

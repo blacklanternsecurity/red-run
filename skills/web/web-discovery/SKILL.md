@@ -549,37 +549,37 @@ When routing, pass along: the confirmed injection point (URL, parameter, method)
 For expanded methodology, additional probes, and edge cases:
 
 ```
-Read ~/docs/hacktricks/src/pentesting-web/web-vulnerabilities-methodology.md
-Read ~/docs/PayloadsAllTheThings/SQL Injection/README.md
-Read ~/docs/PayloadsAllTheThings/Server Side Template Injection/README.md
-Read ~/docs/PayloadsAllTheThings/XSS Injection/README.md
-Read ~/docs/PayloadsAllTheThings/Command Injection/README.md
-Read ~/docs/PayloadsAllTheThings/Server Side Request Forgery/README.md
-Read ~/docs/PayloadsAllTheThings/File Inclusion/README.md
-Read ~/docs/PayloadsAllTheThings/XXE Injection/README.md
-Read ~/docs/PayloadsAllTheThings/Insecure Deserialization/Java.md
-Read ~/docs/PayloadsAllTheThings/Insecure Deserialization/PHP.md
-Read ~/docs/PayloadsAllTheThings/Insecure Deserialization/DotNET.md
-Read ~/docs/PayloadsAllTheThings/JSON Web Token/README.md
-Read ~/docs/PayloadsAllTheThings/NoSQL Injection/README.md
-Read ~/docs/PayloadsAllTheThings/Request Smuggling/README.md
-Read ~/docs/hacktricks/src/pentesting-web/http-request-smuggling/README.md
-Read ~/docs/PayloadsAllTheThings/IDOR - Insecure Direct Object References/README.md
-Read ~/docs/hacktricks/src/pentesting-web/idor.md
-Read ~/docs/PayloadsAllTheThings/CORS Misconfiguration/README.md
-Read ~/docs/hacktricks/src/pentesting-web/cors-bypass.md
-Read ~/docs/PayloadsAllTheThings/Cross-Site Request Forgery/README.md
-Read ~/docs/hacktricks/src/pentesting-web/csrf-cross-site-request-forgery.md
-Read ~/docs/hacktricks/src/pentesting-web/oauth-to-account-takeover.md
-Read ~/docs/PayloadsAllTheThings/OAuth Misconfiguration/README.md
-Read ~/docs/PayloadsAllTheThings/Account Takeover/README.md
-Read ~/docs/hacktricks/src/pentesting-web/reset-password.md
-Read ~/docs/PayloadsAllTheThings/Account Takeover/mfa-bypass.md
-Read ~/docs/hacktricks/src/pentesting-web/2fa-bypass.md
-Read ~/docs/PayloadsAllTheThings/Race Condition/README.md
-Read ~/docs/hacktricks/src/pentesting-web/race-condition.md
-Read ~/docs/PayloadsAllTheThings/Upload Insecure Files/README.md
-Read ~/docs/hacktricks/src/pentesting-web/file-upload/README.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/web-vulnerabilities-methodology.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/SQL Injection/README.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/Server Side Template Injection/README.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/XSS Injection/README.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/Command Injection/README.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/Server Side Request Forgery/README.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/File Inclusion/README.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/XXE Injection/README.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/Insecure Deserialization/Java.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/Insecure Deserialization/PHP.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/Insecure Deserialization/DotNET.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/JSON Web Token/README.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/NoSQL Injection/README.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/Request Smuggling/README.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/http-request-smuggling/README.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/IDOR - Insecure Direct Object References/README.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/idor.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/CORS Misconfiguration/README.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/cors-bypass.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/Cross-Site Request Forgery/README.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/csrf-cross-site-request-forgery.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/oauth-to-account-takeover.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/OAuth Misconfiguration/README.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/Account Takeover/README.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/reset-password.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/Account Takeover/mfa-bypass.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/2fa-bypass.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/Race Condition/README.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/race-condition.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/Upload Insecure Files/README.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/file-upload/README.md
 ```
 
 ## Troubleshooting

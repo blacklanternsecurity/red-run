@@ -472,10 +472,10 @@ When routing to a technique skill, pass along:
 For extended enumeration techniques, tool options, and edge cases:
 
 ```
-Read ~/docs/InternalAllTheThings/docs/active-directory/ad-adds-enumerate.md
-Read ~/docs/InternalAllTheThings/docs/active-directory/ad-adds-groups.md
-Read ~/docs/hacktricks/src/windows-hardening/active-directory-methodology/README.md
-Read ~/docs/hacktricks/src/windows-hardening/active-directory-methodology/bloodhound.md
+Read $RED_RUN_DOCS/InternalAllTheThings/docs/active-directory/ad-adds-enumerate.md
+Read $RED_RUN_DOCS/InternalAllTheThings/docs/active-directory/ad-adds-groups.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/active-directory-methodology/README.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/active-directory-methodology/bloodhound.md
 ```
 
 ## Troubleshooting
