@@ -1,22 +1,21 @@
 # red-run — Session Log
 
-## 2026-02-23 — Phase 6 Batch 1: Network Foundation (survey + planning)
+## 2026-02-23 — Phase 6 Batch 1: Network Foundation (COMPLETE)
 
 ### Done
 
-- Completed source material survey for Phase 6 Batch 1 (2 skills):
-  - `network-recon` survey: host discovery (ICMP/ARP/TCP/UDP), port scanning with evasion techniques, service enumeration for 20+ protocols (FTP, SSH, SMTP, DNS, HTTP, Kerberos, RPC, SMB, LDAP, MSSQL, Oracle, MySQL, RDP, PostgreSQL, WinRM, Redis, MongoDB), quick-win checks per service (anonymous access, default creds, version CVEs), OS fingerprinting, NSE/nuclei vulnerability scanning, OPSEC-tiered scanning, routing decision tree. Source: HT network-services-pentesting/ (189 files).
-  - `pivoting-tunneling` survey: 20+ techniques — SSH (L/R/D/VPN/control sequence), sshuttle, Chisel (reverse SOCKS + port forward), Ligolo-ng (TUN interface), socat (relay + SSL), proxychains, FRP (reverse proxy + SSH gateway), Windows (netsh/plink/SocksOverRDP), Metasploit (autoroute/portfwd/SOCKS), DNS tunneling (dnscat2/iodine), ICMP (hans/ptunnel-ng), HTTP (reGeorg), rpivot (NTLM proxy), ngrok/cloudflared, multi-hop, tool selection matrix. Source: HT tunneling-and-port-forwarding.md.
-- Created `skills/network` branch from `skills/privesc` (carries Phase 5 commits — will PR after build)
-- Enriched Phase 6 Batch 1 specs in task_plan.md with full technique inventory and source references
+- Completed source material survey for Phase 6 Batch 1 (2 skills)
+- Created `skills/network` branch from `skills/privesc`
+- Built 2 Network Foundation skills (Batch 1) on `skills/network` branch:
+  - `network-recon` (880 lines) — 9-step workflow: passive recon (DNS enum + zone transfer, Shodan, cert transparency), host discovery (ARP/ICMP/TCP/UDP sweeps, masscan for large ranges), port scanning (default `nmap -A -p- -T4 -oA -vvv` plus quick top-ports, stealth/evasion: fragmentation/decoys/source port/idle scan/timing, masscan+nmap combo, Naabu), service enumeration for 20+ protocols each with embedded quick-win checks (FTP anonymous+write/vsftpd backdoor, SSH CVE-2018-15473+regreSSHion, SMTP open relay+NTLM info, DNS zone transfer, HTTP default creds+git exposure, Kerberos AS-REP roast+user enum, RPC null session+NFS, SMB null/guest+EternalBlue+SMBGhost, LDAP anon bind, MSSQL sa empty+xp_cmdshell, Oracle default SIDs+creds, MySQL root empty+UDF, RDP NTLM leak+BlueKeep, PostgreSQL trust auth, WinRM, Redis unauth RCE+SSH key inject, MongoDB unauth, SNMP default community+Net-SNMP Extend, IPMI cipher 0, NFS no_root_squash, TFTP config grab, VNC no-auth), OS fingerprinting (port signatures, TTL heuristics), vuln scanning (NSE vuln scripts, nuclei templates, specific CVE checks), multi-host pipeline (discovery→quick scan→full scan→service enum), output parsing for state.md, routing decision tree to web-discovery/ad-discovery/technique skills, bash fallback scanning for pivots without nmap.
+  - `pivoting-tunneling` (1108 lines) — 15-step workflow: tool selection decision tree by scenario (SSH/shell+upload/HTTP-only/DNS-only/ICMP-only/Windows/NTLM proxy), SSH tunneling (local -L single+multi port, dynamic SOCKS -D with proxychains config, remote -R for NAT/firewall bypass, ~C escape sequence for mid-session forwards, ProxyJump -J multi-hop with ssh_config, sshuttle transparent VPN with DNS forwarding and exclusions, SSH VPN TUN device with NAT/routing), Ligolo-ng (TUN setup, agent/proxy workflow, route addition, listener port forwarding, double pivot via listener chaining, transfer methods), Chisel (reverse SOCKS, port forward single+multi, HTTP proxy support, TLS encryption, transfer methods), socat (TCP/UDP relay, SSL encrypted relay, reverse shell relay), Windows pivoting (netsh portproxy with firewall rules, plink SSH-style tunnels, SocksOverRDP+Proxifier, Chisel/Ligolo Windows binaries), DNS tunneling (dnscat2 with port forward+shell, iodine TUN with routing), ICMP tunneling (hans, ptunnel-ng), HTTP tunneling (neo-reGeorg webshell SOCKS, rpivot NTLM proxy bypass), Metasploit pivoting (autoroute, portfwd, SOCKS module, proxychains config), FRP (TOML config with SOCKS+port forward), public tunnels (ngrok/cloudflared — CTF only), multi-hop scenarios (SSH ProxyJump, sshuttle chain, Ligolo double pivot, Chisel chain, proxychains strict_chain), tunnel verification procedures, SOCKS tool compatibility table (14 pentesting tools), persistent tunnels (SSH keep-alive, autossh, Chisel keepalive, tmux session management), Python minimal SOCKS4 proxy fallback.
+- Updated task_plan.md, README.md (59 skills, ~31,400 lines), progress.md
+- Tool priority per user preference: SSH > Ligolo-ng > Chisel > others (reflected in skill step ordering)
 
-### Next: Build Phase 6 Batch 1 (Network Foundation — 2 skills)
+### Next
 
-**Branch**: `skills/network`
-
-**Skills to build:**
-1. `network-recon` (~700-900 lines) — Discovery skill, orchestrator entry point
-2. `pivoting-tunneling` (~800-1000 lines) — Lateral movement backbone
+- PR `skills/network` branch to main
+- Phase 6 Batch 2: Cloud & Containers (or Phase 7 depending on priority)
 
 ---
 
