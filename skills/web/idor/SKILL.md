@@ -514,16 +514,6 @@ technique, current mode, and scope of exposed data.
 - Autorize/AuthMatrix Burp extensions passively test IDOR as you browse —
   lowest OPSEC impact
 
-## Deep Reference
-
-For expanded methodology, edge cases, and additional patterns:
-
-```
-Read $RED_RUN_DOCS/PayloadsAllTheThings/IDOR - Insecure Direct Object References/README.md
-Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/idor.md
-Read $RED_RUN_DOCS/hacktricks/src/network-services-pentesting/pentesting-web/web-api-pentesting.md
-```
-
 ## Troubleshooting
 
 ### All Requests Return Your Own Data

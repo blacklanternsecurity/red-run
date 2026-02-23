@@ -467,17 +467,6 @@ When routing, pass along: confirmed injection point, operator format
   issues on production systems
 - Mongoose RCE payloads execute OS commands — visible in process monitoring
 
-## Deep Reference
-
-For expanded payloads, wordlists, and edge cases:
-
-```
-Read $RED_RUN_DOCS/PayloadsAllTheThings/NoSQL Injection/README.md
-Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/nosql-injection.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/NoSQL Injection/Intruder/MongoDB.txt
-Read $RED_RUN_DOCS/PayloadsAllTheThings/NoSQL Injection/Intruder/NoSQL.txt
-```
-
 ## Troubleshooting
 
 ### Operators Not Accepted

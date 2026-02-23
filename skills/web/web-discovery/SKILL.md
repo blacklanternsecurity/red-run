@@ -544,44 +544,6 @@ Update `engagement/state.md` with any new targets, confirmed vulns, or blocked t
 
 When routing, pass along: the confirmed injection point (URL, parameter, method), observed response behavior, suspected DBMS (if SQL), current mode, and any payloads that already succeeded.
 
-## Deep Reference
-
-For expanded methodology, additional probes, and edge cases:
-
-```
-Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/web-vulnerabilities-methodology.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/SQL Injection/README.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/Server Side Template Injection/README.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/XSS Injection/README.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/Command Injection/README.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/Server Side Request Forgery/README.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/File Inclusion/README.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/XXE Injection/README.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/Insecure Deserialization/Java.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/Insecure Deserialization/PHP.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/Insecure Deserialization/DotNET.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/JSON Web Token/README.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/NoSQL Injection/README.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/Request Smuggling/README.md
-Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/http-request-smuggling/README.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/IDOR - Insecure Direct Object References/README.md
-Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/idor.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/CORS Misconfiguration/README.md
-Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/cors-bypass.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/Cross-Site Request Forgery/README.md
-Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/csrf-cross-site-request-forgery.md
-Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/oauth-to-account-takeover.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/OAuth Misconfiguration/README.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/Account Takeover/README.md
-Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/reset-password.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/Account Takeover/mfa-bypass.md
-Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/2fa-bypass.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/Race Condition/README.md
-Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/race-condition.md
-Read $RED_RUN_DOCS/PayloadsAllTheThings/Upload Insecure Files/README.md
-Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/file-upload/README.md
-```
-
 ## Troubleshooting
 
 ### WAF Blocking Requests

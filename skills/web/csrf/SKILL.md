@@ -557,16 +557,6 @@ PoC, current mode, and impact assessment.
   no server-side artifacts beyond the forged request
 - WebSocket CSRF maintains a persistent connection — visible in connection logs
 
-## Deep Reference
-
-For expanded payloads, edge cases, and framework-specific bypasses:
-
-```
-Read $RED_RUN_DOCS/PayloadsAllTheThings/Cross-Site Request Forgery/README.md
-Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/csrf-cross-site-request-forgery.md
-Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/hacking-with-cookies/README.md
-```
-
 ## Troubleshooting
 
 ### Token Present and Validated
