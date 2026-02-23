@@ -267,7 +267,7 @@ Build workflow: Same as Batch 1. Survey source material (parallel agents) → wr
 ## Backlog
 
 - [ ] Global tool prerequisites list — enumerate every tool mentioned across all skills, add to README as install checklist (do last, after all skills written)
-- [ ] Learning - how to updating skills, keep them current with the latest methods, update them prior to closing an engagement based on knowledge gained from that engagement, targeted research mode)
+- [ ] Learning - how to update skills, keep them current with the latest methods, revise them prior to closing an engagement based on knowledge gained from that engagement, targeted research mode)
 - [ ] Wireless attacks (limited source material)
 - [ ] Physical/hardware (limited source material)
 - [ ] GCP cloud (gap across all three repos)
