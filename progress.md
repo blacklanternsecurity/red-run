@@ -12,10 +12,17 @@
 - Updated task_plan.md, README.md (59 skills, ~31,400 lines), progress.md
 - Tool priority per user preference: SSH > Ligolo-ng > Chisel > others (reflected in skill step ordering)
 
+### Batch 2: Containers
+
+- Built `container-escapes` (1021 lines) — Docker escape (socket/privileged/cgroup release_agent/sensitive mounts/capabilities), Kubernetes exploitation (SA tokens, RBAC, kubelet, etcd, malicious pods), container CVEs (runc CVE-2019-5736, Leaky Vessels CVE-2024-21626, CVE-2025-31133), cloud metadata from containers
+- Updated orchestrator to route to network-recon, container-escapes, and pivoting-tunneling
+- Moved AWS, Azure, CI/CD to backlog (not first release)
+- Phase 6 COMPLETE: 60 skills, ~32,400 lines
+
 ### Next
 
 - PR `skills/network` branch to main
-- Phase 6 Batch 2: Cloud & Containers (or Phase 7 depending on priority)
+- Phase 7: Red Team Operations (or test on HTB first)
 
 ---
 
