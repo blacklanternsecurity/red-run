@@ -1,5 +1,35 @@
 # red-run — Session Log
 
+## 2026-02-23 — Phase 5 Batch 2: Windows Extended Skills
+
+### Done
+
+- Built 3 Windows Extended privesc skills (Batch 2) on `skills/privesc` branch:
+  - `windows-uac-bypass` (561 lines) — 6-step workflow: assess UAC config (ConsentPromptBehaviorAdmin levels, EnableLUA, integrity check), auto-elevating binary bypass (fodhelper with ms-settings registry hijack, eventvwr with mscfile hijack, sdclt with Folder hijack, computerdefaults, CMSTP with INF scriptlet, SilentCleanup with windir env var, WSReset, DiskCleanup — each with full cmd/PowerShell write→trigger→cleanup sequences), COM hijacking (Process Monitor CLSID enumeration, scheduled task CLSID hijack, InprocServer32 HKCU override, TypeLib hijacking with scriptlet payloads), AlwaysInstallElevated (dual registry check, msfvenom MSI, custom WiX MSI, MSI repair exploitation), autorun exploitation (startup folders, Run/RunOnce registry keys, writable autorun binaries, Winlogon Userinit/Shell, Active Setup StubPath), escalation routing. Bypass decision table by Windows version/reliability/OPSEC.
+  - `windows-credential-harvesting` (540 lines) — 6-step workflow: quick wins (cmdkey/savecred, registry autologon, PS history/transcripts, unattend/sysprep with base64 decode, registry password search, PuTTY/SSH sessions, WiFi passwords, IIS web.config, credential file search, SessionGopher), HiveNightmare/SAM shadow copy (CVE-2021-36934 icacls detection, mimikatz shadow copy extraction, offline secretsdump.py, backup hive paths), DPAPI extraction (5 decryption methods: current session, known password/NTLM, RPC to DC, domain backup key, LSASS memory — SharpDPAPI/mimikatz/dpapi.py for each, machine keys, offline hashcat cracking), browser creds (SharpChrome interactive/offline/remote for Chrome/Edge, Firefox key4.db/logins.json, mimikatz dpapi::chrome), additional sources (vault detailed, Sticky Notes SQLite, VNC, McAfee SiteList.xml, cloud cred files, alternate data streams), escalation routing. Clear scope distinction from AD-level credential-dumping skill.
+  - `windows-kernel-exploits` (615 lines) — 8-step workflow: assess OS/patch/drivers, exploit-suggester (WES-NG primary with offline analysis, Watson on-target, legacy windows-exploit-suggester, triage by reliability/impact/crash risk), named kernel CVEs (PrintNightmare local LPE with SharpPrintNightmare/Invoke-Nightmare/mimikatz + remote via Impacket SMB, EternalBlue with nmap/netexec detection + Metasploit/standalone, MS16-032 secondary logon handle, MS15-051 Win32k, KiTrap0D, CVE-2019-1388 cert dialog, SMBGhost — quick reference table), BYOVD (Capcom.sys/RTCore64.sys/DBUtil, loldrivers.io reference, driver enumeration, generic token theft workflow with EPROCESS offset documentation, EDR bypass notes), privileged file write (DiagHub pre-1903, UsoDLLLoader 1903-2004, WerTrigger, WerMgr, MSI rollback file delete to SYSTEM via osk.exe HID.dll), named pipe + leaked handle exploitation (full C API workflow, common triggers, handle enumeration, shellcode injection and parent process spoofing), restricted shell escape (PowerShell CLM bypass, AppLocker LOLBin bypass via MSBuild/InstallUtil/regsvcs), escalation routing.
+- Updated windows-discovery with OPSEC guidance for whoami/whoami /priv (CrowdStrike detection). Added .NET-based alternatives for privilege enumeration and context-based privilege inference section.
+- Updated README.md: 6 privesc skills (was 3), updated line counts, status line (52 skills, ~25,700 lines), Planned section (5 remaining instead of 8).
+- Updated task_plan.md: Batch 2 skills marked complete with line counts and technique summaries.
+
+### Inventory
+
+- Total skills: 52 (29 web + 16 AD + 6 privesc + 1 orchestrator)
+- Total lines: ~25,700
+- Phase 5 Batch 2: COMPLETE (3/3 skills built, 1,716 lines)
+- Remaining: Batch 3 (3 Linux foundation), Batch 4 (2 Linux extended)
+
+### Next: Build Batch 3 (Linux Foundation — 3 skills)
+
+**Branch**: `skills/privesc`
+
+**Batch 3 skills to build:**
+1. `linux-discovery` — LinPEAS/LinEnum/pspy enumeration, routing to 4 technique skills
+2. `linux-sudo-suid-capabilities` — Sudo misconfig, SUID/SGID exploitation, Linux capabilities
+3. `linux-cron-service-abuse` — Cron exploitation, systemd timer abuse, D-Bus, Unix sockets
+
+---
+
 ## 2026-02-23 — Phase 5 Batch 1: Windows Foundation Skills
 
 ### Done
