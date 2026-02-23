@@ -25,10 +25,21 @@
 - Phase 4 Batch 1: COMPLETE (4/4 skills built)
 - Remaining: Batches 2-5 (12 skills), Phase 4b (6 extended skills)
 
-### Next Steps
+### Next Session: Build Batch 2 (Kerberos & ACL — 3 skills)
 
-- Build Batch 2: `kerberos-delegation`, `kerberos-ticket-forging`, `acl-abuse`
-- Then Batch 3 (ADCS): `adcs-template-abuse`, `adcs-access-and-relay`, `adcs-persistence`
+**Branch**: `skills/ad` (4 commits ahead of main, pushed to origin)
+
+**Batch 2 skills to build:**
+
+1. `kerberos-delegation` — Unconstrained (TGT harvesting + SpoolService coercion), Constrained (S4U2Self + S4U2Proxy), RBCD (msDS-AllowedToActOnBehalfOfOtherIdentity + low-priv path). 3 distinct attack paths with different prerequisites. Sources: IATT 3 files (280+ lines) + HT 3 files (2100+ lines).
+
+2. `kerberos-ticket-forging` — Golden Ticket (krbtgt hash → forged TGT), Silver Ticket (service hash → forged TGS), Diamond Ticket (legitimate TGT decrypt/re-encrypt, OPSEC), Sapphire Ticket (U2U PAC swap), Pass-the-Ticket injection. Sources: IATT kerberos-tickets.md + HT golden-ticket.md (400+) + silver-ticket.md (900+) + diamond-ticket.md (500+).
+
+3. `acl-abuse` — GenericAll, GenericWrite, WriteDACL, WriteOwner, ForceChangePassword, SPN manipulation (→ targeted Kerberoasting), shadow credentials (msDS-KeyCredentialLink → PKINIT), AdminSDHolder persistence. Sources: IATT ad-adds-acl-ace.md (200+ lines) + HT acl-persistence-abuse/README.md (2500+ lines).
+
+**Workflow**: Survey source material for all 3 skills (parallel agents) → write skills → update task_plan.md/progress.md/README.md → commit + push.
+
+**After Batch 2**: Batch 3 (ADCS, 3 skills), Batch 4 (Relay & Credentials, 3 skills), Batch 5 (Trust & Persistence, 3 skills), then Phase 4b (6 extended skills).
 
 ---
 
