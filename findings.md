@@ -40,26 +40,76 @@ Survey of three reference repos to build a unified topic taxonomy for the skill 
 
 ### 2. Active Directory
 
-**Best source: InternalAllTheThings** (exceptional — largest single-topic section at 472K)
-**Supplemented by: HackTricks** (solid AD methodology section)
+**Best source: InternalAllTheThings** (exceptional — largest single-topic section at 472K, 65+ files)
+**Supplemented by: HackTricks** (42 files + 2 subdirs, OPSEC annotations, 2025 threat context)
+**PayloadsAllTheThings**: Minimal — all AD content redirects to InternalAllTheThings. Only LDAP injection (Phase 3b) is relevant.
 
-| Topic | IATT Depth | HT Depth | Notes |
-|-------|-----------|----------|-------|
-| ADCS (ESC1–ESC15) | EXCEPTIONAL (15 individual files) | HIGH | Certipy, Golden Certificate |
-| Kerberoasting / AS-REP | HIGH | HIGH | Impacket, Rubeus, NetExec, bifrost |
-| Kerberos Delegation | HIGH (3 types + S4U + Bronze Bit) | HIGH | Unconstrained, constrained, RBCD |
-| NTLM Relay & Coercion | HIGH (signing table by OS) | HIGH | ntlmrelayx, Responder, WebClient |
-| ACL/ACE Abuse | HIGH | HIGH | WriteDACL, GenericAll, ForceChangePassword |
-| BloodHound Enumeration | HIGH (all collector variants) | HIGH | SharpHound, RustHound, Python, SOAP |
-| Pass-the-Hash | HIGH | HIGH | |
-| NTDS Dumping | HIGH | HIGH | DCSync, secretsdump |
-| Trust Attacks | HIGH (SID history, inter-realm TGT, PAM) | HIGH | |
-| Password Spraying | HIGH | HIGH | |
-| Shadow Credentials | HIGH | HIGH | msDS-KeyCredentialLink |
-| LAPS/gMSA/dMSA | HIGH (3 separate files) | MEDIUM | |
-| GPO Abuse | HIGH | MEDIUM | |
-| SCCM/WSUS/MDT | HIGH (deployment attacks) | MEDIUM | |
-| Named CVEs | HIGH (ZeroLogon, NoPAC, PrintNightmare) | MEDIUM | |
+#### Source Material Depth by Topic
+
+| Topic | IATT Depth | HT Depth | IATT Files | Key Tools |
+|-------|-----------|----------|------------|-----------|
+| ADCS (ESC1–ESC15) | EXCEPTIONAL | VERY HIGH | 17 (15 ESC + enum + golden) | Certipy, Certify, Rubeus |
+| Kerberos Delegation | VERY HIGH | DEEP | 3 (unconstrained, constrained, RBCD) | Rubeus, Impacket, bloodyAD |
+| ACL/ACE Abuse | VERY HIGH | VERY HIGH (2500+ lines) | 1 (comprehensive) | bloodyAD, PowerView, Invoke-ACLPwn |
+| NTLM Relay & Coercion | VERY HIGH | HIGH | 4 (NTLM relay, Kerberos relay, coercion, DCOM) | ntlmrelayx, Responder, krbrelayx, mitm6 |
+| Kerberoasting / AS-REP | HIGH | HIGH (500+ lines each) | 3 (kerberoasting, asrep, timeroasting) | Rubeus, Impacket, NetExec, hashcat |
+| Credential Extraction | HIGH | MEDIUM | 9 (LAPS, gMSA, dMSA, shadow creds, hash dump, PTH, OPTH, PTK, spray) | secretsdump, mimikatz, NetExec, bloodyAD |
+| NTDS/DCSync | HIGH | HIGH (300+ lines) | 1 (comprehensive) | secretsdump, mimikatz, ntdsutil |
+| Ticket Forging | MEDIUM | DEEP (golden/silver/diamond 400-900 lines each) | 3 (tickets, S4U, bronze bit) | Rubeus, mimikatz, Impacket ticketer |
+| Trust Attacks | MEDIUM | MEDIUM | 4 (relationships, SID history, trust ticket, PAM) | mimikatz, ticketer, bloodyAD |
+| GPO Abuse | HIGH | MEDIUM | 1 | SharpGPOAbuse, GPOHound |
+| Password Spraying | HIGH | DEEP (1000+ lines) | 1 | NetExec, kerbrute, DomainPasswordSpray |
+| BloodHound/Enumeration | HIGH | HIGH (600+ lines) | 2 (enumerate, groups) | SharpHound, BloodHound.py, rusthound-ce |
+| SCCM | HIGH | HIGH (400+ lines) | 1 | SharpSCCM, sccmhunter, MalSCCM |
+| AD FS | HIGH | — | 1 | ADFSDump, ADFSpoof |
+| DNS Poisoning (ADIDNS) | HIGH | DEEP (600+ lines) | 1 | adidnsdump, dnstool, Inveigh |
+| Named CVEs | VERY HIGH (5 files) | MEDIUM | 5 (MS14-068, NoPAC, PrintNightmare, PrivExchange, ZeroLogon) | Various |
+| Deployment (MDT/WSUS/SCOM) | MEDIUM | — | 3 | PowerPXE, SharpWSUS, SCOMDecrypt |
+| Persistence (DCShadow, SSP, Skeleton Key) | — | DEEP | — | mimikatz |
+| AD Linux Integration | MEDIUM | — | 1 | tickey, SSSDKCMExtractor |
+
+#### HackTricks Unique Value (vs InternalAllTheThings)
+
+| Feature | HackTricks Adds | InternalAllTheThings Lacks |
+|---------|-----------------|---------------------------|
+| Diamond/Sapphire tickets | Modern OPSEC variants (/ldap, /opsec, recutting) | Only Golden/Silver |
+| OPSEC annotations | Event ID correlation (4768/4769/4624) per technique | Sparse detection info |
+| 2025 threat context | RC4 phase-out, PAC validation, certificate mapping enforcement | Legacy RC4-focused |
+| DNS abuse depth | Wildcard, WPAD hijack, Certifried, DDSpoof | Surface-level |
+| SCCM relay chain | MP → MSSQL → OSD secret extraction | SCCM enumeration only |
+| Token privilege mapping | BloodHound with logon rights, not just ACLs | Minimal |
+
+#### ADCS ESC Breakdown (for skill split decision)
+
+| ESC | Attack Primitive | Prerequisite | Source Depth |
+|-----|-----------------|--------------|-------------|
+| ESC1 | Enrollee supplies SAN + client auth EKU | Low-priv enrollment | Deep |
+| ESC2 | Any Purpose / no EKU → request SAN | Low-priv enrollment | Medium |
+| ESC3 | Enrollment Agent → request on behalf | Agent enrollment right | Medium |
+| ESC4 | Vulnerable ACL on template → modify to ESC1 | Template ACL write | Medium |
+| ESC5 | Vulnerable ACL on CA objects | NTAuthCertificates write | Medium |
+| ESC6 | EDITF_ATTRIBUTESUBJECTALTNAME2 CA flag | CA flag misconfigured | Medium |
+| ESC7 | ManageCA/ManageCertificates on CA | CA permissions | Deep |
+| ESC8 | NTLM relay to HTTP web enrollment | Network position | Deep |
+| ESC9 | No security extension + CT_FLAG bypass | Template flag | Medium |
+| ESC10 | Weak cert mapping + GenericAll/Write | ACL on target | Medium |
+| ESC11 | NTLM relay to ICPR (RPC enrollment) | Network position | Medium |
+| ESC12 | Shell access to CA → steal private key | CA server shell | Medium |
+| ESC13 | Issuance policy → linked group SID | Policy misconfigured | Medium |
+| ESC14 | altSecurityIdentities explicit mapping abuse | ACL on target | Medium |
+| ESC15 | Application policies extension override | Template flag | Medium |
+
+#### Key Observations
+
+1. **ADCS is the deepest single topic**: 17 files in IATT + deep HT subdirectory. ESC1-6 are the most commonly exploited (template misconfigs). ESC7-11 require relay or CA access. ESC12-15 are newer/niche.
+2. **Delegation coverage is excellent**: 3 distinct attack paths (unconstrained, constrained, RBCD) with 100+ lines each, distinct prerequisites and exploitation chains.
+3. **Relay/coercion is foundational**: 4 deep files covering NTLM relay, Kerberos relay, coercion methods, DCOM. Relay is the backbone of many AD attack chains.
+4. **HackTricks adds modern OPSEC context**: Diamond tickets, 2025 enforcement changes, event ID correlation. Essential for OPSEC-conscious skills.
+5. **Timeroasting is thin**: Only 16 lines in IATT. Include as subsection of roasting, not standalone.
+6. **Shadow credentials bridges ACL abuse and credential access**: Requires msDS-KeyCredentialLink write (ACL) but yields credentials.
+7. **CVEs are historical but still exploited**: NoPAC, PrintNightmare, ZeroLogon still appear in real environments. Include as extended phase.
+8. **Tool ecosystem**: Rubeus (18 files), Impacket (14), mimikatz (15), bloodyAD (4+), Certipy (4+), NetExec (5+) are the workhorses.
+9. **Gaps across sources**: No coverage of Credential Guard bypass, detailed RODC exploitation, comprehensive lockout bypass techniques.
 
 ### 3. Privilege Escalation
 

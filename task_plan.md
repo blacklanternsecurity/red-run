@@ -124,25 +124,51 @@ with later phases.
 
 ## Phase 4: Core Skills — Active Directory
 
-### Source Material Survey (do first)
-- [ ] Survey `~/docs/InternalAllTheThings` AD content — enumerate every technique file, assess depth and payload coverage
-- [ ] Survey `~/docs/hacktricks/src/windows-hardening/active-directory-methodology/` — cross-reference with InternalAllTheThings, identify unique content
-- [ ] Survey `~/docs/PayloadsAllTheThings` for any AD-adjacent content (LDAP injection already in Phase 3b)
-- [ ] Define concrete skill splits — decide which bullet points below become standalone skills vs. subsections, based on source material depth
-- [ ] Define batching — group skills for build sessions after survey is complete
+### Source Material Survey — COMPLETE
+- [x] Survey `~/docs/InternalAllTheThings` AD content — 65+ files, exceptional depth across ADCS, delegation, relay, ACL
+- [x] Survey `~/docs/hacktricks/src/windows-hardening/active-directory-methodology/` — 42 files + 2 subdirs, adds OPSEC/detection context, modern ticket variants, 2025 enforcement changes
+- [x] Survey `~/docs/PayloadsAllTheThings` — minimal AD content, all redirects to InternalAllTheThings. Only LDAP injection (Phase 3b) relevant.
+- [x] Define concrete skill splits — 16 skills (1 discovery + 15 technique), see below
+- [x] Define batching — 5 batches of 3-4 skills each, see below
 
-### Preliminary Skill List (refine after survey)
-- [ ] `ad-attack-discovery` — entry point: enumerate domain, identify attack paths, route to techniques
-- [ ] AD Enumeration (BloodHound, PowerView, LDAP)
-- [ ] Kerberoasting / AS-REP Roasting
-- [ ] Kerberos Delegation (unconstrained, constrained, RBCD)
-- [ ] ADCS Certificate Abuse (ESC1–ESC15) — likely 2-3 skills given 15 ESC files in InternalAllTheThings
-- [ ] NTLM Relay & Coercion
-- [ ] ACL/ACE Abuse (WriteDACL, GenericAll, GenericWrite)
-- [ ] Pass-the-Hash / Over-Pass-the-Hash
-- [ ] DCSync / NTDS Dumping
-- [ ] Trust Attacks (SID history, inter-realm TGT)
-- [ ] Password Spraying & Credential Harvesting
+### Skill List (16 skills: 1 discovery + 15 technique)
+
+**Batch 1: Foundation** — used on every AD engagement
+- [ ] `ad-attack-discovery` — domain enum (BloodHound, PowerView, LDAP, netexec), attack surface mapping, routing to all technique skills. AD equivalent of web-vuln-discovery.
+- [ ] `kerberos-roasting` — Kerberoasting (SPN-based TGS extraction) + AS-REP Roasting (pre-auth disabled) + Timeroasting (thin, subsection). Same workflow: enumerate → extract → crack offline. Sources: IATT 3 files + HT kerberoast.md (500+ lines) + asreproast.md (250+ lines).
+- [ ] `password-spraying` — domain spray (NetExec, kerbrute, DomainPasswordSpray), lockout policy enumeration, username enumeration, valid account detection. Source: IATT pwd-spraying.md + HT password-spraying.md (1000+ lines).
+- [ ] `pass-the-hash` — PTH (NTLM), Over-Pass-the-Hash (NTLM hash → TGT), Pass-the-Key (AES key). Universal credential reuse without cracking. Sources: IATT 3 files (136 lines combined) + HT over-pass-the-hash.md + pass-the-ticket.md.
+
+**Batch 2: Kerberos & ACL** — advanced Kerberos + privilege escalation
+- [ ] `kerberos-delegation` — Unconstrained (TGT harvesting + SpoolService coercion), Constrained (S4U2Self + S4U2Proxy), RBCD (msDS-AllowedToActOnBehalfOfOtherIdentity + low-priv path). 3 attack paths, distinct prerequisites. Sources: IATT 3 files (280+ lines) + HT 3 files (2100+ lines).
+- [ ] `kerberos-ticket-forging` — Golden Ticket (krbtgt hash → forged TGT), Silver Ticket (service hash → forged TGS), Diamond Ticket (legitimate TGT decryption/re-encryption, OPSEC), Sapphire Ticket (U2U PAC swap), Pass-the-Ticket injection. Sources: IATT kerberos-tickets.md + HT golden-ticket.md (400+) + silver-ticket.md (900+) + diamond-ticket.md (500+).
+- [ ] `acl-abuse` — GenericAll, GenericWrite, WriteDACL, WriteOwner, ForceChangePassword, SPN manipulation (→ targeted Kerberoasting), shadow credentials (msDS-KeyCredentialLink → PKINIT), AdminSDHolder persistence. Sources: IATT ad-adds-acl-ace.md (200+ lines) + HT acl-persistence-abuse/README.md (2500+ lines).
+
+**Batch 3: ADCS** — certificate services attack surface
+- [ ] `adcs-template-abuse` — ESC1 (enrollee-supplies-subject), ESC2 (any-purpose EKU), ESC3 (enrollment agent), ESC6 (EDITF_ATTRIBUTESUBJECTALTNAME2 flag). Template/CA flag misconfigurations where you request a cert with arbitrary SAN. Includes enumeration (Certipy find, Certify). Sources: IATT 5 files + HT ad-certificates/domain-escalation.md (2000+ lines).
+- [ ] `adcs-access-and-relay` — ESC4 (template ACL → modify to ESC1), ESC5 (CA object ACLs), ESC7 (ManageCA/ManageCertificates), ESC8 (NTLM relay to HTTP enrollment), ESC11 (NTLM relay to ICPR). ACL abuse on CA/templates + relay to enrollment endpoints. Sources: IATT 5 files + HT domain-escalation.md.
+- [ ] `adcs-persistence` — ESC9-10 (weak cert mapping), ESC12-15 (CA key theft, issuance policy, altSecIdentities, app policies), Golden Certificate (forging with stolen CA key), certificate theft (DPAPI/CAPI/CNG), account persistence via certificate mapping. Sources: IATT 8 files + HT certificate-theft.md (500+) + domain-persistence.md (400+) + account-persistence.md (350+).
+
+**Batch 4: Relay & Credentials** — authentication attacks
+- [ ] `auth-coercion-relay` — Coercion: PetitPotam (MS-EFSR), PrinterBug (MS-RPRN), DFSCoerce (MS-DFSNM), ShadowCoerce (MS-FSRVP), MS-EVEN. NTLM relay: ntlmrelayx to LDAP (machine account creation), SMB, AD CS, MSSQL. Kerberos relay: krbrelayx, mitm6 (IPv6 DNS takeover). LLMNR/NBNS poisoning (Responder). Sources: IATT 4 files (360+ lines) + HT printers-spooler.md (800+).
+- [ ] `credential-dumping` — DCSync (replication privilege abuse), NTDS extraction (VSS shadow copy, ntdsutil, secretsdump.py), SAM dump, LAPS passwords, gMSA passwords (KDS root key + GoldenGMSA), dMSA (BadSuccessor, 2025), DSRM credentials. Sources: IATT 7 files (490+ lines) + HT dcsync.md (300+) + laps.md (500+) + golden-dmsa-gmsa.md (500+).
+- [ ] `gpo-abuse` — GPO enumeration (GPOHound, BloodHound), exploitation (SharpGPOAbuse immediate tasks, PowerGPOAbuse registry values), SYSVOL/NETLOGON logon script poisoning, GPO-based lateral movement. Sources: IATT ad-adds-group-policy-objects.md (80 lines) + HT acl-persistence-abuse/README.md (GPO section).
+
+**Batch 5: Trust & Persistence** — domain boundaries + persistence
+- [ ] `trust-attacks` — Trust enumeration (nltest, PowerView), SID history injection (child → forest), inter-realm TGT forging (golden ticket across trusts), PAM trust exploitation (shadow principals), cross-forest trust abuse (inbound/outbound). Sources: IATT 4 files (199 lines) + HT 3 files (1100+ lines).
+- [ ] `sccm-exploitation` — SCCM enumeration (SharpSCCM, sccmhunter), management point relay → MSSQL → OSD secrets, client push exploitation, credential harvesting from SCCM policies. Sources: IATT deployment-sccm.md (100+ lines) + HT sccm-management-point-relay.md (400+ lines).
+- [ ] `ad-persistence` — DCShadow (stealthy DC attribute modification), skeleton key (LSASS credential cache), custom SSP injection, ADFS Golden SAML (DKM key → forged SAML tokens), AdminSDHolder ACL backdoors. Sources: HT dcshadow.md (350+) + skeleton-key.md (150+) + custom-ssp.md (100+) + IATT ad-adfs-federation-services.md (80 lines).
+
+### Phase 4b: Extended AD Skills
+
+Identified during survey. Important but lower-priority techniques or specialized targets.
+
+- [ ] `adidns-poisoning` — Dynamic DNS record injection, wildcard records, WPAD hijack. Source: IATT ad-integrated-dns.md (81 lines) + HT ad-dns-records.md (600+ lines).
+- [ ] `dcom-lateral-movement` — DCOM-based remote execution (MMC20, ShellWindows, ShellBrowserWindow, ExcelDDE). Source: IATT internal-dcom.md (80 lines).
+- [ ] `rodc-exploitation` — RODC enumeration, Kerberos Key List Attack. Source: IATT ad-adds-rodc.md (70 lines).
+- [ ] `ad-named-cves` — NoPAC (CVE-2021-42278), PrintNightmare (CVE-2021-1675), ZeroLogon (CVE-2020-1472), PrivExchange, MS14-068. Source: IATT CVE/ directory (5 files, 444+ lines) + HT printnightmare.md (600+).
+- [ ] `mssql-ad-abuse` — Linked server hopping, xp_cmdshell, impersonation chains, UNC path injection. Source: HT abusing-ad-mssql.md (500+ lines).
+- [ ] `deployment-targets` — MDT bootstrap creds, WSUS update poisoning, SCOM RunAs decryption. Source: IATT 3 files (120 lines combined).
 
 ## Phase 5: Core Skills — Privilege Escalation
 

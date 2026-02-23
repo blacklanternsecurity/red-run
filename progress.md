@@ -36,7 +36,49 @@ All 27 web technique skills built. Discovery skill reviewed and verified.
 
 ### Next Steps
 
-- Phase 3b extended web skills or Phase 4 (AD)
+- Phase 4 (AD) — survey complete, ready to build
+
+---
+
+## 2026-02-22 — Phase 4 AD Source Material Survey
+
+### Done
+
+- Surveyed `~/docs/InternalAllTheThings/docs/active-directory/` — 65+ files covering ADCS (17 files with ESC1-15), Kerberos delegation (3 deep), relay/coercion (4 deep), ACL/ACE (200+ lines), credential extraction (9 files), roasting (3 files), trust (4 files), deployment (4 files), CVEs (5 files)
+- Surveyed `~/docs/hacktricks/src/windows-hardening/active-directory-methodology/` — 42 files + 2 subdirs (acl-persistence-abuse with 2500+ lines, ad-certificates with ESC1-10 + theft + persistence). HackTricks adds: Diamond/Sapphire tickets, OPSEC annotations (Event IDs), 2025 enforcement context (RC4 phase-out, PAC validation, cert mapping), DNS abuse depth, SCCM relay chain
+- Surveyed `~/docs/PayloadsAllTheThings/` — minimal AD content, all redirects to InternalAllTheThings. Only LDAP injection (Phase 3b) relevant
+- Defined 16 skill splits (1 discovery + 15 technique) based on source material depth and attack workflow clustering
+- Defined 5 batches grouping skills by engagement phase and shared tooling
+- Updated findings.md with detailed topic depth table, ADCS ESC breakdown, HackTricks unique value analysis
+- Updated task_plan.md with full skill list, batching, source references per skill, and Phase 4b extended list
+
+### Skill Split Decisions
+
+- **Kerberos Roasting**: Kerberoasting + AS-REP combined (same workflow: enumerate → extract → crack). Timeroasting as thin subsection (only 16 lines in IATT).
+- **Kerberos Delegation**: All 3 types in one skill (like sql-injection-blind covering boolean/time/OOB). Distinct attack paths but shared context.
+- **Ticket Forging**: Golden + Silver + Diamond + Sapphire + PTT in one skill. All about forging/reusing tickets with stolen key material.
+- **ADCS split into 3**: Template misconfig (ESC1-3,6), ACL+relay (ESC4-5,7-8,11), mapping+persistence (ESC9-15, golden cert, theft). Grouped by attack primitive, not by ESC number.
+- **Auth Coercion + Relay in one skill**: Coercion and relay are a single workflow (coerce → relay → exploit). Includes NTLM relay, Kerberos relay, and LLMNR/NBNS poisoning.
+- **Credential Dumping**: Combined DCSync, NTDS, LAPS, gMSA, dMSA into one skill (all about extracting stored credentials). Shadow credentials goes in ACL abuse (requires ACL write access).
+- **Pass-the-Hash standalone**: Despite thin source material (136 lines), PTH/Over-PTH/PTK is used on every engagement and deserves visibility.
+- **Phase 4b**: 6 extended skills for ADIDNS, DCOM, RODC, named CVEs, MSSQL AD abuse, deployment targets. Important but lower priority than core 16.
+
+### Batch Rationale
+
+1. **Foundation** (4): ad-attack-discovery, kerberos-roasting, password-spraying, pass-the-hash — techniques used on every engagement, builds the routing hub
+2. **Kerberos & ACL** (3): delegation, ticket-forging, acl-abuse — advanced Kerberos + the ACL primitives that enable many attack chains
+3. **ADCS** (3): template-abuse, access-and-relay, persistence — self-contained attack surface, shared tools (Certipy/Certify)
+4. **Relay & Credentials** (3): auth-coercion-relay, credential-dumping, gpo-abuse — authentication chain attacks
+5. **Trust & Persistence** (3): trust-attacks, sccm-exploitation, ad-persistence — domain boundaries + long-term access
+
+### Observations
+
+- InternalAllTheThings is the primary source (breadth + modern tooling). HackTricks is essential for OPSEC context and modern ticket variants.
+- PayloadsAllTheThings has zero useful AD content — complete redirect to InternalAllTheThings.
+- ADCS is the deepest single topic across all sources (17 IATT files + deep HT subdirectory). Could justify 4-5 skills but 3 provides the right granularity.
+- HackTricks ACL subdirectory (2500+ lines) is the single most comprehensive file for AD privilege escalation.
+- Timeroasting, RODC, and deployment targets (MDT/WSUS) have thin coverage — appropriate for Phase 4b.
+- Tool ecosystem dominated by Rubeus, Impacket, mimikatz, bloodyAD, Certipy, NetExec — these will appear across almost every skill.
 
 ---
 
