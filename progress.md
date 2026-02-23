@@ -1,5 +1,46 @@
 # red-run — Session Log
 
+## 2026-02-23 — Phase 4 AD Batch 3: ADCS Skills
+
+### Done
+
+- Built 3 AD Batch 3 skills (ADCS) on `skills/ad` branch:
+  - `adcs-template-abuse` (457 lines) — ESC1 (enrollee-supplies-subject, SAN manipulation via Certipy `-upn`/Certify `/altname`, SID pinning for KB5014754 patched systems), ESC2 (Any Purpose EKU direct exploitation + No EKU subordinate CA implications), ESC3 (two-step enrollment agent: agent cert request + on-behalf-of enrollment for arbitrary user), ESC6 (EDITF_ATTRIBUTESUBJECTALTNAME2 CA flag enabling SAN via attribute on any template including default User, certreq.exe native exploitation). Shared enumeration (Certipy find -vulnerable, Certify find /enrolleeSuppliesSubject, NetExec LDAP adcs module), PKINIT/Schannel/LDAPS auth chains, UnPAC the Hash for NT hash extraction, certificate format conversion (PEM↔PFX). Decision tree routing by ESC variant, OPSEC comparison table.
+  - `adcs-access-and-relay` (475 lines) — ESC4 (template ACL abuse: modify via modifyCertTemplate.py/Certipy template/StandIn.exe + exploit as ESC1 + restore via `-save-old`/`-configuration`), ESC5 (PKI container write: create/publish malicious template or golden cert via CA key), ESC7 (ManageCA: add self as officer → enable SubCA → request/issue/retrieve cycle, enable ESC6 flag, RCE via CRL/file write; ManageCertificates: extension injection on pending requests), ESC8 (NTLM relay to HTTP enrollment: ntlmrelayx `--adcs` + Certipy relay + PetitPotam/SpoolSample/DFSCoerce coercion, Kerberos relay variant via krbrelayx + mitm6), ESC11 (NTLM relay to ICPR RPC: certipy relay `-target rpc://` + ntlmrelayx `-rpc-mode ICPR`). ESC8 vs ESC11 comparison table. Explicit OPSEC exception for relay attacks (inherently NTLM, Kerberos-first N/A). Cleanup commands for ESC4/ESC7.
+  - `adcs-persistence` (611 lines) — Golden Certificate (CA key extraction via certipy ca -backup/certutil -backupKey/mimikatz crypto, forge with Certipy/ForgeCert/Certify including -sid + -crl for KB5014754 Full Enforcement), user/machine cert persistence + renewal for extended lifetime, ESC9 (CT_FLAG_NO_SECURITY_EXTENSION + GenericWrite UPN swap via shadow credentials chain), ESC10 (StrongCertificateBindingEnforcement=0 bypass + CertificateMappingMethods UPN variant for computer account mapping), ESC12 (YubiHSM CA key extraction from registry + certutil CSP signing), ESC13 (issuance policy OID group link → automatic group membership in TGT), ESC14 (altSecIdentities explicit mapping with 6 format types: 3 strong + 3 weak, KB5014754 compatibility), ESC15/CVE-2024-49019 (application policies override on schema v1 templates: WebServer → Client Auth injection, Certificate Request Agent OID injection), certificate theft THEFT1-5 (CAPI/CNG patching via mimikatz, DPAPI user masterkey + SharpDPAPI, machine DPAPI_SYSTEM + LSA secret, filesystem PFX search + pfx2john cracking, UnPAC the Hash from PKINIT TGT), KB5014754 enforcement impact table by technique. OPSEC comparison table for all persistence methods.
+
+### Conventions Applied
+
+- All 3 skills follow Kerberos-first auth convention where applicable
+- `adcs-template-abuse`: All enumeration and certificate requests use -k -no-pass; PKINIT preferred for authentication
+- `adcs-access-and-relay`: Kerberos-first for ACL-based ESCs (4/5/7); explicit OPSEC exception for relay ESCs (8/11) — NTLM detection accepted as necessary cost
+- `adcs-persistence`: PKINIT for certificate auth; KB5014754 SID embedding documented for golden cert and mapping techniques
+- All skills include Mode, Engagement Logging, State Management sections per template
+- Discovery skill (`ad-attack-discovery`) already routes to all 3 ADCS skills (lines 424-427)
+
+### Inventory
+
+- Total skills: 40 (29 web + 10 AD + 1 orchestrator)
+- Total lines: ~19,000
+- Phase 4 Batch 3: COMPLETE (3/3 skills built, 1543 lines)
+- Remaining: Batches 4-5 (6 skills), Phase 4b (6 extended skills)
+
+### Next Session: Build Batch 4 (Relay & Credentials — 3 skills)
+
+**Branch**: `skills/ad`
+
+**Batch 4 skills to build:**
+
+1. `auth-coercion-relay` — PetitPotam, PrinterBug, DFSCoerce, ShadowCoerce, NTLM relay (ntlmrelayx to LDAP/SMB/ADCS/MSSQL), Kerberos relay (krbrelayx, mitm6), LLMNR/NBNS poisoning (Responder)
+
+2. `credential-dumping` — DCSync, NTDS extraction, SAM dump, LAPS, gMSA, dMSA (BadSuccessor), DSRM
+
+3. `gpo-abuse` — GPO enumeration (GPOHound), SharpGPOAbuse, SYSVOL/NETLOGON poisoning
+
+**After Batch 4**: Batch 5 (Trust & Persistence, 2 skills), then Phase 4b (6 extended skills).
+
+---
+
 ## 2026-02-23 — Phase 4 AD Batch 2: Kerberos & ACL Skills
 
 ### Done
