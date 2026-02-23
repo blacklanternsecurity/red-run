@@ -124,25 +124,51 @@ with later phases.
 
 ## Phase 4: Core Skills — Active Directory
 
-### Source Material Survey (do first)
-- [ ] Survey `~/docs/InternalAllTheThings` AD content — enumerate every technique file, assess depth and payload coverage
-- [ ] Survey `~/docs/hacktricks/src/windows-hardening/active-directory-methodology/` — cross-reference with InternalAllTheThings, identify unique content
-- [ ] Survey `~/docs/PayloadsAllTheThings` for any AD-adjacent content (LDAP injection already in Phase 3b)
-- [ ] Define concrete skill splits — decide which bullet points below become standalone skills vs. subsections, based on source material depth
-- [ ] Define batching — group skills for build sessions after survey is complete
+### Source Material Survey — COMPLETE
+- [x] Survey `~/docs/InternalAllTheThings` AD content — 65+ files, exceptional depth across ADCS, delegation, relay, ACL
+- [x] Survey `~/docs/hacktricks/src/windows-hardening/active-directory-methodology/` — 42 files + 2 subdirs, adds OPSEC/detection context, modern ticket variants, 2025 enforcement changes
+- [x] Survey `~/docs/PayloadsAllTheThings` — minimal AD content, all redirects to InternalAllTheThings. Only LDAP injection (Phase 3b) relevant.
+- [x] Define concrete skill splits — 16 skills (1 discovery + 15 technique), see below
+- [x] Define batching — 5 batches of 3-4 skills each, see below
 
-### Preliminary Skill List (refine after survey)
-- [ ] `ad-attack-discovery` — entry point: enumerate domain, identify attack paths, route to techniques
-- [ ] AD Enumeration (BloodHound, PowerView, LDAP)
-- [ ] Kerberoasting / AS-REP Roasting
-- [ ] Kerberos Delegation (unconstrained, constrained, RBCD)
-- [ ] ADCS Certificate Abuse (ESC1–ESC15) — likely 2-3 skills given 15 ESC files in InternalAllTheThings
-- [ ] NTLM Relay & Coercion
-- [ ] ACL/ACE Abuse (WriteDACL, GenericAll, GenericWrite)
-- [ ] Pass-the-Hash / Over-Pass-the-Hash
-- [ ] DCSync / NTDS Dumping
-- [ ] Trust Attacks (SID history, inter-realm TGT)
-- [ ] Password Spraying & Credential Harvesting
+### Skill List (16 skills: 1 discovery + 15 technique)
+
+**Batch 1: Foundation** — used on every AD engagement
+- [x] `ad-attack-discovery` — (511 lines) domain enum (BloodHound, PowerView, LDAP, netexec), 3 access levels (unauth/username/creds), attack surface mapping, routing table to all 15 technique skills
+- [x] `kerberos-roasting` — (436 lines) Kerberoasting (SPN-based TGS extraction) + AS-REP Roasting (pre-auth disabled) + Timeroasting (subsection) + targeted kerberoasting (ACL abuse) + kerberoasting without domain account (Charlie Clark technique)
+- [x] `password-spraying` — (508 lines) lockout policy enum, smart password generation, Kerberos pre-auth spray (kerbrute/SpearSpray), NTLM spray (NetExec multi-protocol), OWA spray, empty password/STATUS_PASSWORD_MUST_CHANGE technique. OPSEC exception documented.
+- [x] `pass-the-hash` — (473 lines) Pass-the-Key (AES256, lowest OPSEC), Over-Pass-the-Hash (NTLM→TGT), Pass-the-Ticket (ccache/kirbi), Direct PTH (last resort), lateral movement tools, OPSEC comparison table
+
+**Batch 2: Kerberos & ACL** — advanced Kerberos + privilege escalation
+- [x] `kerberos-delegation` — (508 lines) Unconstrained (TGT harvesting + SpoolService/PetitPotam/DFSCoerce coercion + krbrelayx), Constrained (S4U2Self + S4U2Proxy + SPN swapping + altservice), RBCD (msDS-AllowedToActOnBehalfOfOtherIdentity + machine account creation + cleanup). 3 attack paths with enumeration, exploitation, and cleanup for each.
+- [x] `kerberos-ticket-forging` — (463 lines) Golden Ticket (krbtgt hash/AES → forged TGT, cross-forest via extra-sid), Silver Ticket (service hash/AES → forged TGS, common SPN targets table, KB5021131 AES enforcement), Diamond Ticket (decrypt/modify/re-encrypt legitimate TGT, /ldap /opsec flags), Sapphire Ticket (U2U PAC swap via S4U2Self), Pass-the-Ticket (ccache/kirbi conversion + injection). OPSEC comparison table.
+- [x] `acl-abuse` — (554 lines) GenericAll/GenericWrite on users (4 options: shadow credentials, targeted Kerberoasting, ASREPRoast UAC, logon script), GenericAll on groups, WriteDACL (DCSync, GenericAll grant, OU inheritance), WriteOwner (ownership + DACL chain), ForceChangePassword, RBCD via computer write access, AdminSDHolder persistence (SDProp backdoor). Decision tree by ACL right + target type.
+
+**Batch 3: ADCS** — certificate services attack surface
+- [x] `adcs-template-abuse` — (457 lines) ESC1 (enrollee-supplies-subject + SAN manipulation + SID pinning for KB5014754), ESC2 (Any Purpose EKU + No EKU subordinate CA), ESC3 (enrollment agent two-step: agent cert + on-behalf-of), ESC6 (EDITF_ATTRIBUTESUBJECTALTNAME2 CA flag + certreq.exe native). Full enumeration (Certipy/Certify/NetExec), PKINIT/Schannel/LDAPS auth chains, UnPAC the Hash, certificate format conversion. Decision tree by ESC variant.
+- [x] `adcs-access-and-relay` — (475 lines) ESC4 (template ACL → modify to ESC1 + restore via -save-old), ESC5 (PKI container write → malicious template + golden cert path), ESC7 (ManageCA → officer + SubCA abuse + ESC6 flag enable + RCE via CRL write, ManageCertificates → extension injection), ESC8 (NTLM relay to HTTP enrollment via ntlmrelayx/certipy + PetitPotam/SpoolSample/DFSCoerce coercion + Kerberos relay variant via krbrelayx), ESC11 (NTLM relay to ICPR RPC). OPSEC exception documented for relay attacks (inherently NTLM). Cleanup commands for ESC4/ESC7.
+- [x] `adcs-persistence` — (611 lines) Golden Certificate (CA key extraction via certipy/certutil/mimikatz, forge with SID + CRL for KB5014754, ForgeCert), user/machine cert persistence + renewal, ESC9 (no security extension + UPN swap via shadow creds), ESC10 (weak mapping StrongCertificateBindingEnforcement=0, CertificateMappingMethods UPN), ESC12 (YubiHSM key extraction), ESC13 (issuance policy OID group link), ESC14 (altSecIdentities explicit mapping with strong/weak format table), ESC15/CVE-2024-49019 (application policies override on schema v1), certificate theft (THEFT1-5: CAPI/CNG export, DPAPI user/machine, filesystem search, UnPAC), KB5014754 enforcement impact table. OPSEC comparison for all techniques.
+
+**Batch 4: Relay & Credentials** — authentication attacks
+- [x] `auth-coercion-relay` — (581 lines) Coercion methods (PetitPotam/PrinterBug/DFSCoerce/ShadowCoerce/CheeseOunce with method reference table, NetExec coerce_plus), NTLM relay (ntlmrelayx to SMB/LDAP/AD CS/MSSQL, SOCKS proxy, machine account creation, RBCD setup), Kerberos relay (krbrelayx + Responder, krbrelayx + mitm6 IPv6 DNS, Kerberos reflection CVE-2025-33073), name resolution poisoning (Responder LLMNR/NBNS/WPAD, mitm6 IPv6, Inveigh), hash capture + NTLMv1 downgrade + cracking, advanced techniques (Drop the MIC CVE-2019-1040, Ghost Potato CVE-2019-1384, NTLM reflection). OPSEC exception documented (inherently NTLM/network-level). Signing requirement assessment workflow.
+- [x] `credential-dumping` — (603 lines) DCSync (targeted + full domain via secretsdump/mimikatz/NetExec, replication rights check), NTDS extraction (VSS shadow copy, ntdsutil IFM, vssadmin, offline secretsdump), SAM dump (remote + manual hive extraction, LSA secrets), LAPS (legacy ms-Mcs-AdmPwd + Windows LAPS 2023+ encrypted, NetExec/bloodyAD/PowerView), gMSA (authorized read + GoldenGMSA persistence via KDS root key), dMSA BadSuccessor (CVE-2025-21293, GenericWrite → successor → managed password), DSRM (DsrmAdminLogonBehavior, hash extraction), GPP passwords (MS14-025, cpassword decryption). OPSEC comparison table for all 12 techniques.
+- [x] `gpo-abuse` — (532 lines) GPO enumeration (GPOHound dump/analysis, BloodHound edges, PowerView ACL scan, NetExec), exploitation via 7 methods (immediate task, startup/logon scripts, registry Run key, local admin assignment, user rights), 5 tools (SharpGPOAbuse/PowerGPOAbuse/pyGPOAbuse/GroupPolicyBackdoor/StandIn), SYSVOL/NETLOGON logon script poisoning (VBS/BAT/PS1 prepend technique), GPP password extraction (Get-GPPPassword/NetExec/manual openssl decryption), cleanup procedures (GroupPolicyBackdoor state-based + manual). GPO refresh timing documented.
+
+**Batch 5: Trust & Persistence** — domain boundaries + persistence
+- [x] `trust-attacks` — (464 lines) Trust enumeration (nltest/PowerView/AD Module/NetExec, trust property assessment: SIDFilteringQuarantined/SelectiveAuthentication/ForestTransitive/TGTDelegation), SID history injection (golden ticket + extra SID child→parent via Mimikatz/Rubeus/ticketer.py, diamond ticket variant for stealth, raiseChild.py automation), inter-realm TGT forging (trust key extraction via lsadump::trust, referral ticket creation, service ticket request in target domain), cross-forest trust abuse (trust account authentication + Kerberoasting, cross-forest RBCD via S4U, SID filtering bypass assessment), PAM trust exploitation (shadow principal enumeration, group membership manipulation via bloodyAD/Set-ADObject). PAC validation considerations for 2025+ enforcement mode. Trust type decision tree.
+- [x] `sccm-exploitation` — (510 lines) SCCM enumeration (sccmhunter find/show/http, SharpSCCM, unauthenticated MP HTTP endpoints: MPKEYINFORMATIONMEDIA/MPLIST/SITESIGNCERT), NAA extraction via policy request CRED-2 (machine account creation + sccmwtf + policysecretunobfuscate.py), NAA from WMI/DPAPI CRED-3 (SharpSCCM local secrets, SharpDPAPI blob decryption), WMI repository CRED-4 (SharpDPAPI/SharpSCCM disk search), MP relay to MSSQL TAKEOVER-1 (ntlmrelayx + PetitPotam coercion, SOCKS proxy, RBAC_Admins SQL injection, OSD policy secret extraction + PXEthief decryption), client push relay ELEVATE-2 (SharpSCCM invoke client-push), PXE boot harvesting CRED-1 (pxethiefy/SharpPXE, Hashcat mode 31100), database credential extraction CRED-5 (Mimikatz misc::sccm, SQLRecon), application deployment lateral movement (MalSCCM full chain + SharpSCCM exec), SCCM share looting (CMLoot). Attack path decision tree by access level.
+- [x] `ad-persistence` — (600 lines) Golden Certificate (CA key extraction via certipy/certutil/mimikatz, forge with SID embedding for KB5014754, ForgeCert/Certify, certificate renewal + enrollment agent persistence), DCShadow (dual mimikatz instances, SIDHistory/primaryGroupID/ntSecurityDescriptor modification, /stack for batching, delegated DCShadow via Set-DCShadowPermissions), Skeleton Key (misc::skeleton, PPL bypass via !processprotect, /letaes compatibility), Custom SSP (mimilib.dll persistent via registry + memssp in-memory non-persistent, credential logging to kiwissp.log/mimilsa.log), security descriptor backdoors (WMI via Set-RemoteWMI, WinRM via Set-RemotePSRemoting, registry via DAMP Add-RemoteRegBackdoor for remote hash retrieval), ADFS Golden SAML (DKM key extraction from AD contact object, ADFSDump WID extraction, ADFSpoof/Shimit token forging, O365 support), SID history persistence (via DCShadow/golden ticket/direct modification). Persistence decision tree by stealth and reboot survival. OPSEC comparison table.
+
+### Phase 4b: Extended AD Skills
+
+Identified during survey. Important but lower-priority techniques or specialized targets.
+
+- [ ] `adidns-poisoning` — Dynamic DNS record injection, wildcard records, WPAD hijack. Source: IATT ad-integrated-dns.md (81 lines) + HT ad-dns-records.md (600+ lines).
+- [ ] `dcom-lateral-movement` — DCOM-based remote execution (MMC20, ShellWindows, ShellBrowserWindow, ExcelDDE). Source: IATT internal-dcom.md (80 lines).
+- [ ] `rodc-exploitation` — RODC enumeration, Kerberos Key List Attack. Source: IATT ad-adds-rodc.md (70 lines).
+- [ ] `ad-named-cves` — NoPAC (CVE-2021-42278), PrintNightmare (CVE-2021-1675), ZeroLogon (CVE-2020-1472), PrivExchange, MS14-068. Source: IATT CVE/ directory (5 files, 444+ lines) + HT printnightmare.md (600+).
+- [ ] `mssql-ad-abuse` — Linked server hopping, xp_cmdshell, impersonation chains, UNC path injection. Source: HT abusing-ad-mssql.md (500+ lines).
+- [ ] `deployment-targets` — MDT bootstrap creds, WSUS update poisoning, SCOM RunAs decryption. Source: IATT 3 files (120 lines combined).
 
 ## Phase 5: Core Skills — Privilege Escalation
 
