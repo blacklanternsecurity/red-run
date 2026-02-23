@@ -1,5 +1,28 @@
 # red-run — Session Log
 
+## 2026-02-23 — Phase 5 Batch 4: Linux Extended Skills (Phase 5 COMPLETE)
+
+### Done
+
+- Built 2 Linux Extended privesc skills (Batch 4) on `skills/privesc` branch:
+  - `linux-file-path-abuse` (838 lines) — 10-step workflow: writable critical files (/etc/passwd UID 0 backdoor + hash generation, /etc/shadow root hash replacement, /etc/sudoers NOPASSWD injection, SSH authorized_keys to root), NFS no_root_squash (SUID shell C payload via NFS mount, bash -p copy, nosuid/noexec troubleshooting), Docker group escape (host mount -v /, SUID bash creation, /etc/passwd modification, SSH key injection, docker.sock API curl workflow, nsenter --privileged --pid=host), LXD/LXC group escape (privileged container with security.privileged=true and recursive host disk device, init + image import workflow), disk group (debugfs /etc/shadow + SSH key + bash_history extraction, dd full partition dump, hashcat/john crack workflow), shared library hijacking (missing .so via ldd/strace on SUID binaries, constructor C payload, RPATH/RUNPATH writable directory detection with readelf, /etc/ld.so.conf.d/ cache poisoning, Python os.py and Perl strict.pm path hijack), PATH hijacking (writable PATH directory detection, payload binary with passthrough to real command, staff group /usr/local/bin), profile script injection (.bashrc root-conditional SUID creation, /etc/profile.d/ system-wide with zzz- prefix, reverse shell variant), cleanup checklist.
+  - `linux-kernel-exploits` (947 lines) — 7-step workflow: kernel/environment identification (version, distro, arch, protections: KASLR/kptr_restrict/ptrace_scope/dmesg_restrict/SELinux/AppArmor), exploit suggesters (linux-exploit-suggester.sh with version override, les2.pl, manual searchsploit, quick CVE version table with 10 major CVEs ranked by reliability), DirtyPipe CVE-2022-0847 (full C exploit source: /etc/passwd overwrite with offset calculation + page boundary check, affected 5.8-5.16.11/5.15.25), DirtyCow CVE-2016-5195 (full C exploit source: race condition madvise/proc-self-mem threads with 30s sleep, stability warning), GameOver(lay) CVE-2023-0386 (overlayfs user namespace, Ubuntu-specific, FUSE mount + trigger workflow), Netfilter CVE-2023-32233, route4 CVE-2022-2588, legacy CVE quick reference table (7 entries with ExploitDB IDs), pre-compiled exploit repos (lucyoa, bwbwbwbw, Kabot), container kernel escapes (CVE-2022-0492 cgroup release_agent full exploit: mount cgroup + notify_on_release + overlayfs perdir discovery, hostPID nsenter), restricted shell escape (GTFOBins: 6 editors, 3 pagers, 6 interpreters, 7 system utilities, 3 file utilities; PATH manipulation; bash BASH_CMDS/declare tricks; SSH force-bash/ShellShock; Python __builtins__/__subclasses__ sandbox escape; Lua encoded bypass + debug.debug()), chroot escape (classic mkdir+chroot+chdir C code, Python variant, FD escape with fchdir, mount-based /proc/1/root, chw00t tool), kernel protection reference (KASLR/SMEP/SMAP/KPTI, grsecurity/PaX detection, SELinux/AppArmor status, ptrace_scope levels).
+- Updated README.md: 11 privesc skills (was 9), added new skill rows, status line (57 skills, ~29,400 lines), removed privesc from Planned section.
+- Updated task_plan.md: Batch 4 skills marked complete with line counts and technique summaries.
+- **Phase 5 (Privilege Escalation) is now COMPLETE**: 11 skills (6 Windows + 5 Linux), 6,712 lines total.
+
+### Inventory
+
+- Total skills: 57 (29 web + 16 AD + 11 privesc + 1 orchestrator)
+- Total lines: ~29,400
+- Phase 5: COMPLETE (all 4 batches, 11 skills)
+
+### Next: Phase 6 (Infrastructure & Network) or AD Extended (Phase 3b)
+
+**Branch**: `skills/privesc` — ready for PR to main
+
+---
+
 ## 2026-02-23 — Phase 5 Batch 3: Linux Foundation Skills
 
 ### Done
