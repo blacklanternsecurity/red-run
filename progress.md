@@ -1,5 +1,44 @@
 # red-run — Session Log
 
+## 2026-02-23 — Phase 4 AD Batch 2: Kerberos & ACL Skills
+
+### Done
+
+- Built 3 AD Batch 2 skills on `skills/ad` branch:
+  - `kerberos-delegation` (508 lines) — Unconstrained Delegation (TGT harvesting via SpoolService/PetitPotam/DFSCoerce coercion, krbrelayx for Linux-based capture, attacker-created computer with unconstrained flag), Constrained Delegation (S4U2Self + S4U2Proxy with Impacket getST.py and Rubeus, SPN swapping via /altservice for LDAP/CIFS/HTTP/HOST/WSMAN, cross-domain S4U), RBCD (machine account creation, msDS-AllowedToActOnBehalfOfOtherIdentity setup via rbcd.py/bloodyAD/PowerView, S4U exploitation, cleanup commands). Decision tree by finding type, enumeration for all 3 types, OPSEC comparison table.
+  - `kerberos-ticket-forging` (463 lines) — Golden Ticket (Impacket ticketer.py/Rubeus/mimikatz with AES256 preferred, cross-forest via extra-sid, realistic lifetime tuning), Silver Ticket (service-specific TGS forging, common SPN target table with exploitation examples, KB5021131 AES enforcement note, duration flag), Diamond Ticket (legitimate TGT decrypt/modify PAC/re-encrypt, Rubeus /tgtdeleg /ldap /opsec flags, Impacket -request flag, service ticket re-cutting), Sapphire Ticket (U2U S4U2Self PAC swap technique, Impacket --u2u --s4u2self), Pass-the-Ticket (ccache/kirbi conversion, Linux/Windows injection). Ticket type decision table ranked by OPSEC, comparison table.
+  - `acl-abuse` (554 lines) — Enumeration (bloodyAD writable objects, PowerView ACL scanner, BloodHound cypher queries), GenericAll/GenericWrite on User (4 options ranked by OPSEC: shadow credentials via pywhisker/bloodyAD/Certipy + PKINIT + S4U2Self for computer accounts, targeted Kerberoasting via SPN manipulation, ASREPRoast via UAC modification, logon script path), GenericAll on Group (add to privileged group), WriteDACL (DCSync rights grant, GenericAll grant, OU inheritance via dacledit.py), WriteOwner (ownership + DACL chain), ForceChangePassword (destructive last resort), Computer write → RBCD (routes to kerberos-delegation), AdminSDHolder persistence (SDProp propagation backdoor). Decision tree by ACL right + target type, OPSEC comparison table.
+
+### Conventions Applied
+
+- All 3 skills follow Kerberos-first auth convention from CLAUDE.md
+- `kerberos-delegation`: All enumeration and exploitation uses -k -no-pass / --use-kcache; RBCD cleanup commands included
+- `kerberos-ticket-forging`: Diamond/Sapphire preferred over Golden for OPSEC; AES256 mandatory for modern domains
+- `acl-abuse`: Shadow credentials ranked first (lowest OPSEC); password reset marked destructive and ranked last; cleanup commands for every technique
+- All skills include Mode, Engagement Logging, State Management sections per template
+
+### Inventory
+
+- Total skills: 37 (29 web + 7 AD + 1 orchestrator)
+- Phase 4 Batch 2: COMPLETE (3/3 skills built)
+- Remaining: Batches 3-5 (9 skills), Phase 4b (6 extended skills)
+
+### Next Session: Build Batch 3 (ADCS — 3 skills)
+
+**Branch**: `skills/ad`
+
+**Batch 3 skills to build:**
+
+1. `adcs-template-abuse` — ESC1 (enrollee-supplies-subject), ESC2 (any-purpose EKU), ESC3 (enrollment agent), ESC6 (EDITF_ATTRIBUTESUBJECTALTNAME2 flag). Template/CA flag misconfigurations. Sources: IATT 5 files + HT ad-certificates/domain-escalation.md (2000+ lines).
+
+2. `adcs-access-and-relay` — ESC4 (template ACL → modify to ESC1), ESC5 (CA object ACLs), ESC7 (ManageCA/ManageCertificates), ESC8 (NTLM relay to HTTP enrollment), ESC11 (NTLM relay to ICPR). ACL abuse on CA/templates + relay to enrollment endpoints. Sources: IATT 5 files + HT domain-escalation.md.
+
+3. `adcs-persistence` — ESC9-10 (weak cert mapping), ESC12-15, Golden Certificate, certificate theft, account persistence via certificate mapping. Sources: IATT 8 files + HT certificate-theft.md (500+) + domain-persistence.md (400+).
+
+**After Batch 3**: Batch 4 (Relay & Credentials, 3 skills), Batch 5 (Trust & Persistence, 3 skills), then Phase 4b (6 extended skills).
+
+---
+
 ## 2026-02-22 — Phase 4 AD Batch 1: Foundation Skills
 
 ### Done
