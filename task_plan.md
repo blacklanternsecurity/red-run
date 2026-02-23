@@ -172,9 +172,29 @@ Identified during survey. Important but lower-priority techniques or specialized
 
 ## Phase 5: Core Skills — Privilege Escalation
 
-- [ ] Windows Privesc (token impersonation, service abuse, DLL hijack, UAC bypass)
-- [ ] Linux Privesc (SUID, sudo, capabilities, cron, kernel exploits)
-- [ ] macOS Privesc (TCC bypass, dylib hijack, SIP bypass)
+### Source Material Survey
+- [ ] Survey `~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/` — token impersonation (Potato family), service misconfig, DLL hijack, UAC bypass, unquoted paths, AlwaysInstallElevated, PrintNightmare local, named pipes
+- [ ] Survey `~/docs/hacktricks/src/linux-hardening/privilege-escalation/` — SUID/SGID, sudo misconfig, capabilities, cron/systemd timers, NFS no_root_squash, kernel exploits, wildcard injection, PATH abuse, Docker group escape
+- [ ] Survey `~/docs/hacktricks/src/macos-hardening/` — TCC bypass, dylib hijack, SIP bypass, authorization plugins, PPPC abuse (assess depth — may defer if thin)
+- [ ] Survey `~/docs/InternalAllTheThings/` for privesc content (check docs/redteam/ and any privesc directories)
+- [ ] Survey `~/docs/PayloadsAllTheThings/` for privesc content (check Methodology and Command Execution directories)
+- [ ] Define concrete skill splits — expect Windows and Linux to need multiple skills each (similar density to AD). macOS likely 1 skill or deferred.
+- [ ] Define batching — group by platform, then by attack primitive
+
+### Skill List (TBD after survey)
+
+Placeholder topics — survey will determine actual skill splits:
+
+**Windows**
+- [ ] Windows Privesc — token impersonation (Potato family: JuicyPotato, PrintSpoofer, GodPotato, Sweet/Rogue), service abuse (unquoted paths, weak permissions, DLL hijack), registry (AlwaysInstallElevated, AutoRun), UAC bypass, credential access (SAM/DPAPI/vault), scheduled tasks, named pipes
+- [ ] Tools: WinPEAS, PowerUp, SharpUp, BeRoot, Seatbelt
+
+**Linux**
+- [ ] Linux Privesc — SUID/SGID, sudo (GTFOBins, CVE-2021-3156), capabilities, cron/systemd abuse, NFS no_root_squash, kernel exploits (DirtyPipe, DirtyCow, GameOver(lay)), wildcard injection, PATH hijack, Docker/LXD group, writable /etc/passwd
+- [ ] Tools: LinPEAS, pspy, linux-exploit-suggester, GTFOBins
+
+**macOS** (contingent on source material depth)
+- [ ] macOS Privesc — TCC bypass, dylib hijack, SIP bypass, authorization plugins
 
 ## Phase 6: Core Skills — Infrastructure & Network
 
