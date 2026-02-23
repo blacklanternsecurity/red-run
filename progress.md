@@ -1,5 +1,43 @@
 # red-run — Session Log
 
+## 2026-02-23 — Phase 4 AD Batch 4: Relay & Credentials Skills
+
+### Done
+
+- Built 3 AD Batch 4 skills (Relay & Credentials) on `skills/ad` branch:
+  - `auth-coercion-relay` (581 lines) — 6 coercion methods (PetitPotam MS-EFSR, PrinterBug MS-RPRN, DFSCoerce MS-DFSNM, ShadowCoerce MS-FSRVP, CheeseOunce MS-EVEN, MSSQL xp_dirtree) with reference table and NetExec coerce_plus automation. NTLM relay to 4 targets (SMB code execution, LDAP machine account creation + RBCD, AD CS certificate enrollment, MSSQL command execution) with SOCKS proxy support. Kerberos relay 3 methods (krbrelayx + Responder LLMNR, krbrelayx + mitm6 IPv6 DNS, Kerberos reflection CVE-2025-33073). Name resolution poisoning (Responder LLMNR/NBNS/WPAD, mitm6 IPv6, Inveigh Windows). Hash capture with NTLMv1 downgrade (shuck.sh/crack.sh). Advanced relay techniques (Drop the MIC CVE-2019-1040, Ghost Potato CVE-2019-1384, NTLM reflection CVE-2025-33073). Signing requirement assessment workflow (SMB signing by OS, LDAP signing check, AD CS enrollment check, WebClient status).
+  - `credential-dumping` (603 lines) — DCSync (targeted single user + full domain via secretsdump/mimikatz/NetExec, replication rights verification). NTDS extraction 3 methods (VSS via secretsdump -use-vss, ntdsutil IFM, vssadmin manual + offline secretsdump). SAM dump (remote via secretsdump/NetExec, manual hive export, LSA secrets + cached domain creds). LAPS (legacy ms-Mcs-AdmPwd plaintext read via NetExec/bloodyAD/PowerView + Windows LAPS 2023+ encrypted attribute with authorized decryption). gMSA (authorized read via NetExec/bloodyAD/gMSADumper/DSInternals + GoldenGMSA persistence via KDS root key extraction). dMSA BadSuccessor CVE-2025-21293 (GenericWrite on dMSA → set successor → read managed password). DSRM (DsrmAdminLogonBehavior registry + hash extraction via secretsdump/mimikatz). GPP passwords MS14-025 (Get-GPPPassword/NetExec/manual openssl AES decryption with published Microsoft key). OPSEC comparison table for all 12 techniques.
+  - `gpo-abuse` (532 lines) — GPO enumeration (GPOHound dump/analysis, BloodHound edge detection, PowerView ACL scan, NetExec gpo_enum). Exploitation via 7 methods: immediate tasks (SharpGPOAbuse/PowerGPOAbuse/pyGPOAbuse/GroupPolicyBackdoor with state-based cleanup), startup/logon scripts, registry Run key via GPP, local admin assignment, user rights assignment (also StandIn tool). SYSVOL/NETLOGON logon script poisoning (VBS/BAT/PS1 prepend techniques preserving original script, write access verification). GPP password extraction (automated via Get-GPPPassword.py/NetExec + manual SYSVOL search and openssl decryption). Cleanup section (GroupPolicyBackdoor state restore + manual procedures). GPO refresh timing (90 min + random offset, DC 5 min).
+
+### Conventions Applied
+
+- `auth-coercion-relay`: Explicit OPSEC exception — relay/coercion is inherently network-level, Kerberos-first does not apply to the attack itself. Enumeration commands still use -k -no-pass.
+- `credential-dumping`: Kerberos-first for all remote operations (secretsdump -k -no-pass, bloodyAD -k -no-pass, NetExec --use-kcache). Filesystem operations (SAM/NTDS hive extraction) exempt.
+- `gpo-abuse`: pyGPOAbuse uses -hashes, GroupPolicyBackdoor supports -k. Windows tools use domain session. GPP extraction via Get-GPPPassword.py -k -no-pass.
+- All skills include Mode, Engagement Logging, State Management sections per template
+- Discovery skill (`ad-attack-discovery`) already routes to all 3 Batch 4 skills (SMB signing -> auth-coercion-relay, DCSync rights/LAPS/gMSA -> credential-dumping, GPO write -> gpo-abuse)
+
+### Inventory
+
+- Total skills: 43 (29 web + 13 AD + 1 orchestrator)
+- Total lines: ~20,700
+- Phase 4 Batch 4: COMPLETE (3/3 skills built, 1716 lines)
+- Remaining: Batch 5 (3 skills), Phase 4b (6 extended skills)
+
+### Next Session: Build Batch 5 (Trust & Persistence — 3 skills)
+
+**Branch**: `skills/ad`
+
+**Batch 5 skills to build:**
+
+1. `trust-attacks` — Trust enumeration (nltest, PowerView), SID history injection (child -> forest), inter-realm TGT forging, PAM trust exploitation, cross-forest trust abuse
+2. `sccm-exploitation` — SCCM enumeration (SharpSCCM, sccmhunter), management point relay, client push exploitation, credential harvesting
+3. `ad-persistence` — DCShadow, skeleton key, custom SSP, ADFS Golden SAML, AdminSDHolder ACL backdoors
+
+**After Batch 5**: Phase 4b (6 extended AD skills), then Phase 5 (Privilege Escalation).
+
+---
+
 ## 2026-02-23 — Phase 4 AD Batch 3: ADCS Skills
 
 ### Done
