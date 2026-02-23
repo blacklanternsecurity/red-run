@@ -134,10 +134,10 @@ with later phases.
 ### Skill List (16 skills: 1 discovery + 15 technique)
 
 **Batch 1: Foundation** — used on every AD engagement
-- [ ] `ad-attack-discovery` — domain enum (BloodHound, PowerView, LDAP, netexec), attack surface mapping, routing to all technique skills. AD equivalent of web-vuln-discovery.
-- [ ] `kerberos-roasting` — Kerberoasting (SPN-based TGS extraction) + AS-REP Roasting (pre-auth disabled) + Timeroasting (thin, subsection). Same workflow: enumerate → extract → crack offline. Sources: IATT 3 files + HT kerberoast.md (500+ lines) + asreproast.md (250+ lines).
-- [ ] `password-spraying` — domain spray (NetExec, kerbrute, DomainPasswordSpray), lockout policy enumeration, username enumeration, valid account detection. Source: IATT pwd-spraying.md + HT password-spraying.md (1000+ lines).
-- [ ] `pass-the-hash` — PTH (NTLM), Over-Pass-the-Hash (NTLM hash → TGT), Pass-the-Key (AES key). Universal credential reuse without cracking. Sources: IATT 3 files (136 lines combined) + HT over-pass-the-hash.md + pass-the-ticket.md.
+- [x] `ad-attack-discovery` — (511 lines) domain enum (BloodHound, PowerView, LDAP, netexec), 3 access levels (unauth/username/creds), attack surface mapping, routing table to all 15 technique skills
+- [x] `kerberos-roasting` — (436 lines) Kerberoasting (SPN-based TGS extraction) + AS-REP Roasting (pre-auth disabled) + Timeroasting (subsection) + targeted kerberoasting (ACL abuse) + kerberoasting without domain account (Charlie Clark technique)
+- [x] `password-spraying` — (508 lines) lockout policy enum, smart password generation, Kerberos pre-auth spray (kerbrute/SpearSpray), NTLM spray (NetExec multi-protocol), OWA spray, empty password/STATUS_PASSWORD_MUST_CHANGE technique. OPSEC exception documented.
+- [x] `pass-the-hash` — (473 lines) Pass-the-Key (AES256, lowest OPSEC), Over-Pass-the-Hash (NTLM→TGT), Pass-the-Ticket (ccache/kirbi), Direct PTH (last resort), lateral movement tools, OPSEC comparison table
 
 **Batch 2: Kerberos & ACL** — advanced Kerberos + privilege escalation
 - [ ] `kerberos-delegation` — Unconstrained (TGT harvesting + SpoolService coercion), Constrained (S4U2Self + S4U2Proxy), RBCD (msDS-AllowedToActOnBehalfOfOtherIdentity + low-priv path). 3 attack paths, distinct prerequisites. Sources: IATT 3 files (280+ lines) + HT 3 files (2100+ lines).

@@ -1,5 +1,37 @@
 # red-run — Session Log
 
+## 2026-02-22 — Phase 4 AD Batch 1: Foundation Skills
+
+### Done
+
+- Built 4 AD foundation skills (Batch 1) on `skills/ad` branch:
+  - `ad-attack-discovery` (511 lines) — domain enumeration at 3 access levels (unauth/username-only/full creds), BloodHound collection (bloodhound-python, rusthound-ce, SharpHound, SOAPHound), ADCS template enumeration (certipy), targeted enumeration (SPNs, delegation, ACLs, groups, LAPS/gMSA, trusts, shares, sessions, SCCM), full routing table mapping 30+ findings to 15 technique skills with OPSEC-prioritized order
+  - `kerberos-roasting` (436 lines) — Kerberoasting (Impacket/Rubeus/NetExec/PowerView with OPSEC flags: /rc4opsec, /delay, /jitter, /pwdsetbefore), AS-REP Roasting (GetNPUsers.py/Rubeus/bloodyAD), kerberoasting without domain account (Charlie Clark technique via altered sname field), targeted kerberoasting (ACL abuse via targetedKerberoast.py), Timeroasting (timeroast.py, unauthenticated), cracking reference table (hashcat modes 13100/18200/19600/19700/31300)
+  - `password-spraying` (508 lines) — lockout policy enumeration (NetExec/enum4linux/rpcclient/LDAP, plus Fine-Grained PSOs), smart password generation (season+year, company patterns, SpearSpray per-user templates), pre-spray badPwdCount safety check, Kerberos pre-auth spray (kerbrute/SpearSpray — Event 4771), NTLM spray fallback (NetExec multi-protocol: SMB/LDAP/WinRM/RDP/MSSQL), OWA spray (Ruler/MailSniper/Metasploit), empty password STATUS_PASSWORD_MUST_CHANGE technique, OPSEC exception documented
+  - `pass-the-hash` (473 lines) — decision tree by credential material (AES key → PTK, NTLM hash → OPTH, ticket → PTT, last resort → direct PTH), Pass-the-Key with AES256 (/opsec flag, etype 0x12 = normal traffic), Over-Pass-the-Hash (getTGT.py -hashes + Rubeus /rc4:), Pass-the-Ticket (ccache/kirbi conversion, ticket injection), Direct PTH (NetExec -H, Impacket -hashes, mimikatz sekurlsa::pth, RDP Restricted Admin), lateral movement tool comparison (psexec/smbexec/wmiexec/atexec/dcomexec noise levels), OPSEC comparison summary table
+
+### Conventions Applied
+
+- All 4 skills follow Kerberos-first auth convention from CLAUDE.md
+- `ad-attack-discovery`: Notes it may start unauthenticated; switches to Kerberos once creds obtained
+- `password-spraying`: Documents OPSEC exception (testing credentials = Kerberos-first doesn't apply)
+- `kerberos-roasting`: Kerberos-first Prerequisites with getTGT.py workflow
+- `pass-the-hash`: Defaults to AES/Kerberos techniques; direct NTLM PTH explicitly marked as last resort
+- All skills include Mode, Engagement Logging, State Management sections per template
+
+### Inventory
+
+- Total skills: 34 (29 web + 4 AD + 1 orchestrator)
+- Phase 4 Batch 1: COMPLETE (4/4 skills built)
+- Remaining: Batches 2-5 (12 skills), Phase 4b (6 extended skills)
+
+### Next Steps
+
+- Build Batch 2: `kerberos-delegation`, `kerberos-ticket-forging`, `acl-abuse`
+- Then Batch 3 (ADCS): `adcs-template-abuse`, `adcs-access-and-relay`, `adcs-persistence`
+
+---
+
 ## 2026-02-22 — IDOR + CORS Misconfiguration Skills
 
 ### Done
