@@ -170,26 +170,6 @@ Every skill reads `state.md` on activation and writes back on completion. The or
 
 ## Installation
 
-### Reference repositories
-
-Skills reference `$RED_RUN_DOCS` for deep payload content beyond what's embedded. Clone these anywhere (optional — skills degrade gracefully without them):
-
-```bash
-# Clone to any directory you like
-git clone https://github.com/security-research/public-security-references /path/to/docs/public-security-references
-git clone https://github.com/security-research/public-security-references /path/to/docs/public-security-references
-git clone https://github.com/public-security-references-wiki/public-security-references /path/to/docs/public-security-references
-```
-
-Then set the `RED_RUN_DOCS` environment variable to point to your docs directory:
-
-```bash
-# Add to your shell profile (~/.bashrc, ~/.zshrc, etc.)
-export RED_RUN_DOCS="/path/to/docs"
-```
-
-If `RED_RUN_DOCS` is not set, skills fall back to `~/docs/`.
-
 ### Install
 
 ```bash
@@ -204,18 +184,6 @@ If `RED_RUN_DOCS` is not set, skills fall back to `~/docs/`.
 ```
 
 Skills install to `~/.claude/skills/red-run-<skill-name>/SKILL.md`.
-
-## Source material
-
-Skills synthesize content from three reference repositories:
-
-| Repo | Strength |
-|------|----------|
-| [public-security-references](https://github.com/security-research/public-security-references) | Web payloads, injection techniques — deepest per-technique coverage |
-| [public-security-references](https://github.com/security-research/public-security-references) | AD, red team ops, cloud, evasion — 15 ADCS ESC files, full delegation chain |
-| [public-security-references](https://github.com/public-security-references-wiki/public-security-references) | Broadest scope — binary exploitation, macOS, mobile, network protocols |
-
-Each skill embeds the top 2-3 payloads per variant (80% coverage) and references `$RED_RUN_DOCS` for WAF bypass, edge cases, and the long tail.
 
 ## Running Claude Code for pentesting
 
