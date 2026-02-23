@@ -108,9 +108,9 @@ and any payloads that already succeeded.
 For edge cases, WAF bypass, or alternative payloads beyond what's embedded above:
 
 ```
-Read ~/docs/PayloadsAllTheThings/<relevant-path>
-Read ~/docs/hacktricks/src/<relevant-path>
-Read ~/docs/InternalAllTheThings/<relevant-path>
+Read $RED_RUN_DOCS/PayloadsAllTheThings/<relevant-path>
+Read $RED_RUN_DOCS/hacktricks/src/<relevant-path>
+Read $RED_RUN_DOCS/InternalAllTheThings/<relevant-path>
 ```
 
 ## Troubleshooting

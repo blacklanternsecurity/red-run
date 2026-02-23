@@ -562,9 +562,9 @@ PoC, current mode, and impact assessment.
 For expanded payloads, edge cases, and framework-specific bypasses:
 
 ```
-Read ~/docs/PayloadsAllTheThings/Cross-Site Request Forgery/README.md
-Read ~/docs/hacktricks/src/pentesting-web/csrf-cross-site-request-forgery.md
-Read ~/docs/hacktricks/src/pentesting-web/hacking-with-cookies/README.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/Cross-Site Request Forgery/README.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/csrf-cross-site-request-forgery.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/hacking-with-cookies/README.md
 ```
 
 ## Troubleshooting

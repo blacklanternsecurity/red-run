@@ -528,10 +528,10 @@ current mode.
 For additional UAC bypass techniques, UACMe bypass index, or edge cases:
 
 ```
-Read ~/docs/hacktricks/src/windows-hardening/authentication-credentials-uac-and-efs/uac-user-account-control.md
-Read ~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/com-hijacking.md
-Read ~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/privilege-escalation-with-autorun-binaries.md
-Read ~/docs/InternalAllTheThings/docs/redteam/escalation/windows-privilege-escalation.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/authentication-credentials-uac-and-efs/uac-user-account-control.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/windows-local-privilege-escalation/com-hijacking.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/windows-local-privilege-escalation/privilege-escalation-with-autorun-binaries.md
+Read $RED_RUN_DOCS/InternalAllTheThings/docs/redteam/escalation/windows-privilege-escalation.md
 ```
 
 **UACMe project** (comprehensive bypass collection): https://github.com/hfiref0x/UACME

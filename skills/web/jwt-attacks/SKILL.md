@@ -517,8 +517,8 @@ algorithm, current mode, and any secrets recovered.
 For edge cases, additional techniques, and tool-specific options:
 
 ```
-Read ~/docs/PayloadsAllTheThings/JSON Web Token/README.md
-Read ~/docs/hacktricks/src/pentesting-web/hacking-jwt-json-web-tokens.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/JSON Web Token/README.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/hacking-jwt-json-web-tokens.md
 ```
 
 ## Troubleshooting

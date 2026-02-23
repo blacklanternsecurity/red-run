@@ -397,12 +397,12 @@ Update `engagement/state.md` with SYSTEM access achieved.
 For edge cases, additional Potato variants, or privilege-specific techniques:
 
 ```
-Read ~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/juicypotato.md
-Read ~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/roguepotato-and-printspoofer.md
-Read ~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/privilege-escalation-abusing-tokens.md
-Read ~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/seimpersonate-from-high-to-system.md
-Read ~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/sedebug-+-seimpersonate-copy-token.md
-Read ~/docs/InternalAllTheThings/docs/redteam/escalation/windows-privilege-escalation.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/windows-local-privilege-escalation/juicypotato.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/windows-local-privilege-escalation/roguepotato-and-printspoofer.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/windows-local-privilege-escalation/privilege-escalation-abusing-tokens.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/windows-local-privilege-escalation/seimpersonate-from-high-to-system.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/windows-local-privilege-escalation/sedebug-+-seimpersonate-copy-token.md
+Read $RED_RUN_DOCS/InternalAllTheThings/docs/redteam/escalation/windows-privilege-escalation.md
 ```
 
 ## Troubleshooting

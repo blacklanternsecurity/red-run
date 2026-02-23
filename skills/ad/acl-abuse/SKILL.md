@@ -501,9 +501,9 @@ Update `engagement/state.md` with ACL findings, obtained access, and cleanup not
 For additional ACL exploitation techniques and edge cases:
 
 ```
-Read ~/docs/InternalAllTheThings/docs/active-directory/ad-adds-acl-ace.md
-Read ~/docs/hacktricks/src/windows-hardening/active-directory-methodology/acl-persistence-abuse/README.md
-Read ~/docs/hacktricks/src/windows-hardening/active-directory-methodology/acl-persistence-abuse/shadow-credentials.md
+Read $RED_RUN_DOCS/InternalAllTheThings/docs/active-directory/ad-adds-acl-ace.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/active-directory-methodology/acl-persistence-abuse/README.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/active-directory-methodology/acl-persistence-abuse/shadow-credentials.md
 ```
 
 ## Troubleshooting

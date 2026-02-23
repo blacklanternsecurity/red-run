@@ -389,9 +389,9 @@ machine keys if obtained, current mode, and any payloads that succeeded.
 For additional gadget chains, formatter details, and framework-specific exploits:
 
 ```
-Read ~/docs/PayloadsAllTheThings/Insecure Deserialization/DotNET.md
-Read ~/docs/hacktricks/src/pentesting-web/deserialization/README.md
-Read ~/docs/hacktricks/src/pentesting-web/deserialization/basic-.net-deserialization-objectdataprovider-gadgets-expandedwrapper-and-json.net.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/Insecure Deserialization/DotNET.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/deserialization/README.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/deserialization/basic-.net-deserialization-objectdataprovider-gadgets-expandedwrapper-and-json.net.md
 ```
 
 ## Troubleshooting

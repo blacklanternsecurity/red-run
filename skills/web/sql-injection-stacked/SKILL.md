@@ -281,12 +281,12 @@ When routing, pass along: injection point, DBMS, stacking confirmation, current 
 For advanced techniques, WAF bypass, and edge cases:
 
 ```
-Read ~/docs/PayloadsAllTheThings/SQL Injection/MSSQL Injection.md
-Read ~/docs/PayloadsAllTheThings/SQL Injection/PostgreSQL Injection.md
-Read ~/docs/PayloadsAllTheThings/SQL Injection/MySQL Injection.md
-Read ~/docs/hacktricks/src/pentesting-web/sql-injection/mssql-injection.md
-Read ~/docs/hacktricks/src/pentesting-web/sql-injection/postgresql-injection/README.md
-Read ~/docs/hacktricks/src/pentesting-web/sql-injection/mysql-injection/README.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/SQL Injection/MSSQL Injection.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/SQL Injection/PostgreSQL Injection.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/SQL Injection/MySQL Injection.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/sql-injection/mssql-injection.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/sql-injection/postgresql-injection/README.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/sql-injection/mysql-injection/README.md
 ```
 
 ## Troubleshooting

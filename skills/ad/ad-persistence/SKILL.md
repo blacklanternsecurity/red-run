@@ -528,14 +528,14 @@ For additional persistence techniques, detection signatures, and
 cleanup procedures:
 
 ```
-Read ~/docs/hacktricks/src/windows-hardening/active-directory-methodology/dcshadow.md
-Read ~/docs/hacktricks/src/windows-hardening/active-directory-methodology/skeleton-key.md
-Read ~/docs/hacktricks/src/windows-hardening/active-directory-methodology/custom-ssp.md
-Read ~/docs/hacktricks/src/windows-hardening/active-directory-methodology/security-descriptors.md
-Read ~/docs/hacktricks/src/windows-hardening/active-directory-methodology/dsrm-credentials.md
-Read ~/docs/hacktricks/src/windows-hardening/active-directory-methodology/ad-certificates/domain-persistence.md
-Read ~/docs/hacktricks/src/windows-hardening/active-directory-methodology/ad-certificates/account-persistence.md
-Read ~/docs/InternalAllTheThings/docs/active-directory/ad-adfs-federation-services.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/active-directory-methodology/dcshadow.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/active-directory-methodology/skeleton-key.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/active-directory-methodology/custom-ssp.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/active-directory-methodology/security-descriptors.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/active-directory-methodology/dsrm-credentials.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/active-directory-methodology/ad-certificates/domain-persistence.md
+Read $RED_RUN_DOCS/hacktricks/src/windows-hardening/active-directory-methodology/ad-certificates/account-persistence.md
+Read $RED_RUN_DOCS/InternalAllTheThings/docs/active-directory/ad-adfs-federation-services.md
 ```
 
 ## Troubleshooting

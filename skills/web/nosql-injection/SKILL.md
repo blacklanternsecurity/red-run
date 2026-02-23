@@ -472,10 +472,10 @@ When routing, pass along: confirmed injection point, operator format
 For expanded payloads, wordlists, and edge cases:
 
 ```
-Read ~/docs/PayloadsAllTheThings/NoSQL Injection/README.md
-Read ~/docs/hacktricks/src/pentesting-web/nosql-injection.md
-Read ~/docs/PayloadsAllTheThings/NoSQL Injection/Intruder/MongoDB.txt
-Read ~/docs/PayloadsAllTheThings/NoSQL Injection/Intruder/NoSQL.txt
+Read $RED_RUN_DOCS/PayloadsAllTheThings/NoSQL Injection/README.md
+Read $RED_RUN_DOCS/hacktricks/src/pentesting-web/nosql-injection.md
+Read $RED_RUN_DOCS/PayloadsAllTheThings/NoSQL Injection/Intruder/MongoDB.txt
+Read $RED_RUN_DOCS/PayloadsAllTheThings/NoSQL Injection/Intruder/NoSQL.txt
 ```
 
 ## Troubleshooting
