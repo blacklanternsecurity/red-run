@@ -175,18 +175,48 @@ Identified during survey. Important but lower-priority techniques or specialized
 ### Source Material Survey — COMPLETE
 - [x] Survey `~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/` — 26 files + DLL subdir (6,000+ lines). Key: Potato family (5 variants), service misconfig, DLL hijack (536 lines), UAC bypass (275 lines), DPAPI (500 lines), named pipes (297 lines), leaked handles (696 lines), COM hijacking, kernel exploits, autorun (354 lines). Supporting dirs: credentials (424+215+211 lines), UAC (275+319 lines), NTLM (349+185 lines).
 - [x] Survey `~/docs/hacktricks/src/linux-hardening/privilege-escalation/` — 46 files + kernel subdir (8,000+ lines). Key: capabilities (1,700 lines), Docker breakout (664+ lines, 14 container files totaling 3,500+), D-Bus (540 lines), groups (288 lines), restricted shell (296 lines), wildcards (255 lines), euid/suid (216 lines), NFS (146 lines), LD_PRELOAD (156 lines). Kernel CVE-2025-38352 (332 lines).
-- [x] Survey `~/docs/hacktricks/src/macos-hardening/` — 70+ files, 14,000+ lines. FAR deeper than expected. TCC bypass: 2,275 lines (800 + 932 payloads + 543 bypasses with 20+ techniques). SIP bypass: 284 lines (8+ CVEs). Gatekeeper: 571 lines (11+ CVEs). Dylib hijacking: 169 lines. XPC/Mach IPC: 1,323 lines. Sandbox escape: 507 lines. Process abuse: 2,000+ lines. Persistence: 1,818 lines. Code signing: 413 lines. Electron injection: 511 lines.
+- [x] Survey `~/docs/hacktricks/src/macos-hardening/` — 70+ files, 14,000+ lines. Deep content exists but **macOS removed from scope** (never used in engagements).
 - [x] Survey `~/docs/InternalAllTheThings/` — linux-privilege-escalation.md (868 lines, systematic checklist with LinPEAS/pspy/GTFOBins/SUDO_KILLER), windows-privilege-escalation.md (1,565 lines, tool-heavy with PowerUp/Seatbelt/winPEAS/WES-NG, Potato CLSID tables, BYOVD drivers). IATT is complementary — more actionable checklists; HT has deeper technique coverage.
 - [x] Survey `~/docs/PayloadsAllTheThings/` — Minimal. Two redirect pages (50+68 lines) pointing to IATT. No standalone privesc content. PAT's value is in the RCE-to-privesc pipeline (command injection, LFI-to-RCE, deserialization) already covered by Phase 3 web skills.
-- [x] Define concrete skill splits — Windows 6, Linux 5, macOS 3 (Phase 5b). See below.
-- [x] Define batching — 4 core batches by platform, macOS as Phase 5b (1 batch).
+- [x] Define concrete skill splits — Windows 6, Linux 5. macOS removed (not in scope).
+- [x] Define batching — 4 batches by platform. Docker/container escapes deferred to Phase 6.
 
-### Skill List (14 skills: 2 discovery + 9 technique + 3 macOS technique)
+### Skill List (11 skills: 2 discovery + 9 technique)
 
 **Batch 1: Windows Foundation** — most common Windows privesc vectors
-- [ ] `windows-privesc-discovery` — Enumeration (WinPEAS, PowerUp, Seatbelt, Watson, WES-NG, PrivescCheck, Sherlock, JAWS), system info, user/group enum, installed software, network config, scheduled tasks, routing to 5 technique skills. Source: HT README.md (1,961 lines) + IATT (1,565 lines).
-- [ ] `windows-token-impersonation` — Potato family (JuicyPotato/RoguePotato/PrintSpoofer/GodPotato/SweetPotato/EfsPotato/JuicyPotatoNG with CLSID tables), SeImpersonate/SeAssignPrimaryToken, SeDebugPrivilege (token copy + LSASS access), SeBackupPrivilege (SAM/SYSTEM/ntds.dit), SeTakeOwnership, SeManageVolume, SeLoadDriverPrivilege (BYOVD), FullPowers (recover impersonation from services). Source: HT juicypotato.md (162), roguepotato.md (253), token-abuse.md (202), seimpersonate.md (183), sedebug.md (220) + IATT token section.
-- [ ] `windows-service-dll-abuse` — Unquoted service paths (enumeration + exploitation), weak service permissions (binpath modification, registry ACL abuse), service binary replacement, DLL hijacking (search order, writable PATH, side-loading, COM DLL), DLL proxying. Source: HT dll-hijacking/ (694 lines), service-triggers.md (148), abusing-auto-updaters.md (234) + IATT service/DLL sections.
+
+Build workflow: Survey source material for all 3 skills (parallel agents) → write skills → update task_plan.md/progress.md/README.md → commit + push. Follow existing template at `skills/_template/SKILL.md`. No Kerberos-first convention (that's AD-only). Skills go in `skills/privesc/`.
+
+- [ ] `windows-privesc-discovery` — Enumeration hub + routing to 5 Windows technique skills.
+  - **Enumeration tools**: WinPEAS (comprehensive automated), PowerUp (PowerSploit module), Seatbelt (GhostPack), Watson (missing KBs), WES-NG (systeminfo-based), PrivescCheck (PowerShell), JAWS (PowerShell), Sherlock (legacy)
+  - **Enumeration categories**: System info (OS version, architecture, hotfixes), users/groups (whoami /priv, net user, local admins), running processes/services (tasklist, sc query, wmic), network (netstat, ipconfig, arp, route), installed software, scheduled tasks, writable directories, registry (AlwaysInstallElevated, AutoLogon, Winlogon), antivirus/EDR detection
+  - **Routing table**: Maps findings → technique skills. Token privs → windows-token-impersonation, service misconfig → windows-service-dll-abuse, UAC context → windows-uac-bypass, stored creds → windows-credential-harvesting, old kernel → windows-kernel-exploits
+  - **Structure**: Step 1 (system info), Step 2 (user context + privileges), Step 3 (service/process enum), Step 4 (scheduled tasks + autorun), Step 5 (network + shares), Step 6 (credential hunting quick scan), Step 7 (routing decision tree)
+  - **Source files**: `~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/README.md` (1,961 lines — master index), `~/docs/InternalAllTheThings/docs/redteam/escalation/windows-privilege-escalation.md` (1,565 lines — tool-heavy checklist), `~/docs/hacktricks/src/windows-hardening/checklist-windows-privilege-escalation.md`
+  - **Target**: ~400-500 lines
+
+- [ ] `windows-token-impersonation` — Potato family + dangerous Windows privileges.
+  - **Potato family decision tree**: Check `whoami /priv` → SeImpersonatePrivilege or SeAssignPrimaryTokenPrivilege present → select Potato variant by Windows version:
+    - **JuicyPotato**: Windows Server 2008-2016, Win 7-10 (pre-1809). CLSID required (per-OS table). `JuicyPotato.exe -l 1337 -p cmd.exe -a "/c whoami" -t * -c {CLSID}`
+    - **RoguePotato**: Win 10 1809+, Server 2019. Needs controlled machine for OXID resolution. `RoguePotato.exe -r ATTACKER_IP -e "cmd.exe /c whoami" -l 9999`
+    - **PrintSpoofer**: Win 10, Server 2016-2019. Simplest. `PrintSpoofer.exe -i -c cmd.exe`
+    - **GodPotato**: .NET 4.x, broad version support. `GodPotato.exe -cmd "cmd /c whoami"`
+    - **SweetPotato**: Combines multiple techniques. `SweetPotato.exe -p cmd.exe -a "/c whoami"`
+    - **EfsPotato**: Uses MS-EFSR (PetitPotam local). `EfsPotato.exe whoami`
+    - **JuicyPotatoNG**: COM-based, Win 10 1809+. `JuicyPotatoNG.exe -t * -p cmd.exe -a "/c whoami"`
+  - **Other dangerous privileges**: SeDebugPrivilege (token duplication from SYSTEM process, LSASS access via mimikatz), SeBackupPrivilege (read any file — SAM/SYSTEM/ntds.dit via robocopy or diskshadow), SeTakeOwnership (take ownership of any object → modify DACL), SeManageVolume (arbitrary file write via USN journal or IFM), SeLoadDriverPrivilege (load vulnerable driver → kernel R/W → SYSTEM token), SeRestorePrivilege (write any file — DLL hijack system service)
+  - **FullPowers**: Recovers default service privileges when they've been stripped. `FullPowers.exe -c "cmd.exe /c whoami /priv"`
+  - **Structure**: Step 1 (check privileges), Step 2 (Potato variant selector), Step 3 (Potato exploitation), Step 4 (other privilege abuse), Step 5 (escalate/pivot)
+  - **Source files**: `~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/juicypotato.md` (162), `roguepotato-and-printspoofer.md` (253), `privilege-escalation-abusing-tokens.md` (202), `seimpersonate-from-high-to-system.md` (183), `sedebug-+-seimpersonate-copy-token.md` (220), `semanagevolume-perform-volume-maintenance-tasks.md` (87), `access-tokens.md` (113), `~/docs/InternalAllTheThings/docs/redteam/escalation/windows-privilege-escalation.md` (token impersonation section with CLSID tables)
+  - **Target**: ~500-550 lines
+
+- [ ] `windows-service-dll-abuse` — Service misconfigurations + DLL hijacking.
+  - **Service exploitation**: Unquoted service paths (wmic/sc/PowerUp enumeration → space-in-path binary placement), weak service permissions (sc sdshow analysis, accesschk.exe, service binary overwrite, binpath modification via `sc config svc binpath=`), service registry ACL abuse (writable ImagePath), service binary replacement (stop → replace → start)
+  - **DLL hijacking**: DLL search order (application dir → system → windows → PATH), writable PATH directory injection, known DLL hijacking targets (common applications/services), DLL side-loading (trusted binary + malicious DLL), DLL proxying (forward exports to legit DLL while executing payload), COM DLL hijacking (InprocServer32 registry modification). Enumeration: Process Monitor (filter: NAME NOT FOUND + .dll), PowerUp Find-ProcessDLLHijack, automated scanning
+  - **Auto-updater/IPC abuse**: Third-party update mechanisms, writable update directories, IPC channel interception
+  - **Structure**: Step 1 (enumerate services — running, stopped, permissions), Step 2 (unquoted path check), Step 3 (weak permission exploitation), Step 4 (DLL hijack enumeration), Step 5 (DLL hijack exploitation), Step 6 (escalate/pivot)
+  - **Source files**: `~/docs/hacktricks/src/windows-hardening/windows-local-privilege-escalation/dll-hijacking/README.md` (536), `dll-hijacking/writable-sys-path-dll-hijacking-privesc.md` (87), `service-triggers.md` (148), `abusing-auto-updaters-and-ipc.md` (234), `acls-dacls-sacls-aces.md` (156), `~/docs/InternalAllTheThings/docs/redteam/escalation/windows-privilege-escalation.md` (service/DLL sections)
+  - **Target**: ~450-500 lines
 
 **Batch 2: Windows Extended** — secondary vectors + credential access
 - [ ] `windows-uac-bypass` — UAC bypass techniques (auto-elevating binaries, fodhelper, eventvwr, sdclt, silentcleanup, cmstp, DiskCleanup), COM hijacking (CLSID registry abuse), AlwaysInstallElevated (MSI payload via WiX/msfvenom), autorun exploitation (startup folders, registry Run/RunOnce). Source: HT uac.md (275), com-hijacking.md (149), create-msi-with-wix.md (72), autorun.md (354).
@@ -201,14 +231,6 @@ Identified during survey. Important but lower-priority techniques or specialized
 **Batch 4: Linux Extended** — filesystem + kernel vectors
 - [ ] `linux-file-path-abuse` — Writable /etc/passwd (add root user), /etc/sudoers, /etc/shadow, NFS no_root_squash (SUID binary injection via mount), shared library hijacking (LD_PRELOAD, ldconfig, RPATH manipulation, ld.so.conf), wildcard injection (tar checkpoint, chown, chmod, rsync, 7z), PATH hijack in scripts/cron, Docker/LXD group escape (mount host filesystem), writable /etc/crontab. Source: HT nfs.md (146), ld.so.conf.md (156), wildcards.md (255), groups.md (288), lxd.md (96), write-to-root.md (98) + IATT NFS/library/group sections.
 - [ ] `linux-kernel-exploits` — Kernel CVEs (DirtyPipe CVE-2022-0847, DirtyCow CVE-2016-5195, GameOver(lay) CVE-2023-0386, CVE-2025-38352 POSIX CPU timers, Full Nelson CVE-2010-4258, Mempodipper CVE-2012-0056, RDS CVE-2010-3904), exploit-suggester workflow, restricted shell escape (rbash/rksh breakout via GTFOBins, chroot escape, Python/Perl/PHP shell spawning), jailbreak techniques. Source: HT kernel-exploitation/ subdir, escaping-from-limited-bash.md (296) + IATT kernel CVE references.
-
-### Phase 5b: Extended Privilege Escalation — macOS
-
-macOS has exceptional depth (14,000+ lines in HT). Deferred from core Phase 5 because macOS privesc is less common in standard engagements but fully viable as standalone skills.
-
-- [ ] `macos-tcc-bypass` — TCC database structure (user + system), 20+ bypass techniques: write bypass (TCC doesn't protect writes), ClickJacking, request spoofing (Info.plist), SSH default FDA, CVE-2020-9934 (HOME env variable), CVE-2021-30970 Powerdir (NFSHomeDirectory), plugin loading (Directory Utility CVE-2020-27937, CoreAudiod HAL CVE-2020-29621, DAL camera), Firefox dylib injection, Terminal .terminal scripts, mount_apfs (CVE-2020-9771), mounting over TCC (CVE-2021-1784/30808), SQLITE_AUTO_TRACE, Automation→FDA chain (Finder, System Events + Accessibility). TCC exploitation payloads (camera, keylogger, screen capture). Source: HT macos-tcc/ (800 + 932 + 543 lines).
-- [ ] `macos-sip-gatekeeper-bypass` — SIP bypass: Installer packages (CVE-2019-8561, CVE-2020-9854), Shrootless CVE-2021-30892 (/etc/zshenv), systemmigrationd env abuse (Migraine CVE-2023-32369), CVE-2022-22583 (/tmp mount), fsck_cs symlink, sealed system snapshots. Gatekeeper bypass: path length (CVE-2021-1810), zip structure (CVE-2022-22616), ACL+AppleDouble (CVE-2022-42821), Apple Archive (CVE-2022-32910), uchg flag, third-party unarchiver vulns. Quarantine xattr manipulation. Code signing abuse (disable-library-validation entitlement). Source: HT macos-sip.md (284), macos-gatekeeper.md (571), macos-code-signing.md (413).
-- [ ] `macos-dylib-injection` — DYLD_INSERT_LIBRARIES injection, @rpath hijacking (LC_RPATH abuse), weak library validation bypass, library reexport, install_name_tool manipulation, function hooking (method swizzling, DYLD hooks, fishhook, Mach-O patching), Electron injection (ELECTRON_RUN_AS_NODE, preload scripts, debug port), Dirty NIB (NIB file abuse for code execution), Chromium --load-extension injection. Source: HT macos-dyld-hijacking.md (169), macos-library-injection.md (344), macos-function-hooking.md (380), macos-electron-applications-injection.md (511), macos-dirty-nib.md (152).
 
 ## Phase 6: Core Skills — Infrastructure & Network
 

@@ -11,26 +11,24 @@
   - **InternalAllTheThings**: linux-privilege-escalation.md (868 lines), windows-privilege-escalation.md (1,565 lines). Complementary to HT — more actionable checklists, Potato CLSID tables, BYOVD driver names.
   - **PayloadsAllTheThings**: Minimal — just 2 redirect pages (118 lines total) pointing to IATT. No standalone privesc content.
 
-- Defined concrete skill splits: 14 skills total
+- Defined concrete skill splits: 11 skills total (macOS removed — never used in engagements)
   - **Windows** (6): 1 discovery + 5 technique (token impersonation, service/DLL, UAC bypass, credential harvesting, kernel exploits)
   - **Linux** (5): 1 discovery + 4 technique (sudo/SUID/capabilities, cron/service/D-Bus, file/path abuse, kernel exploits)
-  - **macOS** (3): TCC bypass, SIP/Gatekeeper bypass, dylib injection (Phase 5b — deeper than expected but lower engagement frequency)
 
-- Defined batching: 4 core batches + 1 extended batch
+- Defined batching: 4 batches by platform
   - Batch 1: Windows Foundation (3 skills — discovery, token impersonation, service/DLL)
   - Batch 2: Windows Extended (3 skills — UAC, credentials, kernel)
   - Batch 3: Linux Foundation (3 skills — discovery, sudo/SUID/caps, cron/service)
   - Batch 4: Linux Extended (2 skills — file/path abuse, kernel exploits)
-  - Phase 5b: macOS (3 skills)
 
 ### Key Decisions
 
-- **macOS to Phase 5b**: Despite exceptional depth (14,000+ lines), macOS privesc is less common in standard engagements. Structured as extended phase like Phase 3b/4b — build as capacity allows or interleave with Phase 6.
+- **macOS removed**: Never used in engagements. Deep source material exists (14,000+ lines in HT) but not worth building.
 - **Docker/container escapes**: Large section in Linux HT survey (3,500+ lines) but belongs in Phase 6 (Containers). Docker/LXD *group escape* included in `linux-file-path-abuse` as a common privesc vector; full container escape coverage deferred.
 - **Credential harvesting vs. credential dumping**: Phase 5 `windows-credential-harvesting` focuses on LOCAL credential discovery (DPAPI, history, vaults, HiveNightmare). Phase 4 `credential-dumping` covers AD-level extraction (DCSync, NTDS, LAPS, gMSA). Distinct scopes with minimal overlap.
-- **Capabilities standalone vs. combined**: Despite being 1,700 lines in HT, capabilities folded into `linux-sudo-suid-capabilities` — same enumeration workflow (check what binaries have elevated privs → exploit via GTFOBins or technique-specific abuse). Would be too thin as standalone skill without the SUID/sudo context.
+- **Capabilities standalone vs. combined**: Despite being 1,700 lines in HT, capabilities folded into `linux-sudo-suid-capabilities` — same enumeration workflow (check what binaries have elevated privs → exploit via GTFOBins or technique-specific abuse).
 - **Linux restricted shell escape**: Folded into `linux-kernel-exploits` rather than standalone — it's a pre-requisite technique (getting a proper shell before exploiting kernel bugs), and 296 lines alone is thin for a skill.
-- **Discovery skills**: Platform-specific (not a single privesc discovery) because the user knows their target OS. Windows and Linux each get a discovery skill; macOS does not (enumeration baked into each macOS technique skill).
+- **Discovery skills**: Platform-specific (not a single privesc discovery) because the user knows their target OS. Windows and Linux each get a discovery skill.
 
 ### Source Material Comparison
 
@@ -45,17 +43,17 @@ HT is the primary source for all 3 platforms. IATT is complementary for Windows/
 ### Inventory
 
 - Total skills: 46 (29 web + 16 AD + 1 orchestrator)
-- Phase 5 planned: 14 skills (11 core + 3 macOS extended)
-- Phase 5 will bring total to 60 skills, ~30,000+ estimated lines
+- Phase 5 planned: 11 skills (6 Windows + 5 Linux)
+- Phase 5 will bring total to 57 skills, ~28,000+ estimated lines
 
 ### Next: Build Batch 1 (Windows Foundation — 3 skills)
 
 **Branch**: `skills/privesc`
 
-**Batch 1 skills to build:**
-1. `windows-privesc-discovery` — Enumeration hub (WinPEAS/PowerUp/Seatbelt/Watson/WES-NG), routing to 5 technique skills
-2. `windows-token-impersonation` — Potato family (7 variants), dangerous privileges (SeImpersonate/SeDebug/SeBackup/SeManageVolume/SeLoadDriver), FullPowers
-3. `windows-service-dll-abuse` — Unquoted paths, weak service perms, DLL hijacking (search order/PATH/side-loading/COM), DLL proxying
+**Batch 1 skills to build** (detailed specs in task_plan.md):
+1. `windows-privesc-discovery` (~400-500 lines) — Enumeration hub (WinPEAS/PowerUp/Seatbelt/Watson/WES-NG), 7-step enumeration workflow, routing table to 5 technique skills. Source: HT README.md (1,961 lines) + IATT (1,565 lines).
+2. `windows-token-impersonation` (~500-550 lines) — Potato family decision tree by Windows version (7 variants with exact commands), dangerous privileges (SeImpersonate/SeDebug/SeBackup/SeManageVolume/SeLoadDriver/SeRestore each with exploitation), FullPowers. Source: HT juicypotato.md + roguepotato.md + token-abuse.md + seimpersonate.md + sedebug.md + semanagevolume.md + IATT token section.
+3. `windows-service-dll-abuse` (~450-500 lines) — Unquoted paths, weak service perms (binpath/registry ACL), DLL hijacking (search order/PATH/side-loading/COM/proxying), auto-updater abuse. Source: HT dll-hijacking/ (694 lines) + service-triggers.md + auto-updaters.md + IATT service/DLL sections.
 
 ---
 
