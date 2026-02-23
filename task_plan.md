@@ -240,8 +240,11 @@ Build workflow: Same as Batch 1. Survey source material (parallel agents) → wr
 
 ## Phase 6: Core Skills — Infrastructure & Network
 
-- [ ] Network Recon (nmap, service enumeration, protocol-specific)
-- [ ] Pivoting & Tunneling (SSH, chisel, ligolo-ng, proxychains)
+**Batch 1: Network Foundation** — recon + pivoting (the orchestrator's entry point + lateral movement backbone)
+- [ ] `network-recon` — Discovery skill. Host discovery (ICMP/ARP/TCP/UDP ping sweep, passive DNS/Shodan), port scanning (TCP SYN/connect/UDP with evasion: decoys, fragmentation, source port spoofing, timing control), service enumeration per port (20+ protocols: FTP/21, SSH/22, SMTP/25, DNS/53, HTTP/80+443, Kerberos/88, RPC/111+135, SMB/139+445, LDAP/389+636, MSSQL/1433, Oracle/1521, MySQL/3306, RDP/3389, PostgreSQL/5432, WinRM/5985+5986, Redis/6379, MongoDB/27017 — each with quick-win checks: anonymous access, default creds, version CVEs), OS fingerprinting (TTL/window/MSS heuristics), vulnerability scanning (NSE vuln/safe categories, nuclei templates), OPSEC-tiered scanning (passive → medium → aggressive), output parsing + state.md population, routing decision tree to web-discovery/ad-discovery/technique skills. Source: HT network-services-pentesting/ (189 files, 60+ protocols), HT pentesting-network/ (nmap, host discovery), IATT scanning cheatsheet.
+- [ ] `pivoting-tunneling` — SSH tunneling (local -L, remote -R, dynamic SOCKS -D, VPN TUN interface, ProxyJump, ~C control sequence), sshuttle (transparent VPN over SSH), Chisel (reverse SOCKS, port forwarding, HTTP/S tunneling), Ligolo-ng (TUN interface, agent/proxy, listener binding, full subnet pivoting), socat (port relay, SSL tunnels, bidirectional forwarding), proxychains/proxychains-ng (configuration, tool compatibility, DNS handling), FRP (reverse proxy, SSH gateway mode), Windows-specific (netsh portproxy, plink reverse SSH, SocksOverRDP + Proxifier), Metasploit pivoting (autoroute, portfwd, SOCKS module), DNS tunneling (dnscat2, iodine TUN), ICMP tunneling (hans, ptunnel-ng), HTTP tunneling (reGeorg/neo-reGeorg), rpivot (NTLM proxy bypass), ngrok/cloudflared (public tunnels), multi-hop scenarios, tool selection decision tree by scenario (direct internet/SSH-only/HTTP-only/DNS-ICMP-only/NTLM proxy/stealth priority). Source: HT tunneling-and-port-forwarding.md, IATT pivoting sections.
+
+**Batch 2: Cloud & Containers** — cloud exploitation + container escapes
 - [ ] Cloud — AWS (IAM, IMDS, S3, Lambda)
 - [ ] Cloud — Azure (Azure AD, tokens, CAP bypass, service abuse)
 - [ ] Containers (Docker escape, K8s RBAC, SA token abuse)

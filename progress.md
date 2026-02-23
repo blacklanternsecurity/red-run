@@ -1,5 +1,25 @@
 # red-run — Session Log
 
+## 2026-02-23 — Phase 6 Batch 1: Network Foundation (survey + planning)
+
+### Done
+
+- Completed source material survey for Phase 6 Batch 1 (2 skills):
+  - `network-recon` survey: host discovery (ICMP/ARP/TCP/UDP), port scanning with evasion techniques, service enumeration for 20+ protocols (FTP, SSH, SMTP, DNS, HTTP, Kerberos, RPC, SMB, LDAP, MSSQL, Oracle, MySQL, RDP, PostgreSQL, WinRM, Redis, MongoDB), quick-win checks per service (anonymous access, default creds, version CVEs), OS fingerprinting, NSE/nuclei vulnerability scanning, OPSEC-tiered scanning, routing decision tree. Source: HT network-services-pentesting/ (189 files).
+  - `pivoting-tunneling` survey: 20+ techniques — SSH (L/R/D/VPN/control sequence), sshuttle, Chisel (reverse SOCKS + port forward), Ligolo-ng (TUN interface), socat (relay + SSL), proxychains, FRP (reverse proxy + SSH gateway), Windows (netsh/plink/SocksOverRDP), Metasploit (autoroute/portfwd/SOCKS), DNS tunneling (dnscat2/iodine), ICMP (hans/ptunnel-ng), HTTP (reGeorg), rpivot (NTLM proxy), ngrok/cloudflared, multi-hop, tool selection matrix. Source: HT tunneling-and-port-forwarding.md.
+- Created `skills/network` branch from `skills/privesc` (carries Phase 5 commits — will PR after build)
+- Enriched Phase 6 Batch 1 specs in task_plan.md with full technique inventory and source references
+
+### Next: Build Phase 6 Batch 1 (Network Foundation — 2 skills)
+
+**Branch**: `skills/network`
+
+**Skills to build:**
+1. `network-recon` (~700-900 lines) — Discovery skill, orchestrator entry point
+2. `pivoting-tunneling` (~800-1000 lines) — Lateral movement backbone
+
+---
+
 ## 2026-02-23 — Phase 5 Batch 4: Linux Extended Skills (Phase 5 COMPLETE)
 
 ### Done
