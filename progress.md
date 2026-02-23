@@ -1,5 +1,31 @@
 # red-run — Session Log
 
+## 2026-02-23 — Phase 6 Batch 1: Network Foundation (COMPLETE)
+
+### Done
+
+- Completed source material survey for Phase 6 Batch 1 (2 skills)
+- Created `skills/network` branch from `skills/privesc`
+- Built 2 Network Foundation skills (Batch 1) on `skills/network` branch:
+  - `network-recon` (880 lines) — 9-step workflow: passive recon (DNS enum + zone transfer, Shodan, cert transparency), host discovery (ARP/ICMP/TCP/UDP sweeps, masscan for large ranges), port scanning (default `nmap -A -p- -T4 -oA -vvv` plus quick top-ports, stealth/evasion: fragmentation/decoys/source port/idle scan/timing, masscan+nmap combo, Naabu), service enumeration for 20+ protocols each with embedded quick-win checks (FTP anonymous+write/vsftpd backdoor, SSH CVE-2018-15473+regreSSHion, SMTP open relay+NTLM info, DNS zone transfer, HTTP default creds+git exposure, Kerberos AS-REP roast+user enum, RPC null session+NFS, SMB null/guest+EternalBlue+SMBGhost, LDAP anon bind, MSSQL sa empty+xp_cmdshell, Oracle default SIDs+creds, MySQL root empty+UDF, RDP NTLM leak+BlueKeep, PostgreSQL trust auth, WinRM, Redis unauth RCE+SSH key inject, MongoDB unauth, SNMP default community+Net-SNMP Extend, IPMI cipher 0, NFS no_root_squash, TFTP config grab, VNC no-auth), OS fingerprinting (port signatures, TTL heuristics), vuln scanning (NSE vuln scripts, nuclei templates, specific CVE checks), multi-host pipeline (discovery→quick scan→full scan→service enum), output parsing for state.md, routing decision tree to web-discovery/ad-discovery/technique skills, bash fallback scanning for pivots without nmap.
+  - `pivoting-tunneling` (1108 lines) — 15-step workflow: tool selection decision tree by scenario (SSH/shell+upload/HTTP-only/DNS-only/ICMP-only/Windows/NTLM proxy), SSH tunneling (local -L single+multi port, dynamic SOCKS -D with proxychains config, remote -R for NAT/firewall bypass, ~C escape sequence for mid-session forwards, ProxyJump -J multi-hop with ssh_config, sshuttle transparent VPN with DNS forwarding and exclusions, SSH VPN TUN device with NAT/routing), Ligolo-ng (TUN setup, agent/proxy workflow, route addition, listener port forwarding, double pivot via listener chaining, transfer methods), Chisel (reverse SOCKS, port forward single+multi, HTTP proxy support, TLS encryption, transfer methods), socat (TCP/UDP relay, SSL encrypted relay, reverse shell relay), Windows pivoting (netsh portproxy with firewall rules, plink SSH-style tunnels, SocksOverRDP+Proxifier, Chisel/Ligolo Windows binaries), DNS tunneling (dnscat2 with port forward+shell, iodine TUN with routing), ICMP tunneling (hans, ptunnel-ng), HTTP tunneling (neo-reGeorg webshell SOCKS, rpivot NTLM proxy bypass), Metasploit pivoting (autoroute, portfwd, SOCKS module, proxychains config), FRP (TOML config with SOCKS+port forward), public tunnels (ngrok/cloudflared — CTF only), multi-hop scenarios (SSH ProxyJump, sshuttle chain, Ligolo double pivot, Chisel chain, proxychains strict_chain), tunnel verification procedures, SOCKS tool compatibility table (14 pentesting tools), persistent tunnels (SSH keep-alive, autossh, Chisel keepalive, tmux session management), Python minimal SOCKS4 proxy fallback.
+- Updated task_plan.md, README.md (59 skills, ~31,400 lines), progress.md
+- Tool priority per user preference: SSH > Ligolo-ng > Chisel > others (reflected in skill step ordering)
+
+### Batch 2: Containers
+
+- Built `container-escapes` (1021 lines) — Docker escape (socket/privileged/cgroup release_agent/sensitive mounts/capabilities), Kubernetes exploitation (SA tokens, RBAC, kubelet, etcd, malicious pods), container CVEs (runc CVE-2019-5736, Leaky Vessels CVE-2024-21626, CVE-2025-31133), cloud metadata from containers
+- Updated orchestrator to route to network-recon, container-escapes, and pivoting-tunneling
+- Moved AWS, Azure, CI/CD to backlog (not first release)
+- Phase 6 COMPLETE: 60 skills, ~32,400 lines
+
+### Next
+
+- PR `skills/network` branch to main
+- Phase 7: Red Team Operations (or test on HTB first)
+
+---
+
 ## 2026-02-23 — Phase 5 Batch 4: Linux Extended Skills (Phase 5 COMPLETE)
 
 ### Done
