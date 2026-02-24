@@ -851,12 +851,28 @@ exec 3<>/dev/tcp/TARGET_IP/PORT; echo "" >&3; cat <&3; exec 3>&-
 
 ### Permission errors running nmap
 
-Most scan types require root/sudo. Without root:
-- `-sT` (connect scan) works unprivileged but is slower and more detectable
-- `-sV` (service detection) works unprivileged
-- `--top-ports` reduces scan time
+Most scan types (`-sS`, `-sU`, `-O`, NSE scripts) require root. If `sudo nmap`
+fails, check two things:
+
+**Claude Code blocking sudo:** The project `.claude/settings.json` includes
+allow rules for `sudo nmap` and `sudo masscan`. If you're using custom settings,
+add `"Bash(sudo nmap *)"` to your `permissions.allow` array.
+
+**sudo prompting for a password:** Claude Code can't respond to interactive
+password prompts. Configure passwordless sudo for nmap:
 
 ```bash
-# Unprivileged scan
+echo "$(whoami) ALL=(ALL) NOPASSWD: $(which nmap), $(which masscan)" | sudo tee /etc/sudoers.d/nmap
+sudo chmod 440 /etc/sudoers.d/nmap
+```
+
+See the README "sudo nmap setup" section for details.
+
+**Degraded fallback (last resort):** If sudo is unavailable, nmap falls back to
+TCP connect scans. These are slower, noisier, and lose OS detection, UDP, and
+most NSE scripts. Note the degradation in scan output and state.md.
+
+```bash
+# Unprivileged fallback — connect scan only
 nmap -sT -sV --top-ports 1000 TARGET_IP
 ```
