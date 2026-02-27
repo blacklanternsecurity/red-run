@@ -23,6 +23,7 @@ tools/skill-router/.chromadb/
 tools/skill-router/tools/
 tools/skill-router/uv.lock
 tools/nmap-server/uv.lock
+tools/burp-proxy/*.jar
 
 # Claude Code local state
 .claude/agents

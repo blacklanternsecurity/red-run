@@ -514,3 +514,22 @@ Do not loop. Work through failures systematically:
 - Check if data needs to be gzip-compressed before base64
 - Try sending raw binary instead of base64
 - Endpoint may use a custom `ObjectInputStream` with class filtering
+
+## Collaborator Exit (Burp co-pilot path)
+
+If `engagement/state.md` contains `burp-copilot: active` AND you reach a blind
+deserialization detection point that requires DNS/HTTP callbacks (e.g., URLDNS
+gadget, JNDI lookup), return to the orchestrator with:
+
+**Routing Recommendations:**
+- OOB needed: blind Java deserialization at [endpoint]/[parameter]
+- Payload template: [URLDNS or JNDI payload with COLLABORATOR_URL placeholder]
+- Interaction type: dns
+- Context: [what a callback confirms — e.g., "ObjectInputStream.readObject() reached with attacker-controlled data", "JNDI lookup triggered"]
+
+The orchestrator handles Collaborator payload generation and interaction
+polling in the main context, then re-invokes this skill with results.
+
+If `burp-copilot` is NOT active, use existing fallbacks (URLDNS with
+interactsh, time-based detection via Thread.sleep chains, error-based
+detection via invalid class names).

@@ -200,6 +200,7 @@ Use this table to pick the right agent for each skill:
 | container-escapes | privesc-agent | Container context |
 | credential-cracking | _(inline — no agent needed)_ | Local-only, no target interaction |
 | retrospective | _(inline — no agent needed)_ | Post-engagement, no target interaction |
+| web-discovery-burp | _(inline — main context only)_ | Requires Burp MCP |
 
 #### Orchestrator Loop
 
@@ -402,17 +403,49 @@ Wait for the agent to return before proceeding to attack surface mapping.
 
 ### Web Discovery (if HTTP/HTTPS found)
 
-STOP. Spawn **web-agent** with skill `web-discovery`:
+**Autonomous mode**: Skip the choice. Spawn **web-agent** with `web-discovery`:
 
 ```
 Task(
     subagent_type="web-agent",
-    prompt="Load skill 'web-discovery'. Target: <URL>. Tech stack: <from recon>. Mode: <mode>.",
+    prompt="Load skill 'web-discovery'. Target: <URL>. Tech stack: <from recon>. Mode: autonomous.",
     description="Web discovery on <target>"
 )
 ```
 
 Do not execute ffuf, httpx, or nuclei commands inline.
+
+**Guided mode**: Present the operator with a choice:
+
+> Web services detected on <target>. How do you want to approach web testing?
+>
+> **(A) Burp co-pilot** — I read your Burp proxy history, triage findings
+>     with technique skill methodology, manage Collaborator payloads.
+>     You drive Burp, I provide the brain. *(Requires Burp Pro + MCP extension)*
+> **(B) CLI recon** — Automated discovery via ffuf, arjun, injection probes.
+>     Standard web-agent scan, no Burp needed.
+> **(C) Manual walkthrough** — You test, I analyze. Paste requests/responses
+>     or describe what you've found. No automated scanning.
+
+**Option A** — Check Burp MCP availability: call `get_proxy_http_history(count=1, offset=0)`.
+If it fails: "Burp MCP not detected. Skipping to B/C." Re-present with B and C only.
+If available: load `web-discovery-burp` INLINE via `get_skill("web-discovery-burp")`.
+Do NOT delegate to a subagent — Burp MCP tools are only in main context.
+Add `- burp-copilot: active` to `engagement/state.md` Targets section.
+
+**Option B** — Spawn **web-agent** with `web-discovery` (same as autonomous path):
+
+```
+Task(
+    subagent_type="web-agent",
+    prompt="Load skill 'web-discovery'. Target: <URL>. Tech stack: <from recon>. Mode: guided.",
+    description="Web discovery on <target>"
+)
+```
+
+**Option C** — Interactive analysis. Ask the operator what they've found.
+Suggest testing approaches. Load technique skills via `get_skill()` for
+methodology guidance. Route to web-agent subagents when ready to exploit.
 
 ### Host Enumeration (if domain environment suspected)
 
@@ -448,7 +481,7 @@ Based on recon results, categorize the attack surface:
 
 | Surface | Indicators | Agent → Skill |
 |---------|-----------|---------------|
-| Web application | HTTP/HTTPS, login forms, APIs | web-agent → `web-discovery` |
+| Web application | HTTP/HTTPS, login forms, APIs | Guided: fork (Burp co-pilot / CLI / manual) — see Step 2. Autonomous: web-agent → `web-discovery` |
 | Active Directory | LDAP (389/636), Kerberos (88), SMB domain | ad-agent → `ad-discovery` |
 | Containers / K8s | Docker API (2375), K8s API (6443/8443), kubelet (10250), etcd (2379), or inside a container | privesc-agent → `container-escapes` |
 | Database | MySQL (3306), MSSQL (1433), PostgreSQL (5432) | Direct DB testing |
@@ -613,6 +646,23 @@ When reading state.md, the orchestrator should:
       corresponding agent.
    d. If no search result is relevant, proceed with general methodology and
       note the coverage gap in `engagement/activity.md`.
+
+### Collaborator Workflow (Burp co-pilot path)
+
+When a technique skill returns with "OOB needed" in routing recommendations
+AND `engagement/state.md` contains `burp-copilot: active`:
+
+1. Call `generate_collaborator_payload(customData="<vuln-type>-<param>")`
+2. Present payload + injection instructions to operator
+3. Wait for operator to inject and signal ready
+4. Call `get_collaborator_interactions(payloadId=<id>)` — poll 2-3 times
+   with 5-10 second gaps if no interactions found initially
+5. If interaction confirmed: update state.md, re-invoke technique skill
+   with Collaborator results as context
+6. If no interaction: note in state.md Blocked section, move on
+
+If `burp-copilot` is NOT active in state.md, the technique skill handles OOB
+testing with its own fallbacks (time-based, boolean, error-based).
 
 **In guided mode**: Present the chain analysis and recommend next steps.
 Show the reasoning: "We have SQLi on the web app. We could extract credentials

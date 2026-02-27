@@ -174,6 +174,22 @@ fi
 echo "  [shell-server] Installing Python dependencies..."
 uv sync --directory "${MCP_SHELL_SERVER}" --quiet
 
+# Burp MCP proxy (optional)
+if [[ -f "${REPO_DIR}/tools/burp-proxy/mcp-proxy-all.jar" ]]; then
+    if command -v java &>/dev/null; then
+        java_version=$(java -version 2>&1 | head -1 | sed 's/.*"\(.*\)".*/\1/' | cut -d. -f1)
+        if [[ "$java_version" -ge 21 ]] 2>/dev/null; then
+            echo "  [burp-proxy] Proxy jar found, Java ${java_version}: OK"
+        else
+            echo "  [burp-proxy] Proxy jar found but Java ${java_version} < 21 (Burp MCP requires 21+)"
+        fi
+    else
+        echo "  [burp-proxy] Proxy jar found but Java not in PATH (required for Burp MCP)"
+    fi
+else
+    echo "  [burp-proxy] Proxy jar not found (optional — see tools/burp-proxy/README.md)"
+fi
+
 # --- Step 6: Verify project config ---
 config_warnings=0
 if [[ ! -f "${REPO_DIR}/.mcp.json" ]]; then
@@ -195,7 +211,7 @@ fi
 echo ""
 echo "Installed ${native_count} native skill(s) to ${SKILLS_DST}/ (${MODE} mode)"
 echo "Installed ${agent_count} custom subagent(s) to ${AGENTS_DST}/"
-echo "63 technique/discovery skills served via MCP skill-router"
+echo "64 technique/discovery skills served via MCP skill-router"
 echo "nmap MCP server ready (sudo nmap wrapper)"
 echo "shell MCP server ready (TCP listener + reverse shell manager)"
 if [[ "$config_warnings" -eq 0 ]]; then

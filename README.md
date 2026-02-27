@@ -57,6 +57,7 @@ Each invocation: agent loads one skill, follows the methodology, updates engagem
 - **skill-router** — semantic search + skill loading via ChromaDB + sentence-transformer embeddings
 - **nmap-server** — wraps `sudo nmap`, returns parsed JSON
 - **shell-server** — TCP listener + reverse shell session manager
+- **burp** — bridges to Burp Suite Pro (optional — requires Burp Pro + MCP extension + Java 21+)
 
 ### Reverse shells via MCP
 
@@ -70,7 +71,7 @@ The orchestrator makes every routing decision. When an LFI reads Tomcat credenti
 
 ## Skills
 
-66 skills across 6 categories — see **[SKILLS.md](SKILLS.md)** for the full inventory with technique details and line counts.
+67 skills across 6 categories — see **[SKILLS.md](SKILLS.md)** for the full inventory with technique details and line counts.
 
 | Category | Skills | Coverage |
 |----------|--------|----------|
@@ -78,7 +79,7 @@ The orchestrator makes every routing decision. When an LFI reads Tomcat credenti
 | Active Directory | 16 | Kerberos, ADCS, ACLs, GPO, trust, persistence, lateral movement |
 | Privilege Escalation | 11 | Windows + Linux enumeration and technique skills |
 | Infrastructure | 4 | Network recon, pivoting, container escapes, SMB exploitation |
-| Utility | 2 | Orchestrator + retrospective |
+| Utility | 3 | Orchestrator + Burp co-pilot + retrospective |
 
 ## Engagement logging
 
@@ -137,6 +138,7 @@ The cycle is: **engage → retrospective → improve skills → engage again**. 
 - Linux VM with your pentesting tools installed
 - [uv](https://docs.astral.sh/uv/) — Python package manager (for MCP servers)
 - Passwordless `sudo nmap` — the install script checks for this and advises how to configure it if missing
+- **Optional:** [Burp Suite Professional](https://portswigger.net/burp/pro) + MCP extension + Java 21+ — for the `web-discovery-burp` co-pilot skill (see `tools/burp-proxy/README.md`)
 
 ### Install
 

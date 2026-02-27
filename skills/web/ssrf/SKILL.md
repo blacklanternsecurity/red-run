@@ -613,3 +613,20 @@ interactsh-client
 # ipfuscator — generate IP encoding variations
 ipfuscator -i 169.254.169.254
 ```
+
+## Collaborator Exit (Burp co-pilot path)
+
+If `engagement/state.md` contains `burp-copilot: active` AND you reach a blind
+SSRF testing point that requires OOB callbacks, return to the orchestrator with:
+
+**Routing Recommendations:**
+- OOB needed: blind SSRF at [endpoint]/[parameter]
+- Payload template: [the URL/parameter with COLLABORATOR_URL placeholder]
+- Interaction type: dns|http
+- Context: [what a callback confirms — e.g., "server resolves attacker-controlled domain", "internal service reachable via SSRF"]
+
+The orchestrator handles Collaborator payload generation and interaction
+polling in the main context, then re-invokes this skill with results.
+
+If `burp-copilot` is NOT active, use existing fallbacks (interactsh, custom
+DNS server, time-based detection via internal service timing differences).

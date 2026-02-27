@@ -32,6 +32,15 @@
         "python",
         "server.py"
       ]
+    },
+    "burp": {
+      "command": "java",
+      "args": [
+        "-jar",
+        "tools/burp-proxy/mcp-proxy-all.jar",
+        "--sse-url",
+        "http://127.0.0.1:9876"
+      ]
     }
   }
 }

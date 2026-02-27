@@ -1,6 +1,6 @@
 # Skills Inventory
 
-66 skills across 6 categories. All skills are `SKILL.md` files under `skills/`.
+67 skills across 6 categories. All skills are `SKILL.md` files under `skills/`.
 
 ## Web Application (33 skills)
 
@@ -88,11 +88,12 @@ All AD skills follow a **Kerberos-first authentication** convention — commands
 | `container-escapes` | Docker socket/privileged/cgroup escape, sensitive mounts, capability abuse, K8s SA token/RBAC/etcd/kubelet exploitation, container CVEs, cloud metadata | 1115 |
 | `smb-exploitation` | MS08-067, MS17-010/EternalBlue, MS09-050, SMBGhost, OS compatibility matrix, Metasploit target selection, standalone Python fallback | 479 |
 
-## Utility (2 skills)
+## Utility (3 skills)
 
 | Skill | Purpose | Lines |
 |-------|---------|-------|
-| `orchestrator` | Takes a target, runs recon, routes to discovery skills, chains vulnerabilities via state management | 788 |
+| `orchestrator` | Takes a target, runs recon, routes to discovery skills, chains vulnerabilities via state management | 855 |
+| `web-discovery-burp` | Burp Suite co-pilot for guided-mode web discovery — proxy history triage, scanner review, Collaborator workflow, Repeater assistance | 638 |
 | `retrospective` | Post-engagement lessons-learned analysis, skill routing gaps, actionable improvements | 304 |
 
 ## Planned

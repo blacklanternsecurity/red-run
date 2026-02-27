@@ -520,3 +520,22 @@ Do not loop. Work through failures systematically:
 - PSObject: requires pre-CVE-2017-8565 patch level
 - Try DataSet or TextFormattingRunProperties as alternatives
 - Check .NET Framework version — some gadgets require specific versions
+
+## Collaborator Exit (Burp co-pilot path)
+
+If `engagement/state.md` contains `burp-copilot: active` AND you reach a blind
+.NET deserialization detection point that requires DNS/HTTP callbacks, return to
+the orchestrator with:
+
+**Routing Recommendations:**
+- OOB needed: blind .NET deserialization at [endpoint]/[parameter]
+- Payload template: [gadget payload with COLLABORATOR_URL placeholder — e.g., ObjectDataProvider calling nslookup]
+- Interaction type: dns|http
+- Context: [what a callback confirms — e.g., "BinaryFormatter.Deserialize() reached", "ViewState deserialization with known machine keys"]
+
+The orchestrator handles Collaborator payload generation and interaction
+polling in the main context, then re-invokes this skill with results.
+
+If `burp-copilot` is NOT active, use existing fallbacks (time-based detection
+via Thread.Sleep, file write proof, error-based detection via invalid type
+names).

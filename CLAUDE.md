@@ -30,12 +30,15 @@ Agent source files live in `agents/` (version controlled), installed to `~/.clau
 | skill-router | `tools/skill-router/` | `search_skills`, `get_skill`, `list_skills` | Semantic skill discovery and loading |
 | nmap-server | `tools/nmap-server/` | `nmap_scan`, `get_scan`, `list_scans` | Privileged nmap scanning (no sudo handoff) |
 | shell-server | `tools/shell-server/` | `start_listener`, `send_command`, `read_output`, `stabilize_shell`, `list_sessions`, `close_session` | TCP listener and reverse shell session manager |
+| burp | `tools/burp-proxy/` | _(from Burp MCP extension)_ | Burp Suite Pro proxy history, scanner, Collaborator, Repeater (optional — requires Burp Pro + MCP extension + Java 21+) |
 
 The skill-router is backed by ChromaDB + sentence-transformer embeddings (`all-MiniLM-L6-v2`). Skills are indexed from structured frontmatter fields (description, keywords, tools, opsec).
 
 The nmap-server wraps `sudo nmap` and returns parsed JSON. Requires passwordless sudo for nmap.
 
 The shell-server manages TCP listeners and reverse shell sessions. It solves the persistent shell problem — Claude Code's Bash tool runs each command as a separate process, so interactive shells and privilege escalation tools that spawn new shells have no way to connect back.
+
+The burp MCP proxy bridges Claude Code to a running Burp Suite Pro instance via PortSwigger's [MCP server](https://github.com/PortSwigger/mcp-server). Optional — only needed for the `web-discovery-burp` co-pilot skill. See `tools/burp-proxy/README.md` for setup.
 
 ### Modes
 - **Guided** (default): Interactive. Every command that touches the target
