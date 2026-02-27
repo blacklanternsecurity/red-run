@@ -415,7 +415,11 @@ Task(
 
 Do not execute ffuf, httpx, or nuclei commands inline.
 
-**Guided mode**: Present the operator with a choice:
+**Guided mode**: Present the operator with a choice.
+
+> **HARD FORK — GUIDED MODE ONLY. Do NOT skip this choice.**
+> Every web testing engagement in guided mode MUST go through this fork.
+> This applies whether you arrive here from Step 2, Step 3, or Step 4.
 
 > Web services detected on <target>. How do you want to approach web testing?
 >
@@ -506,8 +510,12 @@ Route to discovery skills based on attack surface. Pass along:
 
 ### Web Applications
 
-STOP. Spawn **web-agent** with skill `web-discovery`. Pass: target URL,
-technology stack, current mode, any credentials. Do not execute ffuf, httpx,
+**Guided mode**: STOP. Present the web testing approach fork (A/B/C) from
+Step 2 before spawning any web agent. Do NOT skip this — the operator must
+choose Burp co-pilot, CLI recon, or manual walkthrough.
+
+**Autonomous mode**: Spawn **web-agent** with skill `web-discovery`. Pass:
+target URL, technology stack, any credentials. Do not execute ffuf, httpx,
 or nuclei commands inline.
 
 ### Active Directory
