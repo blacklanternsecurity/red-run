@@ -19,22 +19,25 @@ In Burp Suite:
 1. Go to **Extensions** > **BApp Store**
 2. Search for **MCP Server** (by PortSwigger)
 3. Click **Install**
-4. Verify the extension is loaded and shows "MCP SSE server started on port 9876"
+4. The extension creates an **MCP** tab in Burp's top-level navigation
 
-### 2. Export the MCP proxy jar
+### 2. Extract the proxy jar
 
 The proxy jar bridges Claude Code (stdio MCP) to Burp's SSE endpoint.
 
-**Option A** — Download from the extension:
-1. In Burp, go to **Extensions** > **MCP Server** > **Export proxy jar**
-2. Save as `mcp-proxy-all.jar` in this directory (`tools/burp-proxy/`)
+1. In Burp, go to the **MCP** tab
+2. Click **Extract server proxy jar**
+3. Save the file as `mcp-proxy.jar` in this directory (`tools/burp-proxy/`)
 
-**Option B** — Build from source:
+That's it. The extension also starts an SSE server on `localhost:9876` by
+default — you can verify this in the MCP tab's server settings.
+
+**Alternative — build from source:**
 ```bash
 git clone https://github.com/PortSwigger/mcp-proxy
 cd mcp-proxy
 ./gradlew shadowJar
-cp build/libs/mcp-proxy-all.jar /path/to/red-run/tools/burp-proxy/
+cp build/libs/mcp-proxy.jar /path/to/red-run/tools/burp-proxy/
 ```
 
 ### 3. Verify
@@ -48,7 +51,7 @@ cp build/libs/mcp-proxy-all.jar /path/to/red-run/tools/burp-proxy/
 ## How it works
 
 ```
-Claude Code  <--stdio-->  mcp-proxy-all.jar  <--SSE-->  Burp MCP Extension
+Claude Code  <--stdio-->  mcp-proxy.jar  <--SSE-->  Burp MCP Extension
                           (this directory)               (localhost:9876)
 ```
 
@@ -65,7 +68,7 @@ Burp's MCP extension settings, update the `--sse-url` argument in `.mcp.json`.
 
 | Symptom | Fix |
 |---------|-----|
-| `burp` MCP server fails to start | Is `mcp-proxy-all.jar` in this directory? |
+| `burp` MCP server fails to start | Is `mcp-proxy.jar` in this directory? |
 | "Connection refused" in proxy jar output | Is Burp running with the MCP extension loaded? |
 | Java version error | Burp MCP proxy requires Java 21+. Check `java -version`. |
 | SSE connection timeout | Check that the port in `.mcp.json` matches Burp's MCP extension port |
@@ -73,6 +76,6 @@ Burp's MCP extension settings, update the `--sse-url` argument in `.mcp.json`.
 
 ## Files
 
-- `mcp-proxy-all.jar` — the MCP proxy (gitignored, user-provided)
+- `mcp-proxy.jar` — the MCP proxy (gitignored, user-provided)
 - `.gitkeep` — keeps this directory in git
 - `README.md` — this file

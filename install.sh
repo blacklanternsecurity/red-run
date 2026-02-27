@@ -175,7 +175,7 @@ echo "  [shell-server] Installing Python dependencies..."
 uv sync --directory "${MCP_SHELL_SERVER}" --quiet
 
 # Burp MCP proxy (optional)
-if [[ -f "${REPO_DIR}/tools/burp-proxy/mcp-proxy-all.jar" ]]; then
+if [[ -f "${REPO_DIR}/tools/burp-proxy/mcp-proxy.jar" ]]; then
     if command -v java &>/dev/null; then
         java_version=$(java -version 2>&1 | head -1 | sed 's/.*"\(.*\)".*/\1/' | cut -d. -f1)
         if [[ "$java_version" -ge 21 ]] 2>/dev/null; then

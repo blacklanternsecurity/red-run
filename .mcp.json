@@ -37,7 +37,7 @@
       "command": "java",
       "args": [
         "-jar",
-        "tools/burp-proxy/mcp-proxy-all.jar",
+        "tools/burp-proxy/mcp-proxy.jar",
         "--sse-url",
         "http://127.0.0.1:9876"
       ]

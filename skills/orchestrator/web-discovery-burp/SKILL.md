@@ -103,7 +103,7 @@ get_proxy_http_history(count=1, offset=0)
 > Burp MCP is not connected. Verify:
 > 1. Burp Suite Pro is running with the MCP extension loaded
 > 2. The MCP SSE server shows "started on port 9876" in the extension output
-> 3. `tools/burp-proxy/mcp-proxy-all.jar` exists
+> 3. `tools/burp-proxy/mcp-proxy.jar` exists
 > 4. Java 21+ is available (`java -version`)
 >
 > See `tools/burp-proxy/README.md` for setup instructions.
@@ -114,7 +114,7 @@ Do NOT continue if the availability check fails.
 
 - Burp Suite Professional running
 - MCP extension loaded and SSE server active (localhost:9876)
-- `tools/burp-proxy/mcp-proxy-all.jar` configured in `.mcp.json`
+- `tools/burp-proxy/mcp-proxy.jar` configured in `.mcp.json`
 - Java 21+ available
 - Operator actively browsing target through Burp proxy
 
@@ -619,7 +619,7 @@ Do not auto-escalate. Wait for operator direction.
 | `get_proxy_http_history` returns error | Is Burp running? Is the MCP extension loaded? |
 | "Connection refused" | Check SSE port — default is 9876, must match `.mcp.json` |
 | Java error on startup | Requires Java 21+. Check `java -version`. |
-| Proxy jar not found | Place `mcp-proxy-all.jar` in `tools/burp-proxy/`. See README. |
+| Proxy jar not found | Place `mcp-proxy.jar` in `tools/burp-proxy/`. See README. |
 | Slow MCP responses | Normal for large proxy histories. Use regex filters and small `count`. |
 | Empty proxy history | Has the operator browsed the target through Burp? Check scope settings. |
 
