@@ -12,12 +12,12 @@ The orchestrator spawns domain-specific subagents for each skill invocation:
 
 | Agent | Domain | MCP Servers | Skills |
 |-------|--------|-------------|--------|
-| `network-recon-agent` | Network | skill-router, nmap-server, shell-server, state-reader | network-recon, smb-exploitation, pivoting-tunneling (haiku) |
+| `network-recon-agent` | Network | skill-router, nmap-server, shell-server, state-reader | network-recon, smb-exploitation, pivoting-tunneling |
 | `web-discovery-agent` | Web discovery | skill-router, shell-server, state-reader | web-discovery |
 | `web-exploit-agent` | Web exploitation | skill-router, shell-server, state-reader | All web technique skills |
 | `ad-discovery-agent` | AD discovery | skill-router, shell-server, state-reader | ad-discovery |
 | `ad-exploit-agent` | AD exploitation | skill-router, shell-server, state-reader | All AD technique skills |
-| `password-spray-agent` | Credential spraying | skill-router, shell-server, state-reader | password-spraying (haiku) |
+| `password-spray-agent` | Credential spraying | skill-router, shell-server, state-reader | password-spraying |
 | `linux-privesc-agent` | Linux privesc | skill-router, shell-server, state-reader | Linux discovery + privesc + container escapes |
 | `windows-privesc-agent` | Windows privesc | skill-router, shell-server, state-reader | Windows discovery + privesc |
 | `evasion-agent` | AV/EDR evasion | skill-router, shell-server, state-reader | av-edr-evasion |
@@ -50,10 +50,17 @@ The shell-server manages TCP listeners, reverse shell sessions, and local intera
 - **Guided** (default): Interactive. Every command that touches the target
   requires explicit user approval before execution. Present what you want to
   run and why, then wait. Local-only operations (file writes, parsing, hash
-  cracking) don't need approval. Present options at decision forks.
+  cracking) don't need approval. Present options at decision forks. Subagents
+  use **phase-level approval** — agents execute one logical group of commands
+  (grouped by defender visibility / traffic profile), return with findings and
+  a plan for the next group, and the orchestrator relays to the user via
+  `AskUserQuestion`. The user can approve, modify, skip, or approve-all
+  remaining phases. This replaces per-command relay (too slow) and
+  auto-approval (defeats guided mode).
 - **Autonomous**: No guardrails. Execute recon through exploitation, make
   triage decisions, route to skills automatically. Report at milestones. Only
-  pause for destructive or high-OPSEC actions.
+  pause for destructive or high-OPSEC actions. Subagents execute end-to-end
+  (no phase returns).
 
 Mode is set by the user or the orchestrator and propagated via conversation context.
 

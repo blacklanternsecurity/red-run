@@ -134,12 +134,12 @@ every routing decision.
 
 | Agent | Domain | MCP Servers | Use For |
 |-------|--------|-------------|---------|
-| `network-recon-agent` | Network | skill-router, nmap-server, shell-server, state-reader | network-recon, smb-exploitation, pivoting-tunneling (haiku) |
+| `network-recon-agent` | Network | skill-router, nmap-server, shell-server, state-reader | network-recon, smb-exploitation, pivoting-tunneling |
 | `web-discovery-agent` | Web discovery | skill-router, shell-server, state-reader | web-discovery |
 | `web-exploit-agent` | Web exploitation | skill-router, shell-server, state-reader | All web technique skills |
 | `ad-discovery-agent` | AD discovery | skill-router, shell-server, state-reader | ad-discovery |
 | `ad-exploit-agent` | AD exploitation | skill-router, shell-server, state-reader | All AD technique skills |
-| `password-spray-agent` | Credential spraying | skill-router, shell-server, state-reader | password-spraying (haiku) |
+| `password-spray-agent` | Credential spraying | skill-router, shell-server, state-reader | password-spraying |
 | `linux-privesc-agent` | Linux privesc | skill-router, shell-server, state-reader | Linux discovery + technique skills, container escapes |
 | `windows-privesc-agent` | Windows privesc | skill-router, shell-server, state-reader | Windows discovery + technique skills |
 | `evasion-agent` | AV/EDR evasion | skill-router, shell-server, state-reader | AV bypass payload generation |
@@ -151,7 +151,7 @@ Spawn the appropriate domain agent via the Task tool:
 ```
 Task(
     subagent_type="network-recon-agent",
-    prompt="Load skill 'network-recon'. Target: 10.10.10.5. Mode: guided. No credentials provided.",
+    prompt="Load skill 'network-recon'. Target: 10.10.10.5. Mode: guided. Phase approval: guided. No credentials provided.",
     description="Network recon on 10.10.10.5"
 )
 ```
@@ -205,7 +205,7 @@ Use this table to pick the right agent for each skill:
 | kerberos-roasting, kerberos-delegation, kerberos-ticket-forging | ad-exploit-agent | Kerberos attacks |
 | adcs-template-abuse, adcs-access-and-relay, adcs-persistence | ad-exploit-agent | ADCS abuse |
 | acl-abuse, credential-dumping, pass-the-hash | ad-exploit-agent | AD |
-| password-spraying | password-spray-agent | Service-agnostic credential spraying (haiku) |
+| password-spraying | password-spray-agent | Service-agnostic credential spraying |
 | gpo-abuse, trust-attacks, ad-persistence, auth-coercion-relay, sccm-exploitation | ad-exploit-agent | AD |
 | linux-discovery | linux-privesc-agent | Linux host enum |
 | linux-sudo-suid-capabilities, linux-cron-service-abuse, linux-file-path-abuse, linux-kernel-exploits | linux-privesc-agent | Linux privesc |
@@ -236,6 +236,60 @@ while objectives_not_met:
 
 Each iteration is one skill invocation. The orchestrator never runs two skills
 in parallel — sequential execution ensures state stays consistent.
+
+#### Phase-Level Approval (Guided Mode)
+
+In guided mode, subagents cannot talk to the user directly. Instead of
+auto-approving every command (which defeats guided mode) or relaying each
+command individually (which is too slow), the orchestrator uses **phase-level
+approval** — agents execute one logical group of commands, return with findings
+and a plan for the next group, and the orchestrator relays to the user.
+
+**Detecting phase returns vs final returns:**
+
+When an agent returns, check the return text:
+- Starts with `## Phase Complete:` → **phase return** (agent has more work)
+- Starts with any other heading (`## Network Recon Results:`,
+  `## Web Discovery Results:`, etc.) → **final return** (agent is done)
+
+**Phase approval inner loop:**
+
+```
+spawn agent with: skill, target, mode, context, "Phase approval: guided"
+while agent has more phases:
+    agent returns with "## Phase Complete: ..."
+    relay phase report to user via AskUserQuestion:
+        - Approve → resume agent with "Approved. Continue with the next phase."
+        - Modify  → resume agent with "Modified. <user's instructions>"
+        - Skip    → resume agent with "Skip the next phase. Proceed to the one after."
+                     (or "Return final summary." if it was the last phase)
+        - Approve all → resume agent with "All remaining phases approved.
+                         Execute end-to-end and return final summary."
+agent returns final summary → run post-skill checkpoint
+```
+
+**AskUserQuestion format for phase relay:**
+
+Print the agent's phase report (findings + next phase plan) as context, then:
+
+- Header: "Phase"
+- Options:
+  - Approve (Recommended) — proceed with the planned commands
+  - Modify — change the plan (user provides instructions via "Other")
+  - Skip — skip the next phase entirely
+  - Approve all — approve all remaining phases, agent runs end-to-end
+
+**Approve-all optimization:** When the user selects "Approve all", resume the
+agent with instructions to execute all remaining phases without returning. The
+agent switches to end-to-end mode for the rest of this invocation.
+
+**Activity logging:** Log the initial routing and final outcome to
+`engagement/activity.md`. Do not log every phase boundary — that would create
+noise. Phase details are captured in the agent's JSONL transcript.
+
+**Autonomous mode:** Omit `Phase approval: guided` from the spawn prompt (or
+set `Phase approval: false`). Agents execute end-to-end and return only the
+final summary.
 
 #### Built-in Task Sub-Agents (Warning)
 
@@ -300,7 +354,9 @@ Check if the user has set a mode:
   Present attack surface maps, chain analysis, and routing decisions — let the
   user choose which paths to pursue. Confirm before invoking each technique
   skill. Never execute multiple target-touching commands without approval
-  between them.
+  between them. When spawning subagents, include `Phase approval: guided` in
+  the prompt — agents return after each phase for user approval (see
+  Phase-Level Approval in the Subagent Delegation section).
 - **Autonomous**: Execute recon through exploitation. Make triage decisions.
   Route to technique skills automatically. Report at phase boundaries and
   when significant access is gained.
@@ -417,7 +473,7 @@ autonomous modes — the operator always chooses the scan type.
   ```
   Task(
       subagent_type="network-recon-agent",
-      prompt="Load skill 'network-recon'. Target: <IP/range>. Mode: <mode>. Credentials: <creds or 'none'>. Scan type: <quick|full>.",
+      prompt="Load skill 'network-recon'. Target: <IP/range>. Mode: <mode>. Phase approval: guided. Credentials: <creds or 'none'>. Scan type: <quick|full>.",
       description="Network recon on <target>"
   )
   ```
@@ -441,7 +497,7 @@ autonomous modes — the operator always chooses the scan type.
   ```
   Task(
       subagent_type="network-recon-agent",
-      prompt="Load skill 'network-recon'. Target: <IP/range>. Mode: <mode>. Credentials: <creds or 'none'>. Custom scan request: <operator's description>.",
+      prompt="Load skill 'network-recon'. Target: <IP/range>. Mode: <mode>. Phase approval: guided. Credentials: <creds or 'none'>. Custom scan request: <operator's description>.",
       description="Network recon on <target>"
   )
   ```
@@ -466,7 +522,7 @@ STOP. Spawn **web-discovery-agent** with skill `web-discovery`:
 ```
 Task(
     subagent_type="web-discovery-agent",
-    prompt="Load skill 'web-discovery'. Target: <URL>. Tech stack: <from recon>. Mode: <mode>.",
+    prompt="Load skill 'web-discovery'. Target: <URL>. Tech stack: <from recon>. Mode: <mode>. Phase approval: guided.",
     description="Web discovery on <target>"
 )
 ```
@@ -480,7 +536,7 @@ STOP. Spawn **ad-discovery-agent** with skill `ad-discovery`:
 ```
 Task(
     subagent_type="ad-discovery-agent",
-    prompt="Load skill 'ad-discovery'. DC: <IP>. Domain: <name>. Credentials: <creds>. Mode: <mode>.",
+    prompt="Load skill 'ad-discovery'. DC: <IP>. Domain: <name>. Credentials: <creds>. Mode: <mode>. Phase approval: guided.",
     description="AD discovery on <domain>"
 )
 ```
@@ -992,11 +1048,10 @@ must choose the intensity.
 ```
 Agent(
     subagent_type="password-spray-agent",
-    model="haiku",
     prompt="Load skill 'password-spraying'. Spray tier: <light/medium/heavy/custom>.
 Target: <IP>. Services: <only operator-selected services, e.g. 'SMB 445, WinRM 5985'>.
 Domain: <domain or 'N/A'>. Hostname: <hostname>.
-Usernames: <list or path to file>.
+Usernames: <list or path to file>. Phase approval: guided.
 Lockout policy: <threshold/window/duration if known, or 'unknown — enumerate first'>.
 Mode: <guided/autonomous>.
 Custom wordlist: <path if custom, omit otherwise>.",

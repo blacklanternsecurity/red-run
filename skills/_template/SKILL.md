@@ -34,6 +34,55 @@ Check if the user or orchestrator has set a mode:
 
 If unclear, default to guided.
 
+### Guided Mode in Subagent Context
+
+When running as a subagent (spawned by the orchestrator via the Agent tool), you
+cannot talk to the user directly. Instead of per-command approval, use
+**phase-level returns** — execute one logical group of commands, then return to
+the orchestrator with findings and a plan for the next group.
+
+**Phase grouping — group by defender visibility:**
+- **Same auth context** — all enumeration with the same credential against the
+  same service belongs in one phase. Switching credentials or services is a new
+  phase.
+- **Same traffic profile** — unauthenticated probes (null sessions, anonymous
+  binds, banner grabs) can be batched. They look like the same activity to the
+  defender.
+- **Escalation boundary** — moving from enumeration to exploitation is always a
+  new phase. The operator must approve before you inject payloads, send exploits,
+  or modify target state.
+- **Skill Step boundaries are a fallback** — if unsure where to draw the line,
+  the skill's `## Step N` headings are reasonable phase boundaries.
+
+**Phase return format:**
+
+```
+## Phase Complete: <phase title>
+
+### Findings So Far
+- <what was discovered/achieved>
+
+### Next Phase: <next phase title>
+Commands planned:
+- `<command>` -- <what it does and why>
+- `<command>` -- <what it does and why>
+
+### Decision Point
+<options if the skill has a fork here, otherwise omit>
+```
+
+The orchestrator will relay your phase report to the user, collect their
+decision (approve / modify / skip / approve-all), and resume you with the
+result. Your full context is preserved across phase boundaries via the Agent
+resume mechanism.
+
+**When NOT to use phase returns:**
+- **Autonomous mode** — execute end-to-end and return only the final summary
+- **Inline execution** — you're in the main thread, use per-command approval
+  with the user directly
+- **`Phase approval: false`** in the spawn prompt — orchestrator explicitly
+  disabled phase returns for this invocation
+
 ## Engagement Logging
 
 Check for `./engagement/` directory. If absent, proceed without logging.

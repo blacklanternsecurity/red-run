@@ -105,6 +105,50 @@ needed for payload delivery:
 If `engagement/` doesn't exist, skip logging — the orchestrator handles
 directory creation.
 
+## Phase-Level Returns (Guided Mode)
+
+When the orchestrator's spawn prompt includes `Phase approval: guided`, use
+phase-level returns instead of running the entire skill end-to-end. Execute one
+logical group of commands, then return with findings and a plan for the next
+group. The orchestrator relays your phase report to the user for approval and
+resumes you with their decision.
+
+**Protocol:**
+1. Execute one phase (a group of commands with similar traffic profile)
+2. Return with `## Phase Complete: <title>` heading (see format below)
+3. Wait — the orchestrator will resume you with the user's decision
+4. On resume, execute the next phase or adjust per user instructions
+5. Repeat until the skill is complete, then return your final summary
+
+**Phase grouping for AV/EDR evasion:**
+- Detection assessment (analyze what was caught and why) = one phase
+- Payload compilation (build bypass on attackbox) = one phase
+- On-target verification (transfer + AV survival test) = one phase
+
+**Phase return format:**
+```
+## Phase Complete: <phase title>
+
+### Findings So Far
+- <what was discovered/achieved>
+
+### Next Phase: <next phase title>
+Commands planned:
+- `<command>` -- <what it does and why>
+- `<command>` -- <what it does and why>
+
+### Decision Point
+<options if the skill has a fork here, otherwise omit>
+```
+
+**When NOT to phase-return:**
+- `Phase approval: false` or no phase approval field → execute end-to-end
+- Autonomous mode → execute end-to-end
+
+**Evidence:** Save evidence to `engagement/evidence/evasion/` at every phase
+boundary, not just at the end. If the user skips remaining phases, evidence from
+completed phases is preserved.
+
 ## Return Format
 
 When you're done, provide a clear summary for the orchestrator:
