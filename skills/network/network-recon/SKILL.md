@@ -262,6 +262,26 @@ version detection, script scanning, and traceroute. `-p-` scans all 65535
 ports. `-T4` is aggressive timing suitable for most networks. `-oA` saves in
 all formats (`.nmap`, `.gnmap`, `.xml`).
 
+### Host Appears Down — `-Pn` Retry
+
+If the scan returns **0 hosts up** (nmap's host discovery probes got no
+response), retry with `-Pn` added to the **same scan options**. Many targets
+(especially HTB/CTF, cloud instances, and firewalled hosts) block ICMP and
+TCP discovery probes but have open ports.
+
+**Rules:**
+- Add `-Pn` to the ORIGINAL scan options. Do NOT change the scan type, port
+  range, or any other flags. If the operator chose quick (`--top-ports 1000`),
+  retry as quick + `-Pn`. If full (`-p-`), retry as full + `-Pn`.
+- This retry happens **once**. If the `-Pn` scan also returns no open ports,
+  **STOP and return to the orchestrator** with:
+  - What was tried (both scans with exact options)
+  - That the host appears unreachable or has no open ports in the scanned range
+  - A recommendation to check network connectivity (VPN, routing, firewall)
+- Do NOT escalate to a different scan type (e.g., quick → full). Do NOT add
+  `-p-` to a quick scan. Do NOT run additional scans beyond the one `-Pn`
+  retry. The orchestrator decides next steps — not you.
+
 **Parse scan results:**
 
 ```bash
@@ -968,7 +988,11 @@ OS, any credentials or access found, current mode.
 ### Nmap scan runs slowly or hangs
 - Use `-T4` for speed. Drop to `-T3` if getting rate-limited or missing ports.
 - On large subnets, start with `--top-ports 1000` before doing `-p-`.
-- If host seems down but you know it's up, add `-Pn` to skip host discovery.
+
+### Host appears down (0 hosts up)
+- Retry with `-Pn` added to the same scan options (see "Host Appears Down"
+  in Step 2). Do NOT change the scan type or port range.
+- If `-Pn` also finds nothing, return to orchestrator — do not improvise.
 
 ### UDP scan takes too long
 - UDP scans are inherently slow. Limit to key ports: `-sU -p 53,67,69,123,161,162,500,623,1434,5353`.

