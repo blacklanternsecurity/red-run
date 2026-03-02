@@ -361,7 +361,7 @@ echo -n 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9' | base64 -d
 # .htaccess (Apache), web.config (IIS), .user.ini (PHP-FPM)
 ```
 
-> **→ ROUTE ON HIT:** Uploaded file executed server-side → **file-upload-bypass**. Alternative extension accepted → **file-upload-bypass**. Config file accepted (`.htaccess`, `web.config`) → **file-upload-bypass** (config exploitation).
+> **→ ROUTE ON HIT:** Uploaded file executed server-side → **file-upload-bypass**. Alternative extension accepted → **file-upload-bypass**. Config file accepted (`.htaccess`, `web.config`) → **file-upload-bypass** (config exploitation). **Upload endpoint found but execution blocked** → **file-upload-bypass** (discovery-phase testing is preliminary — the technique skill has comprehensive bypass methodology including alternative extensions, .htaccess/.web.config upload, magic bytes, polyglots, and archive tricks that discovery does not exhaustively test).
 
 **NoSQL Injection** (test JSON APIs and Node.js backends):
 ```
@@ -657,6 +657,7 @@ execute exploitation commands inline — even if the technique seems simple.
 | Uploaded file executed server-side | **file-upload-bypass** |
 | Extension blocked but alternative accepted | **file-upload-bypass** |
 | Config file upload accepted (.htaccess, web.config) | **file-upload-bypass** (config exploitation) |
+| Upload endpoint found, basic server-side content blocked | **file-upload-bypass** (discovery testing is preliminary — technique skill has 20+ bypass variants) |
 
 ### Request Smuggling
 

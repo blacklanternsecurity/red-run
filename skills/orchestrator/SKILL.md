@@ -178,6 +178,22 @@ The agent will:
 3. Report findings and return — the orchestrator records state changes and decides what to invoke next
 4. Return a summary of findings and routing recommendations
 
+**Context passing — do NOT override skill methodology.** When routing to a
+technique agent, pass discovery-phase findings as **informational context**,
+not as directives to skip techniques. The skill's methodology determines what
+to try — the orchestrator provides context, not restrictions.
+
+- **WRONG:** *"Do NOT attempt PHP webshell uploads — they are blocked by
+  content inspection."*
+- **RIGHT:** *"Discovery found: basic PHP content (<?php) is blocked by
+  content inspection. PHP short tags also blocked. The skill's full bypass
+  methodology has not been tested yet."*
+
+The technique skill contains curated bypass sequences (alternative extensions,
+config file uploads, magic bytes, polyglots, etc.) that the discovery agent
+never tested. Telling the agent to skip a technique class defeats the purpose
+of routing to the skill in the first place.
+
 **After every subagent return:**
 1. Parse the agent's return summary for new targets, creds, access, vulns, pivots, blocked items
 2. Call structured write tools to record findings (`add_target`, `add_credential`, `add_vuln`, etc.)
@@ -296,7 +312,21 @@ When a skill completes and returns control to the orchestrator:
    - Access gained/changed → `add_access()` / `update_access()`
    - Vulnerabilities confirmed → `add_vuln()` / `update_vuln()`
    - Pivot paths identified → `add_pivot()`
-   - Failed techniques → `add_blocked()`
+   - Failed techniques → `add_blocked()` — **see retry policy below**
+   - **Retry policy for blocked techniques from discovery agents:**
+     Discovery agents (web-discovery, ad-discovery, network-recon,
+     linux-discovery, windows-discovery) perform preliminary testing with
+     basic payloads. They are NOT equipped with the full bypass methodology
+     of technique skills. When a discovery agent reports a technique as
+     blocked (e.g., "PHP upload blocked by content inspection"), **always
+     record with `retry: "with_context"`** — never `retry: "no"`. The
+     corresponding technique skill (e.g., file-upload-bypass) has
+     comprehensive bypass methodology (alternative extensions, .htaccess,
+     magic bytes, polyglots, double extensions, etc.) that discovery agents
+     don't test. Only a technique skill can definitively confirm a
+     technique is blocked. Mark `retry: "no"` only when a **technique
+     agent** (web-exploit, ad-exploit, linux-privesc, windows-privesc)
+     exhausts its skill's methodology and still fails.
 3. Append to `engagement/activity.md` with skill outcome
 4. Append to `engagement/findings.md` if vulnerabilities were confirmed
 5. **Check for new usernames** — if the skill returned usernames not
@@ -772,8 +802,19 @@ When reading the state summary (via `get_state_summary()`), the orchestrator sho
    abuse toward the same account), race them in parallel via the fork
    mechanism.
 6. **Check pivot map** — are there identified paths not yet followed?
-7. **Check blocked items** — has anything changed that might unblock a
-   previously failed technique?
+7. **Check blocked items** — two categories:
+   a. **`retry: "with_context"`** — these are techniques blocked at the
+      discovery phase that have a corresponding technique skill with deeper
+      bypass methodology. Route to the technique skill and let it exhaust
+      its full methodology before accepting the block. Example: web-discovery
+      reports "PHP upload blocked by content inspection" → route to
+      web-exploit-agent with `file-upload-bypass` to try alternative
+      extensions, .htaccess, magic bytes, polyglots, etc.
+   b. **`retry: "later"`** — context has changed (new credentials, new
+      access, different network position). Retry with updated context.
+   c. **`retry: "no"`** — technique skill exhausted its methodology. Only
+      revisit if fundamentally new access is gained (e.g., admin creds,
+      different host).
 8. **Assess progress toward objectives** — are we closer to the goal defined
    in scope.md?
 9. **No hardcoded route matches** — if the scenario doesn't match any routing
