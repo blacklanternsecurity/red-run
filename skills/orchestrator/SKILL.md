@@ -158,6 +158,7 @@ every routing decision.
 | `linux-privesc-agent` | Linux privesc | skill-router, shell-server, state-reader | Linux discovery + technique skills, container escapes |
 | `windows-privesc-agent` | Windows privesc | skill-router, shell-server, state-reader | Windows discovery + technique skills |
 | `evasion-agent` | AV/EDR evasion | skill-router, shell-server, state-reader | AV bypass payload generation |
+| `credential-cracking-agent` | Credential cracking | skill-router, state-reader | credential-cracking (haiku, local-only) |
 
 **How to delegate:**
 
@@ -229,7 +230,7 @@ Use this table to pick the right agent for each skill:
 | windows-token-impersonation, windows-service-dll-abuse, windows-uac-bypass | windows-privesc-agent | Windows privesc |
 | windows-credential-harvesting, windows-kernel-exploits | windows-privesc-agent | Windows privesc |
 | av-edr-evasion | evasion-agent | AV/EDR bypass payload generation |
-| credential-cracking | _(inline — no agent needed)_ | Local-only, no target interaction |
+| credential-cracking | credential-cracking-agent | Local-only cracking, forkable for parallel races (haiku) |
 | retrospective | _(inline — no agent needed)_ | Post-engagement, no target interaction |
 
 #### Orchestrator Loop
@@ -764,9 +765,12 @@ When reading the state summary (via `get_state_summary()`), the orchestrator sho
    services?
 5. **Check for uncracked hashes** — if the Credentials section contains hashes
    without plaintext (NTLM, Kerberos TGS, shadow, etc.) or the engagement has
-   encrypted files (ZIP, Office, KeePass, SSH key), load **credential-cracking**
-   inline via `get_skill("credential-cracking")`. Cracked passwords unlock new
-   testing against all services.
+   encrypted files (ZIP, Office, KeePass, SSH key), spawn
+   **credential-cracking-agent** with the hash details. Cracked passwords
+   unlock new testing against all services. The cracking agent is forkable —
+   if another technique skill targets the same credential goal (e.g., ACL
+   abuse toward the same account), race them in parallel via the fork
+   mechanism.
 6. **Check pivot map** — are there identified paths not yet followed?
 7. **Check blocked items** — has anything changed that might unblock a
    previously failed technique?
@@ -827,7 +831,7 @@ goal, spawn them all. The real constraint is independence, not count.
 
 | Scenario | Forkable? | Why |
 |----------|-----------|-----|
-| Kerberoasting + ACL WriteDacl chain → both target `management_svc` creds | Yes | Convergent goal, independent reads, no resource contention |
+| Kerberoast cracking (credential-cracking-agent) + ACL abuse (ad-exploit-agent) → both target `management_svc` creds | Yes | Convergent goal, independent (local cracking vs LDAP/Kerberos), no resource contention |
 | ADCS ESC1 + ADCS ESC4 → both target DA certificate | Yes | Convergent goal, different CAs/templates, independent |
 | SQLi data extraction + SSRF to internal service | No | Different goals (data vs access), not convergent |
 | Two SQLi payloads against the same parameter | No | Same resource (web session/parameter), not independent |
@@ -1201,13 +1205,14 @@ must choose the intensity.
 
 5. After operator responds:
    - If **Skip**: Log to `activity.md` and continue engagement loop
-   - Otherwise: Spawn **password-spray-agent** with the selected tier and
-     **only the selected services**:
+   - Otherwise: Spawn **password-spray-agent** **in the background** with the
+     selected tier and **only the selected services**:
 
 ```
 Agent(
     subagent_type="password-spray-agent",
     model="haiku",
+    run_in_background=true,
     prompt="Load skill 'password-spraying'. Spray tier: <light/medium/heavy/custom>.
 Target: <IP>. Services: <only operator-selected services, e.g. 'SMB 445, WinRM 5985'>.
 Domain: <domain or 'N/A'>. Hostname: <hostname>.
@@ -1219,17 +1224,31 @@ Custom wordlist: <path if custom, omit otherwise>.",
 )
 ```
 
-6. Parse the agent's return summary — record valid credentials via
-   `add_credential()`, test results via `test_credential()`, and any
-   access gained via `add_access()`
-7. Log to `engagement/activity.md`:
-   ```
-   ### [YYYY-MM-DD HH:MM:SS] orchestrator → password-spraying
-   - Spray tier: <tier>, N usernames, M passwords per user
-   - Valid credentials found: <count>
-   - Access gained: <summary or 'none'>
-   ```
-8. Resume the engagement loop — run Step 5 decision logic with new state
+6. **Immediately continue the engagement loop.** Spraying is independent of
+   other discovery phases — it tests credentials against services (SMB, LDAP,
+   SSH) while discovery enumerates attack surface via different channels
+   (LDAP queries, BloodHound, ADCS templates, ACL analysis). No resource
+   contention. Run the Step 5 decision logic and route to the next discovery
+   skill (ad-discovery, web-discovery, etc.) without waiting for spray results.
+
+   This is NOT a parallel fork (convergent goals). This is **independent phase
+   parallelization** — spray and discovery have different goals (credential
+   finding vs attack surface mapping) and can overlap safely.
+
+7. When the spray agent returns (auto-notified):
+   - Parse the return summary — record valid credentials via
+     `add_credential()`, test results via `test_credential()`, and any
+     access gained via `add_access()`
+   - Log to `engagement/activity.md`:
+     ```
+     ### [YYYY-MM-DD HH:MM:SS] orchestrator → password-spraying complete
+     - Spray tier: <tier>, N usernames, M passwords per user
+     - Valid credentials found: <count>
+     - Access gained: <summary or 'none'>
+     ```
+   - If the spray found valid credentials while another skill is still running,
+     record the findings and integrate them into the next routing decision.
+     Do NOT interrupt the running skill.
 
 **In guided mode**: Present the chain analysis and recommend next steps.
 Show the reasoning: "We have SQLi on the web app. We could extract credentials
