@@ -249,8 +249,13 @@ while objectives_not_met:
     append to findings.md (if vulns confirmed)
 ```
 
-Each iteration is one skill invocation. The orchestrator never runs two skills
-in parallel — sequential execution ensures state stays consistent.
+Each iteration is normally one skill invocation. Sequential execution is the
+default because it keeps state simple. However, when the orchestrator detects
+**convergent independent paths** (multiple skills targeting the same
+intermediate goal with no shared dependencies), it may race them in parallel.
+See **Parallel Fork Execution** below for mechanics. In guided mode, forks are
+presented to the operator for approval. In autonomous mode, forks execute
+automatically.
 
 #### Built-in Task Sub-Agents (Warning)
 
@@ -303,6 +308,14 @@ When a skill completes and returns control to the orchestrator:
 7. Run the Step 5 decision logic
 8. Route to the next skill based on updated state
 
+#### Parallel Fork Returns
+
+When a returning agent was part of a parallel fork (see **Parallel Fork
+Execution**), steps 1–4 above still apply — parse findings, record state, log
+activity, log findings. Steps 5–8 are replaced by the **Race Resolution**
+procedure. Do not run decision logic or route to the next skill until the fork
+is fully resolved.
+
 Skills should NOT chain directly into other skills' scope areas. If a discovery
 skill finds something outside its scope, it reports findings and returns — the
 orchestrator records state changes and decides what to invoke next.
@@ -321,6 +334,34 @@ Check if the user has set a mode:
 
 Skills and agents do not need mode awareness — the orchestrator is the only
 component that checks mode. If unclear, default to guided.
+
+### Guided Mode — Fork Presentation
+
+When **Fork Detection** (see Decision Logic) identifies convergent independent
+paths, guided mode presents the fork to the operator instead of auto-forking.
+
+**Format:**
+```
+**Fork detected** — <N> independent paths converge on the same goal:
+
+**Goal:** <what all paths are trying to achieve>
+
+| Path | Skill | Confidence | OPSEC | Notes |
+|------|-------|------------|-------|-------|
+| A | <skill-name> | high/medium/low | low/medium/high | <brief rationale> |
+| B | <skill-name> | high/medium/low | low/medium/high | <brief rationale> |
+```
+
+Then use `AskUserQuestion` with a single-select question:
+- **"Run all in parallel (Recommended)"** — first to achieve goal wins, others killed
+- **"Path A only — \<skill-name\>"**
+- **"Path B only — \<skill-name\>"**
+- (additional paths if more than 2)
+- **"Run sequentially"** — try each in order, stop when one succeeds
+
+If the operator selects parallel, execute the **Parallel Fork Execution**
+procedure. Otherwise, run the selected path(s) sequentially using the normal
+orchestrator loop.
 
 ## Invocation Log
 
@@ -747,6 +788,139 @@ When reading the state summary (via `get_state_summary()`), the orchestrator sho
    d. If no search result is relevant, proceed with general methodology and
       note the coverage gap in `engagement/activity.md`.
 
+### Fork Detection
+
+Before selecting a single next skill, check whether the current state presents
+**convergent independent paths** — multiple skills that target the same
+intermediate goal with no dependencies between them. If so, these paths can be
+raced in parallel (autonomous mode) or presented as a fork (guided mode).
+
+**Fork criteria — ALL must hold:**
+
+1. **Convergent goal** — all paths target the same intermediate objective
+   (a specific credential, access level, or foothold). "Get `management_svc`
+   creds" is convergent. "Enumerate web" and "enumerate AD" are not — those are
+   independent phases, not convergent paths.
+2. **Independence** — no shared writes, no resource contention between paths.
+   Safe: Kerberoasting + ACL-based credential theft (read-only queries to
+   different services). Unsafe: two skills that both modify the same AD object,
+   two web exploits that both need the same authenticated session, or two
+   attacks that both bind the same port.
+3. **Both worth attempting** — neither path is blocked or already exhausted.
+   Ideal: one high-confidence path + one lower-confidence path (race covers
+   both). Acceptable: two medium-confidence paths. Pointless: one clearly
+   dominant path with no reason to race.
+4. **Same target** — all paths operate on the same target host or AD domain.
+   Cross-target parallelism uses **Phase-Based Cycling** (Step 7) instead.
+
+No hard limit on parallel agents — fork as many convergent independent paths
+as exist. In practice this is typically 2–3. If 4+ paths converge on the same
+goal, spawn them all. The real constraint is independence, not count.
+
+**When NOT to fork (stay sequential):**
+- Single actionable path — nothing to race against
+- Dependency chain — path B needs results from path A
+- Resource contention — same AD object, same port, same web session
+- Clearly dominant path — high confidence + fast, no reason to race
+
+**Examples:**
+
+| Scenario | Forkable? | Why |
+|----------|-----------|-----|
+| Kerberoasting + ACL WriteDacl chain → both target `management_svc` creds | Yes | Convergent goal, independent reads, no resource contention |
+| ADCS ESC1 + ADCS ESC4 → both target DA certificate | Yes | Convergent goal, different CAs/templates, independent |
+| SQLi data extraction + SSRF to internal service | No | Different goals (data vs access), not convergent |
+| Two SQLi payloads against the same parameter | No | Same resource (web session/parameter), not independent |
+| Kerberoasting (needs results) → then pass-the-hash with cracked cred | No | Dependency chain — path B requires path A output |
+| Web shell upload + deserialization RCE → both target initial foothold | Yes | Convergent goal (shell on web server), independent vectors |
+
+**In guided mode:** fork detection still runs, but instead of auto-forking,
+present the fork via the **Guided Mode — Fork Presentation** format above.
+
+### Parallel Fork Execution
+
+When fork detection identifies valid convergent paths, execute them in parallel
+using background agents.
+
+#### 1. Log the Fork Decision
+
+Append to `engagement/activity.md`:
+```
+### [YYYY-MM-DD HH:MM:SS] orchestrator → PARALLEL FORK
+- Goal: <convergent objective>
+- Path A: <skill-name> (confidence: <high/medium/low>, OPSEC: <low/medium/high>)
+- Path B: <skill-name> (confidence: <high/medium/low>, OPSEC: <low/medium/high>)
+- Reason: <why these paths are independent and convergent>
+```
+
+#### 2. Spawn All Fork Agents
+
+Use the Agent tool with `run_in_background: true` for each fork path. **Spawn
+all agents in a single message** — this ensures true parallel execution.
+
+- Prefix each agent's description with `[FORK-A]`, `[FORK-B]`, `[FORK-C]`, etc.
+- Include a note in each agent's prompt: *"Note: other independent paths toward
+  the same goal are being pursued in parallel. This is informational only — do
+  not coordinate with or wait for other agents."*
+- Pass normal context: skill name, target info, mode, relevant state summary.
+
+#### 3. Wait for First Return
+
+Background agents auto-notify on completion. Do **not** poll or sleep. Continue
+waiting until at least one agent returns.
+
+#### 4. Race Resolution
+
+When an agent returns, apply the standard Post-Skill Checkpoint steps 1–4
+(parse, record state, log activity, log findings). Then resolve the fork:
+
+**Case 1 — Goal achieved (winner):**
+The returning agent achieved the convergent goal (credential obtained, access
+gained, foothold established).
+1. Record all findings via state-writer MCP tools.
+2. `TaskStop` the other running agent(s).
+3. Check the killed agent's partial output (via `TaskOutput` with
+   `block: false`) for bonus findings — credentials, hosts, or vulns discovered
+   before termination. Record any useful partial findings.
+4. Log to `engagement/activity.md`:
+   ```
+   ### [YYYY-MM-DD HH:MM:SS] orchestrator → FORK RESOLVED
+   - Winner: Path <X> (<skill-name>)
+   - Goal achieved: <what was obtained>
+   - Killed: Path <Y> (<skill-name>) — partial findings: <none | brief summary>
+   ```
+5. Resume the normal orchestrator loop (call `get_state_summary()`, run
+   decision logic, route to next skill).
+
+**Case 2 — No winner yet:**
+The returning agent completed but did NOT achieve the convergent goal (e.g.,
+Kerberoasting returned no crackable hashes).
+1. Record any findings from the completed agent.
+2. Let the other agent(s) continue — do not kill them.
+3. Block on the next agent's return (it is now the only hope for this goal).
+4. Log `FORK PARTIAL` to activity.md with what was learned.
+5. When the last agent returns, resolve normally — if the goal is achieved,
+   log `FORK RESOLVED`. If all paths failed, log `FORK FAILED` and fall
+   through to the decision logic to find an alternative approach.
+
+**Case 3 — Both succeed:**
+Multiple agents achieve the goal (rare but possible).
+1. Record findings from both agents.
+2. Use the more advantageous result: prefer reusable credentials over one-time
+   access, prefer higher privilege over lower, prefer quieter over noisier.
+3. Log `FORK RESOLVED (both succeeded)` with which result was preferred and why.
+4. Resume the normal orchestrator loop.
+
+#### 5. State Consistency Rules
+
+- Subagents are **read-only** — they use state-reader MCP and cannot write state.
+- The orchestrator processes agent returns **one at a time**, even when agents
+  ran in parallel. State writes are serialized through the orchestrator.
+- Evidence filenames are skill-prefixed (e.g., `kerberoasting-tgs-hashes.txt`,
+  `acl-abuse-dacl-modify.log`) — no collision risk from parallel agents.
+- SQLite WAL mode handles concurrent readers safely. No write conflicts are
+  possible because only the orchestrator writes.
+
 ### Clock Skew Recovery
 
 When an AD skill returns with `KRB_AP_ERR_SKEW` or clock skew as the failure
@@ -1149,9 +1323,10 @@ exhausted or objectives are met.
 - **Do not go deep on one target while ignoring others.** If you're stuck on
   privesc for target A, move to target B. Fresh targets often yield quick wins
   that unlock progress elsewhere.
-- **Do not run the same skill on multiple targets simultaneously.** Invoke
-  agents one at a time. The sequential overhead is the price of methodology and
-  consistent state management.
+- **Cross-target parallelism is not supported.** Parallel Fork Execution is
+  for convergent paths on the **same target** (e.g., Kerberoasting + ACL abuse
+  both targeting the same credential). For multi-target work, use Phase-Based
+  Cycling — work one target at a time and cycle between them.
 
 ### State Management for Multiple Targets
 
