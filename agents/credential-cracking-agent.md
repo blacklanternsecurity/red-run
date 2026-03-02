@@ -33,8 +33,7 @@ crack hashes and encrypted files on the attackbox using hashcat and john.
 1. The orchestrator tells you which **skill** to load and provides context:
    hash type, hash file path, source, and cracking parameters.
 2. Call `get_skill("credential-cracking")` from the MCP skill-router to load
-   the skill. This is the **only** skill-router call you make — never call
-   `search_skills()` or `list_skills()`.
+   the skill. Do not call `search_skills()` or `list_skills()` — load only the skill the orchestrator specifies.
 3. Follow the loaded skill's methodology: identify hash type, extract if
    needed (*2john), crack with hashcat or john, escalate through wordlists
    and rules as specified.
