@@ -227,6 +227,7 @@ red-run/
       pyproject.toml       # Python dependencies (mcp)
     hooks/                # Claude Code hooks
       save-agent-log.sh   # SubagentStop hook — copies JSONL transcripts to engagement/evidence/logs/
+      event-watcher.sh    # Background event poller — spawned by orchestrator to watch state_events
 ```
 
 ## Skill File Format

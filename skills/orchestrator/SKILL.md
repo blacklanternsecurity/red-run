@@ -315,69 +315,41 @@ user stays free to interact while agents work.
 
 #### Background Event Watcher
 
-The watcher is a shell script that polls `state_events` via sqlite3 and exits
-when new events arrive — triggering a task-notification push to the orchestrator.
+The watcher is a shell script that polls `state_events` via Python's built-in
+sqlite3 module and exits when new events arrive — triggering a task-notification
+push to the orchestrator.
 
 **Lifecycle:**
 
 ```
 1. Orchestrator spawns discovery agent(s) in background
-2. Orchestrator writes watcher script to $TMPDIR/event-watcher.sh (once)
-3. Orchestrator spawns watcher via Bash(run_in_background=true)
-4. Orchestrator ENDS ITS TURN — user is free to chat
+2. Orchestrator spawns watcher via Bash(run_in_background=true)
+3. Orchestrator ENDS ITS TURN — user is free to chat
 
-5. [time passes — agent works, writes findings to state.db]
+4. [time passes — agent works, writes findings to state.db]
 
-6. Watcher detects new state_events row(s)
-7. Watcher sleeps 5s (debounce — let agent finish its batch)
-8. Watcher reads all new events, outputs them as JSON, exits
-9. Task-notification pushes to orchestrator automatically
+5. Watcher detects new state_events row(s)
+6. Watcher sleeps 5s (debounce — let agent finish its batch)
+7. Watcher reads all new events, outputs them as JSON, exits
+8. Task-notification pushes to orchestrator automatically
 
-10. Orchestrator reads watcher output, displays findings
-11. Guided: present follow-up options to operator
+9. Orchestrator reads watcher output, displays findings
+10. Guided: present follow-up options to operator
     Autonomous: auto-spawn follow-up agent in background
-12. Spawn NEW watcher with updated cursor
-13. Repeat until all agents complete
+11. Spawn NEW watcher with updated cursor
+12. Repeat until all agents complete
 ```
 
-**Watcher script** — write this to `$TMPDIR/event-watcher.sh` once at engagement
-start, then reuse for all spawns:
-
-```bash
-#!/usr/bin/env bash
-# Event watcher — polls state_events, exits on new findings
-# Spawned by orchestrator with run_in_background: true
-set -euo pipefail
-
-CURSOR=${1:?usage: event-watcher.sh <cursor> <db_path>}
-DB=${2:?usage: event-watcher.sh <cursor> <db_path>}
-DEBOUNCE=5   # seconds to wait after detecting events (batch coalescing)
-POLL=5       # seconds between polls
-TIMEOUT=600  # max lifetime (10 min) — prevents zombie watchers
-
-elapsed=0
-while [ "$elapsed" -lt "$TIMEOUT" ]; do
-    count=$(sqlite3 "$DB" "SELECT count(*) FROM state_events WHERE id > $CURSOR")
-    if [ "$count" -gt 0 ]; then
-        sleep "$DEBOUNCE"  # let the agent finish its batch
-        sqlite3 -json "$DB" \
-            "SELECT id, event_type, record_id, summary, agent, created_at
-             FROM state_events WHERE id > $CURSOR ORDER BY id"
-        exit 0
-    fi
-    sleep "$POLL"
-    elapsed=$((elapsed + POLL))
-done
-
-echo '{"timeout": true, "cursor": '$CURSOR'}'
-exit 0
-```
+**Watcher script** lives at `tools/hooks/event-watcher.sh` in the repo. It
+uses Python's built-in `sqlite3` module (no CLI dependency) to poll and fetch
+events as JSON. Args: `<cursor> <db_path>`. Polls every 5s, debounces 5s on
+detection, 10-minute timeout.
 
 **Spawning the watcher:**
 
 ```
 Bash(
-    command="bash $TMPDIR/event-watcher.sh <event_cursor> ./engagement/state.db",
+    command="bash tools/hooks/event-watcher.sh <event_cursor> ./engagement/state.db",
     run_in_background=true,
     description="Event watcher (cursor <N>)"
 )
