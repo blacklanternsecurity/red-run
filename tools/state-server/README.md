@@ -76,6 +76,7 @@ write conflicts with the orchestrator are prevented by the busy timeout.
 | `get_vulns` | `status` (optional), `target` (optional) | Confirmed vulnerabilities |
 | `get_pivot_map` | `status` (optional) | Pivot path edges (what leads where) |
 | `get_blocked` | `target` (optional) | Failed technique attempts |
+| `poll_events` | `since_id` (default 0), `limit` (default 50) | Poll for interim state events since a cursor (real-time monitoring) |
 
 ### Interim tools (interim mode only)
 
@@ -108,7 +109,7 @@ write conflicts with the orchestrator are prevented by the busy timeout.
 
 ## Schema
 
-The database has 8 tables:
+The database has 9 tables:
 
 | Table | Purpose |
 |-------|---------|
@@ -121,6 +122,7 @@ The database has 8 tables:
 | `vulns` | Confirmed vulnerabilities with severity and status |
 | `pivot_map` | Directed edges showing what leads where |
 | `blocked` | Failed techniques with reasons and retry assessment |
+| `state_events` | Event log for interim writes — enables real-time polling by the orchestrator |
 
 Schema versioning uses `PRAGMA user_version` for future migrations.
 

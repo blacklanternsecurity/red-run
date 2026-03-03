@@ -108,7 +108,7 @@ The only commands the orchestrator may execute directly are:
 - `mkdir -p engagement/evidence/logs` — engagement directory creation
 - File writes to `engagement/scope.md`, `engagement/activity.md`, `engagement/findings.md`
 - State-writer MCP tools (`init_engagement`, `add_target`, `add_credential`, `add_access`, `add_vuln`, `add_pivot`, `add_blocked`, and their update variants) — engagement state
-- State-reader MCP tools (`get_state_summary`, `get_targets`, `get_credentials`, `get_access`, `get_vulns`, `get_pivot_map`, `get_blocked`) — state queries
+- State-reader MCP tools (`get_state_summary`, `get_targets`, `get_credentials`, `get_access`, `get_vulns`, `get_pivot_map`, `get_blocked`, `poll_events`) — state queries
 - Skill-router MCP tools (`get_skill`, `search_skills`, `list_skills`) — skill routing
 - `getent hosts <hostname>` — hostname resolution verification (local-only, no network traffic)
 - `ldapsearch -x -H ldap://TARGET -b "DC=..." -s base lockoutThreshold lockOutObservationWindow lockoutDuration minPwdLength pwdProperties` — lockout policy query (safety-critical pre-spray check, single base-scope read, not enumeration)
@@ -300,10 +300,45 @@ Before every skill invocation, append to
 - Reason: <why this skill was chosen>
 ```
 
+### Event Monitoring
+
+Discovery agents write findings mid-run via state-interim MCP tools. Each
+interim write (credential, vuln, pivot, blocked) also emits a row to the
+`state_events` table. The orchestrator polls these events for real-time
+visibility into what agents are finding — without waiting for them to return.
+
+**Setup:** Maintain an `event_cursor` variable starting at `0`.
+
+**When to poll:** Call `poll_events(since_id=<event_cursor>)` at every natural
+interaction point:
+- When any agent returns (before parsing its return summary)
+- Before every routing decision
+- Before presenting choices in guided mode
+
+**Display:** When `poll_events` returns new events (`count > 0`), display them
+as a compact timeline before continuing with the next action:
+
+```
+**[Interim findings from agents]**
+| Time | Agent | Finding |
+|------|-------|---------|
+| 14:22:03 | web-discovery | credential: admin (password) |
+| 14:22:15 | web-discovery | vuln: SQLi in /search [high] on 10.10.10.5 |
+```
+
+Update `event_cursor` to the returned `cursor` value after each poll.
+
+**Deduplication:** Events represent the same writes that already land in state
+tables — they don't create extra work. The Post-Skill Checkpoint's existing
+dedup logic (step 2) handles any overlap between event-visible findings and
+the agent's return summary.
+
 ### Post-Skill Checkpoint
 
 When a skill completes and returns control to the orchestrator:
 
+0. **Poll events:** Call `poll_events(since_id=<event_cursor>)` and display any
+   new findings as a timeline (see Event Monitoring above). Update the cursor.
 1. Parse the subagent's return summary for new findings
 2. **Deduplicate interim writes**: Discovery agents (network-recon, web-discovery,
    ad-discovery, linux-privesc, windows-privesc) use state-interim MCP and may
@@ -924,8 +959,8 @@ waiting until at least one agent returns.
 
 #### 4. Race Resolution
 
-When an agent returns, apply the standard Post-Skill Checkpoint steps 1–4
-(parse, record state, log activity, log findings). Then resolve the fork:
+When an agent returns, apply the standard Post-Skill Checkpoint steps 0–4
+(poll events, parse, record state, log activity, log findings). Then resolve the fork:
 
 **Case 1 — Goal achieved (winner):**
 The returning agent achieved the convergent goal (credential obtained, access

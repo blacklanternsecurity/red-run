@@ -36,8 +36,8 @@ Agent source files live in `agents/` (version controlled), installed to `~/.clau
 | skill-router | `tools/skill-router/` | `search_skills`, `get_skill`, `list_skills` | Semantic skill discovery and loading |
 | nmap-server | `tools/nmap-server/` | `nmap_scan`, `get_scan`, `list_scans` | Dockerized nmap scanning with input validation |
 | shell-server | `tools/shell-server/` | `start_listener`, `start_process` (supports `privileged` Docker mode), `send_command`, `read_output`, `stabilize_shell`, `list_sessions`, `close_session` | TCP listener, reverse shell, local interactive process manager, and privileged Docker execution |
-| state-reader | `tools/state-server/` | `get_state_summary`, `get_targets`, `get_credentials`, `get_access`, `get_vulns`, `get_pivot_map`, `get_blocked` | Read-only engagement state queries (technique agents) |
-| state-interim | `tools/state-server/` | All read tools + `add_credential`, `add_vuln`, `add_pivot`, `add_blocked` | Read + 4 add-only writes (discovery agents) |
+| state-reader | `tools/state-server/` | `get_state_summary`, `get_targets`, `get_credentials`, `get_access`, `get_vulns`, `get_pivot_map`, `get_blocked`, `poll_events` | Read-only engagement state queries (technique agents) |
+| state-interim | `tools/state-server/` | All read tools + `add_credential`, `add_vuln`, `add_pivot`, `add_blocked` (each emits a `state_events` row) | Read + 4 add-only writes (discovery agents) |
 | state-writer | `tools/state-server/` | All read tools + `init_engagement`, `close_engagement`, `add_target`, `add_port`, `add_credential`, `add_access`, `add_vuln`, `add_pivot`, `add_blocked`, and update variants | Full engagement state management (orchestrator only) |
 | browser-server | `tools/browser-server/` | `browser_open`, `browser_navigate`, `browser_get_page`, `browser_click`, `browser_fill`, `browser_select`, `browser_screenshot`, `browser_cookies`, `browser_evaluate`, `close_browser`, `list_browser_sessions` | Headless browser automation (web agents) |
 
@@ -145,11 +145,13 @@ Engagement state lives in `engagement/state.db`, a SQLite database managed by th
 | **vulns** | Confirmed vulns with status: `found`, `active`, `done` | `get_vulns(status="found")` |
 | **pivot_map** | What leads where — vuln X gives access Y, creds Z work on host W | `get_pivot_map()` |
 | **blocked** | What was tried and why it failed — prevents re-testing | `get_blocked()` |
+| **state_events** | Event log emitted by interim writes — real-time polling | `poll_events(since_id=0)` |
 
 **Rules:**
 - `get_state_summary()` produces a compact markdown summary (~200 lines) for subagent consumption
 - Subagents call `get_state_summary()` on activation, report findings in their return summary
-- Discovery agents (state-interim) also write actionable findings mid-run via 4 add-only tools
+- Discovery agents (state-interim) also write actionable findings mid-run via 4 add-only tools; each write emits a `state_events` row
+- The orchestrator polls `poll_events()` at interaction points for real-time visibility into discovery agent findings
 - The orchestrator parses return summaries, deduplicates interim writes, and calls structured write tools for remaining state changes
 - Orchestrator uses state summary + pivot map to chain vulns toward impact
 

@@ -71,6 +71,29 @@ def _now_sql() -> str:
     return "strftime('%Y-%m-%dT%H:%M:%SZ', 'now')"
 
 
+def _emit_event(
+    conn: sqlite3.Connection,
+    event_type: str,
+    record_id: int,
+    summary: str,
+    agent: str = "",
+) -> None:
+    """Insert a state_events row inside the current transaction.
+
+    Called by interim-mode write tools so the orchestrator can poll for
+    real-time findings via poll_events().  Silently skips if the table
+    doesn't exist (older DBs without the v2 schema).
+    """
+    try:
+        conn.execute(
+            "INSERT INTO state_events (event_type, record_id, summary, agent) "
+            "VALUES (?, ?, ?, ?)",
+            (event_type, record_id, summary, agent),
+        )
+    except sqlite3.OperationalError:
+        pass  # table doesn't exist in older DBs — skip silently
+
+
 # ---------------------------------------------------------------------------
 # Read tools (registered for both modes)
 # ---------------------------------------------------------------------------
@@ -453,6 +476,43 @@ def register_read_tools(mcp: FastMCP) -> None:
             ).fetchall()
         conn.close()
         return json.dumps(_rows_to_dicts(rows), indent=2)
+
+    @mcp.tool()
+    def poll_events(since_id: int = 0, limit: int = 50) -> str:
+        """Poll for state events since a checkpoint.
+
+        Returns new events written by interim-mode discovery agents plus a
+        cursor for the next call.  Use this for real-time monitoring of
+        findings as they happen — call repeatedly with the returned cursor.
+
+        Args:
+            since_id: Last event ID seen (0 = from the beginning).
+            limit: Maximum events to return (default 50).
+        """
+        try:
+            conn = _get_db()
+        except FileNotFoundError:
+            return json.dumps({"events": [], "cursor": 0, "count": 0})
+
+        # Backward compat: check table exists (older DBs without v2 schema)
+        if not conn.execute(
+            "SELECT name FROM sqlite_master "
+            "WHERE type='table' AND name='state_events'"
+        ).fetchone():
+            conn.close()
+            return json.dumps({"events": [], "cursor": 0, "count": 0})
+
+        rows = conn.execute(
+            "SELECT * FROM state_events WHERE id > ? ORDER BY id LIMIT ?",
+            (since_id, limit),
+        ).fetchall()
+        events = _rows_to_dicts(rows)
+        cursor = events[-1]["id"] if events else since_id
+        conn.close()
+        return json.dumps(
+            {"events": events, "cursor": cursor, "count": len(events)},
+            indent=2,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -1149,6 +1209,12 @@ def register_interim_tools(mcp: FastMCP) -> None:
             (username, secret, secret_type, domain, source, discovered_by),
         )
         cred_id = cursor.lastrowid
+        summary = (
+            f"{domain}\\{username} ({secret_type})"
+            if domain
+            else f"{username} ({secret_type})"
+        )
+        _emit_event(conn, "credential", cred_id, summary, discovered_by)
         conn.commit()
         conn.close()
         return json.dumps({
@@ -1200,6 +1266,10 @@ def register_interim_tools(mcp: FastMCP) -> None:
              details, evidence_path, discovered_by),
         )
         vuln_id = cursor.lastrowid
+        summary = f"{title} [{severity}]"
+        if host:
+            summary += f" on {host}"
+        _emit_event(conn, "vuln", vuln_id, summary, discovered_by)
         conn.commit()
         conn.close()
         return json.dumps({
@@ -1236,6 +1306,10 @@ def register_interim_tools(mcp: FastMCP) -> None:
             (source, destination, method, status, discovered_by, notes),
         )
         pivot_id = cursor.lastrowid
+        _emit_event(
+            conn, "pivot", pivot_id,
+            f"{source} -> {destination}", discovered_by,
+        )
         conn.commit()
         conn.close()
         return json.dumps({
@@ -1276,6 +1350,11 @@ def register_interim_tools(mcp: FastMCP) -> None:
             (target_id, technique, reason, retry, notes, blocked_by),
         )
         blocked_id = cursor.lastrowid
+        summary = technique
+        if host:
+            summary += f" on {host}"
+        summary += f" | {reason} [{retry}]"
+        _emit_event(conn, "blocked", blocked_id, summary, blocked_by)
         conn.commit()
         conn.close()
         return json.dumps({
