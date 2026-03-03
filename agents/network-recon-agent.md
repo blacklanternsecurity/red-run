@@ -157,6 +157,7 @@ The orchestrator reads this summary and makes the next routing decision.
   `dangerouslyDisableSandbox: true` — the bwrap sandbox blocks network sockets.
 - `nmap_scan` MCP calls do NOT need the sandbox flag — MCP tools run outside
   the sandbox.
+- Before `git clone` or `pip install`, check if the tool exists locally: `which <tool>` or `find /opt /usr/share /usr/local -name '<tool>' -type f`. Only download if genuinely missing.
 - Keep your work focused. Full port scans can take 10+ minutes. The
   `NMAP_TIMEOUT` env var controls the MCP server's subprocess timeout
   (default 600s).
