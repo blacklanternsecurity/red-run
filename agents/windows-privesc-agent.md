@@ -118,6 +118,11 @@ send_command(session_id=..., command="download C:\\Users\\admin\\Desktop\\flag.t
   you find network-level information (new subnets, services, credentials).
 - **Do not perform AD enumeration**. If you find domain credentials or identify
   that the host is domain-joined, report it and return.
+- **Do not crack hashes offline.** Do not run `hashcat`, `john`, or any offline
+  cracking tool. If you obtain password hashes (NTLM, DPAPI master keys,
+  cached credentials, etc.), save them to `engagement/evidence/` and return to
+  the orchestrator with the hash file path, hash type, and a routing
+  recommendation to **credential-cracking**.
 
 ## Engagement Files
 

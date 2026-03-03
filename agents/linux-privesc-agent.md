@@ -119,6 +119,11 @@ send_command(session_id=..., command="id")
   you find network-level information (new subnets, services, credentials).
 - **Do not perform AD enumeration**. If you find domain credentials or identify
   that the host is domain-joined, report it and return.
+- **Do not crack hashes offline.** Do not run `hashcat`, `john`, or any offline
+  cracking tool. If you obtain password hashes (shadow, /etc/passwd, etc.),
+  save them to `engagement/evidence/` and return to the orchestrator with the
+  hash file path, hash type, and a routing recommendation to
+  **credential-cracking**.
 
 ## Engagement Files
 
