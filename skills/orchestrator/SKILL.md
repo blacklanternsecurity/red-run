@@ -259,11 +259,14 @@ while objectives_not_met:
     analyze: unexploited vulns, unchained access, untested creds, pivot map
     pick highest-value next action → select skill + domain agent
     append to activity.md (routing decision)
-    spawn agent with: skill name, target info, mode, context from summary
-    agent returns: findings summary, routing recommendations
-    parse return → call add_target/add_credential/add_vuln/etc.
-    append to activity.md (outcome)
-    append to findings.md (if vulns confirmed)
+    spawn agent in background with: skill name, target info, mode, context
+    spawn event watcher in background (cursor, db path) if not already running
+    END TURN — user is free to interact
+
+    # Notifications arrive asynchronously:
+    # - Watcher fires → process interim findings, spawn follow-up + new watcher
+    # - Agent completes → Post-Skill Checkpoint, next routing decision
+    # - User messages → respond, poll_events() as supplementary check
 ```
 
 Each iteration is normally one skill invocation. Sequential execution is the
@@ -304,19 +307,121 @@ Before every skill invocation, append to
 
 Discovery agents write findings mid-run via state-interim MCP tools. Each
 interim write (credential, vuln, pivot, blocked) also emits a row to the
-`state_events` table. The orchestrator polls these events for real-time
-visibility into what agents are finding — without waiting for them to return.
+`state_events` table. The orchestrator uses a **background event watcher** to
+get push notifications when agents find something — zero context burn, and the
+user stays free to interact while agents work.
 
 **Setup:** Maintain an `event_cursor` variable starting at `0`.
 
-**When to poll:** Call `poll_events(since_id=<event_cursor>)` at every natural
-interaction point:
-- When any agent returns (before parsing its return summary)
-- Before every routing decision
-- Before presenting choices in guided mode
+#### Background Event Watcher
 
-**Display:** When `poll_events` returns new events (`count > 0`), display them
-as a compact timeline before continuing with the next action:
+The watcher is a shell script that polls `state_events` via sqlite3 and exits
+when new events arrive — triggering a task-notification push to the orchestrator.
+
+**Lifecycle:**
+
+```
+1. Orchestrator spawns discovery agent(s) in background
+2. Orchestrator writes watcher script to $TMPDIR/event-watcher.sh (once)
+3. Orchestrator spawns watcher via Bash(run_in_background=true)
+4. Orchestrator ENDS ITS TURN — user is free to chat
+
+5. [time passes — agent works, writes findings to state.db]
+
+6. Watcher detects new state_events row(s)
+7. Watcher sleeps 5s (debounce — let agent finish its batch)
+8. Watcher reads all new events, outputs them as JSON, exits
+9. Task-notification pushes to orchestrator automatically
+
+10. Orchestrator reads watcher output, displays findings
+11. Guided: present follow-up options to operator
+    Autonomous: auto-spawn follow-up agent in background
+12. Spawn NEW watcher with updated cursor
+13. Repeat until all agents complete
+```
+
+**Watcher script** — write this to `$TMPDIR/event-watcher.sh` once at engagement
+start, then reuse for all spawns:
+
+```bash
+#!/usr/bin/env bash
+# Event watcher — polls state_events, exits on new findings
+# Spawned by orchestrator with run_in_background: true
+set -euo pipefail
+
+CURSOR=${1:?usage: event-watcher.sh <cursor> <db_path>}
+DB=${2:?usage: event-watcher.sh <cursor> <db_path>}
+DEBOUNCE=5   # seconds to wait after detecting events (batch coalescing)
+POLL=5       # seconds between polls
+TIMEOUT=600  # max lifetime (10 min) — prevents zombie watchers
+
+elapsed=0
+while [ "$elapsed" -lt "$TIMEOUT" ]; do
+    count=$(sqlite3 "$DB" "SELECT count(*) FROM state_events WHERE id > $CURSOR")
+    if [ "$count" -gt 0 ]; then
+        sleep "$DEBOUNCE"  # let the agent finish its batch
+        sqlite3 -json "$DB" \
+            "SELECT id, event_type, record_id, summary, agent, created_at
+             FROM state_events WHERE id > $CURSOR ORDER BY id"
+        exit 0
+    fi
+    sleep "$POLL"
+    elapsed=$((elapsed + POLL))
+done
+
+echo '{"timeout": true, "cursor": '$CURSOR'}'
+exit 0
+```
+
+**Spawning the watcher:**
+
+```
+Bash(
+    command="bash $TMPDIR/event-watcher.sh <event_cursor> ./engagement/state.db",
+    run_in_background=true,
+    description="Event watcher (cursor <N>)"
+)
+```
+
+#### Watcher Lifecycle Management
+
+- **Spawn**: After every background agent launch, if no watcher is currently
+  running. One watcher suffices for multiple concurrent agents.
+- **Respawn**: After every watcher notification, spawn a new watcher with the
+  updated cursor. The old watcher has exited — a new one is needed.
+- **Cleanup**: When all background agents have completed, do NOT spawn a new
+  watcher. The watcher's 10-minute timeout handles cleanup if the orchestrator
+  forgets.
+- **On agent return**: If a watcher is still running when an agent completes,
+  let it continue — it may catch events from other still-running agents. If no
+  agents remain running, the watcher will timeout naturally (or can be killed
+  via `TaskStop`).
+
+#### Actionable Event Criteria
+
+When the watcher fires, read the JSON output and evaluate each event:
+
+| Event Type | Actionable? | Follow-up Action |
+|------------|-------------|-----------------|
+| credential | Always | Authenticated enumeration or spray against services |
+| vuln (high/critical) | When a technique skill exists | Spawn technique agent |
+| vuln (medium/low/info) | Display only | Note for later |
+| pivot | When destination is actionable | Spawn appropriate agent |
+| blocked | Display only | Note for later |
+
+**Guided mode response:** Display the findings as a timeline, then present
+follow-up options via `AskUserQuestion` (e.g., "AD-discovery found valid creds
+for Tiffany.Molina — spin up authenticated AD enumeration while web-discovery
+continues?"). After operator responds, spawn new watcher.
+
+**Autonomous mode response:** Auto-spawn follow-up agent in background, log
+routing decision to `activity.md`, spawn new watcher. All without operator
+interaction.
+
+#### Display Format
+
+When the watcher fires or `poll_events` returns new events, display them as a
+compact timeline before continuing with the next action:
 
 ```
 **[Interim findings from agents]**
@@ -326,7 +431,16 @@ as a compact timeline before continuing with the next action:
 | 14:22:15 | web-discovery | vuln: SQLi in /search [high] on 10.10.10.5 |
 ```
 
-Update `event_cursor` to the returned `cursor` value after each poll.
+Update `event_cursor` to the highest event ID seen after each notification.
+
+#### Supplementary Polling
+
+The watcher is the primary notification mechanism. As a safety net, also call
+`poll_events(since_id=<event_cursor>)` at these interaction points to catch
+events written between watcher exit and new watcher spawn:
+- When any agent returns (before parsing its return summary)
+- Before every routing decision
+- Before presenting choices in guided mode
 
 **Deduplication:** Events represent the same writes that already land in state
 tables — they don't create extra work. The Post-Skill Checkpoint's existing
@@ -954,8 +1068,12 @@ all agents in a single message** — this ensures true parallel execution.
 
 #### 3. Wait for First Return
 
-Background agents auto-notify on completion. Do **not** poll or sleep. Continue
-waiting until at least one agent returns.
+Background agents auto-notify on completion. The event watcher runs alongside
+fork agents — if the watcher fires with actionable findings before any fork
+agent completes, the orchestrator can act on them (spawn follow-up agents, ask
+the operator in guided mode). However, **watcher notifications do NOT resolve
+the fork** — fork resolution still requires an agent to complete and return.
+Spawn a new watcher after processing each notification.
 
 #### 4. Race Resolution
 
@@ -1324,6 +1442,12 @@ Custom wordlist: <path if custom, omit otherwise>.",
    This is NOT a parallel fork (convergent goals). This is **independent phase
    parallelization** — spray and discovery have different goals (credential
    finding vs attack surface mapping) and can overlap safely.
+
+   The event watcher is already running (or spawn one if not). If the spray
+   agent writes valid credentials via state-interim, the watcher catches them
+   and notifies the orchestrator — no waiting for spray completion. In guided
+   mode, present the new credentials and ask the operator about follow-up
+   actions. In autonomous mode, spawn authenticated enumeration immediately.
 
 7. When the spray agent returns (auto-notified):
    - Parse the return summary — record valid credentials via
