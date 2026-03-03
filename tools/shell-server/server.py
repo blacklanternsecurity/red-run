@@ -420,11 +420,12 @@ def create_server() -> FastMCP:
                     f"'{SHELL_DOCKER_IMAGE}'. Build it with: "
                     f"docker build -t {SHELL_DOCKER_IMAGE} tools/shell-server/"
                 )
+            # ENTRYPOINT is /bin/bash, so pass -c <cmd> as args
             command = (
                 f"docker run --rm -i --network=host "
                 f"--cap-drop=ALL --cap-add=NET_RAW --cap-add=NET_ADMIN "
                 f"--cap-add=NET_BIND_SERVICE {SHELL_DOCKER_IMAGE} "
-                f"/bin/bash -c {shlex.quote(command)}"
+                f"-c {shlex.quote(command)}"
             )
 
         try:
