@@ -12,11 +12,6 @@ red-run requires the following installed:
 | [uv](https://docs.astral.sh/uv/) | Python package manager for MCP servers | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
 | [Docker](https://docs.docker.com/engine/install/) | Containerized nmap and pentest toolbox | See Docker docs |
 
-> **Docker group membership:** Your user must be in the `docker` group to run containers without sudo:
-> ```bash
-> sudo usermod -aG docker $USER
-> # Log out and back in for the group change to take effect
-> ```
 
 ## Install
 
