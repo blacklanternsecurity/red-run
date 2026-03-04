@@ -130,7 +130,7 @@ close_session(session_id)       → Save transcript
 
 ### Docker mode (`privileged=true`)
 
-The `privileged` parameter runs commands inside the `red-run-shell` Docker container, which includes a full pentest toolkit:
+The `privileged` parameter runs commands inside the `red-run-shell` Docker container, which packages the tools that need persistent sessions or raw sockets:
 
 | Category | Tools |
 |----------|-------|

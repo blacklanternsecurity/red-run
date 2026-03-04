@@ -39,7 +39,7 @@ The installer runs five steps:
 **4. Docker images** — Builds two Docker images:
 
 - `red-run-nmap:latest` — Alpine + nmap for containerized scanning
-- `red-run-shell:latest` — Full pentest toolkit (evil-winrm, impacket, chisel, ligolo-ng, socat, Responder, mitm6, tcpdump)
+- `red-run-shell:latest` — Tools that need persistent sessions or raw sockets (evil-winrm, impacket, chisel, ligolo-ng, socat, Responder, mitm6, tcpdump)
 
 **5. Skill indexing** — Runs the ChromaDB indexer to embed all skills for semantic search. Downloads the `all-MiniLM-L6-v2` embedding model (~80MB) on first run.
 
