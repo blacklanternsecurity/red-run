@@ -176,3 +176,20 @@ State flows through the system in one direction:
 6. **Next agent** reads state via `get_state_summary()` on activation — sees everything discovered so far
 
 This ensures the orchestrator is the single source of truth for engagement state, while discovery agents can share urgent findings (like new credentials) with concurrent agents without waiting for their run to complete.
+
+## Privilege Boundaries
+
+Claude Code never gets sudo. This is a deliberate design decision — an LLM with root access to your machine is an unnecessary risk, and red-run is architected so it's never needed.
+
+The tools that require elevated privileges are isolated behind MCP servers and Docker containers:
+
+| What needs privilege | How red-run handles it | Why not just sudo |
+|---------------------|----------------------|-------------------|
+| `nmap` SYN scans | nmap-server runs nmap inside a Docker container with `--network=host` and minimal capabilities | SYN scans need raw sockets, but Claude doesn't need root — Docker provides the capability isolation |
+| Responder, mitm6, tcpdump | shell-server's `privileged=True` runs commands in the `red-run-shell` Docker container with `NET_RAW`/`NET_ADMIN` capabilities | These daemons need raw sockets for poisoning/sniffing, but the privilege stays inside the container |
+| `/etc/hosts` changes | Orchestrator hits a **hard stop** — presents the hostnames and asks the operator to add them manually | DNS resolution changes affect the entire system, not just the engagement |
+| Clock skew correction | Orchestrator hits a **hard stop** — shows the required `ntpdate` or `faketime` command for the operator to run | System clock changes affect every process on the machine |
+
+The pattern is consistent: if something needs elevated privilege, either it runs inside a container that has the specific capability, or the orchestrator stops and asks the operator to do it. Claude never runs `sudo` itself.
+
+This also means red-run works without adding Claude Code to sudoers, without `NOPASSWD` entries, and without `--dangerously-skip-permissions` for privilege escalation on the *host*. The attack surface is the target, not your machine.
