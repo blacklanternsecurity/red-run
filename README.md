@@ -10,19 +10,6 @@ red-run combines skills, MCP servers, and agents with routing logic that guides 
 
 The orchestrator presents the attack surface, chain analysis, and available paths — you choose what to hit next. Once you pick a path, the agent runs end-to-end and reports back.
 
-## Features
-
-- **Offensive security skills** - baseline SKILL.md files for web, AD, privesc, network, evasion, cracking
-- **Semantic skill routing** - ChromaDB + sentence-transformer embeddings
-- **Persistent shell sessions** - reverse shells and interactive tools maintain state across agent invocations
-- **Headless browser automation** - Playwright accessible to agents via MCP
-- **Engagement state tracking** - SQLite DB storing targets, credentials, access, vulns, pivot paths, and blocked techniques
-- **Retrospectives** - post-engagement analysis that identifies skill gaps and routing mistakes
-
-## How it works
-
-The `orchestrator` skill runs on Opus with extended thinking in the main conversation thread. It spawns domain-specific agents that each load one skill, execute the methodology, save evidence, and report back. The orchestrator parses findings, updates state, and routes to the next skill.
-
 ```mermaid
 graph TD
     User([Operator])
@@ -33,14 +20,14 @@ graph TD
     subgraph Agents["Agents"]
         direction LR
         NetRecon[network-recon] ~~~ WebDisc[web-discovery] ~~~ WebExpl[web-exploit] ~~~ ADDisc[ad-discovery] ~~~ ADExpl[ad-exploit]
-        LinPE[linux-privesc] ~~~ WinPE[windows-privesc] ~~~ PwSpray[password-spray] ~~~ Evasion[evasion]
+        LinPE[linux-privesc] ~~~ WinPE[windows-privesc] ~~~ PwSpray[password-spray] ~~~ Evasion[evasion] ~~~ CredCrack[credential-cracking]
     end
 
     Agents --> MCP
 
     subgraph MCP["MCP Servers"]
         direction LR
-        NmapSrv[nmap-server] ~~~ BrowserSrv[browser-server] ~~~ ShellSrv[shell-server] ~~~ SkillRouter[skill-router] ~~~ StateR[state-reader] ~~~ StateW[state-writer]
+        NmapSrv[nmap-server] ~~~ BrowserSrv[browser-server] ~~~ ShellSrv[shell-server] ~~~ SkillRouter[skill-router] ~~~ StateR[state-reader] ~~~ StateI[state-interim] ~~~ StateW[state-writer]
     end
 
     Agents --> Engage
@@ -52,7 +39,6 @@ graph TD
 
     Orch --> Engage
 
-    %% Styling
     classDef orch fill:#2d3748,stroke:#e2e8f0,color:#e2e8f0,stroke-width:2px
     classDef agent fill:#2b6cb0,stroke:#bee3f8,color:#bee3f8
     classDef mcp fill:#2f855a,stroke:#c6f6d5,color:#c6f6d5
@@ -60,13 +46,11 @@ graph TD
     classDef user fill:#553c9a,stroke:#e9d8fd,color:#e9d8fd
 
     class Orch orch
-    class NetRecon,WebDisc,WebExpl,ADDisc,ADExpl,PwSpray,LinPE,WinPE,Evasion agent
-    class SkillRouter,NmapSrv,ShellSrv,BrowserSrv,StateR,StateW mcp
+    class NetRecon,WebDisc,WebExpl,ADDisc,ADExpl,PwSpray,LinPE,WinPE,Evasion,CredCrack agent
+    class SkillRouter,NmapSrv,ShellSrv,BrowserSrv,StateR,StateI,StateW mcp
     class DB,ScopeMD,ActivityMD,FindingsMD,Evidence storage
     class User user
 ```
-
-See [ARCHITECTURE.md](ARCHITECTURE.md) for engagement workflow and skill lifecycle diagrams.
 
 ## Skills
 
@@ -83,6 +67,18 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for engagement workflow and skill lifecyc
 
 Skills are baseline templates researched and built by Claude. Refine them manually or run retrospectives after engagements to improve and hone them to your target landscape and methodology.
 
+## Documentation
+
+Full documentation is available at the [docs site](https://kevinoriley.github.io/red-run/):
+
+- [Architecture](https://kevinoriley.github.io/red-run/architecture/) — platform vs strategy layers, prompt architecture, data flow
+- [Installation](https://kevinoriley.github.io/red-run/installation/) — prerequisites, setup, sandbox configuration
+- [Running an Engagement](https://kevinoriley.github.io/red-run/running-an-engagement/) — end-to-end operator guide
+- [MCP Servers](https://kevinoriley.github.io/red-run/mcp-servers/) — nmap, shell, browser, state, skill-router
+- [Writing Skills](https://kevinoriley.github.io/red-run/writing-skills/) — contributor guide for new skills
+
+See also: [ARCHITECTURE.md](ARCHITECTURE.md) for Mermaid diagrams, [SKILLS.md](SKILLS.md) for the full skill inventory.
+
 ## Installation
 
 **Prerequisites:** Linux VM with pentesting tools, [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [uv](https://docs.astral.sh/uv/), [Docker](https://docs.docker.com/engine/install/)
@@ -95,23 +91,7 @@ Skills are baseline templates researched and built by Claude. Refine them manual
 
 The installer sets up the orchestrator, agents, and MCP servers, and indexes `skills/` into ChromaDB for semantic retrieval. The repo must stay in place — skill-router reads from `skills/` at runtime.
 
-## Configuration
-
-Run from a VM or dedicated pentesting machine. Claude Code's bwrap sandbox blocks network socket creation, so add a sandbox exception to `~/.claude/CLAUDE.md`:
-
-```markdown
-## Sandbox
-
-Always use `dangerouslyDisableSandbox: true` for commands that make network
-connections: nmap, ping, netexec, curl, wget, sqlmap, impacket-*, certipy,
-bloodyAD, ffuf, nuclei, httpx, responder, tcpdump, ssh, smbclient, ldapsearch,
-crackmapexec, gobuster, hydra, chisel, ligolo, socat, nc, python3 -m http.server.
-
-For everything else (file reads, writes, local processing, hash cracking),
-keep sandbox enabled.
-```
-
-Recommended: [Trail of Bits Claude Code configuration](https://github.com/trailofbits/claude-code-config) for additional guardrails.
+Run from a VM or dedicated pentesting machine. See [Installation docs](https://kevinoriley.github.io/red-run/installation/) for sandbox configuration and troubleshooting.
 
 ## Warning
 

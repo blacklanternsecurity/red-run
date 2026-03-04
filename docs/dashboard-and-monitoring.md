@@ -1,0 +1,156 @@
+# Dashboard & Monitoring
+
+red-run provides real-time visibility into agent execution through a multi-pane dashboard and background event polling.
+
+## Agent Dashboard
+
+The dashboard (`tools/agent-dashboard/tail-agent.py`) parses Claude Code's raw JSONL transcripts and displays agent activity with color-coded formatting.
+
+### Single-Agent Modes
+
+```bash
+# One-shot — print formatted output and exit
+python3 tools/agent-dashboard/tail-agent.py <output_file>
+
+# Follow — live-tail like tail -f (Ctrl-C to stop)
+python3 tools/agent-dashboard/tail-agent.py -f <output_file>
+
+# Pipe — read from stdin
+tail -f <output_file> | python3 tools/agent-dashboard/tail-agent.py
+```
+
+### Multi-Agent Dashboard
+
+The curses-based dashboard shows multiple agents side by side in a split-pane terminal view:
+
+```bash
+# Explicit label:path pairs
+python3 tools/agent-dashboard/tail-agent.py --dashboard web:path1 ad:path2
+
+# From a .dashboard file (hot-reloaded)
+python3 tools/agent-dashboard/tail-agent.py --dashboard --from .dashboard
+
+# Wrapper script (reads from tools/agent-dashboard/.dashboard)
+bash tools/agent-dashboard/dashboard.sh
+```
+
+The orchestrator writes the `.dashboard` file when launching parallel background agents.
+
+### .dashboard File Format
+
+One agent per line as `label:path`. Blank lines and `#` comments are ignored:
+
+```
+# Discovery agents
+web-discovery:/tmp/claude-1000/web-discovery.output
+network-recon:/tmp/claude-1000/network-recon.output
+
+# Exploit agents
+ad-exploit:/tmp/claude-1000/ad-exploit.output
+```
+
+The dashboard hot-reloads this file every ~1 second — panes are added and removed dynamically as entries change. Starts with "Waiting for agents..." if the file is empty or doesn't exist yet.
+
+### Keybindings
+
+| Key | Action |
+|-----|--------|
+| `Tab` | Switch to next pane |
+| `Shift-Tab` | Switch to previous pane |
+| `j` / `Down` | Scroll down |
+| `k` / `Up` | Scroll up |
+| `PgDn` | Page down |
+| `PgUp` | Page up |
+| `G` / `End` | Jump to bottom (resume live follow) |
+| `g` / `Home` | Jump to top |
+| `q` / `Ctrl-C` | Quit |
+
+The status bar shows `LIVE` when auto-following new output or `scrolled +N` when scrolled up. Scrolling to the bottom re-enables live follow.
+
+### Color Coding
+
+| Color | Category | Content |
+|-------|----------|---------|
+| Cyan | Agent reasoning | Text output from the agent's thinking and analysis |
+| Yellow (bold, `▶` prefix) | Shell/Bash commands | `send_command`, `start_process`, `start_listener`, Bash tool calls |
+| Dim | Tool calls | Skill loads, state queries, file reads/writes, browser actions |
+
+In dashboard mode, each pane header uses a rotating color palette (cyan, green, magenta, yellow) with the focused pane highlighted in reverse video.
+
+### Output Format
+
+The dashboard parses JSONL lines with `"type":"assistant"` and formats tool calls as compact one-liners:
+
+| Format | Source |
+|--------|--------|
+| `SHELL[sid] command` | `send_command` |
+| `LISTEN port=N label=X` | `start_listener` |
+| `PROC command` | `start_process` |
+| `BASH (description) command` | Bash tool |
+| `SKILL get_skill(name)` | skill-router calls |
+| `STATE get_summary` | state-server calls |
+| `BROWSER navigate(url=...)` | browser-server calls |
+| `READ/WRITE/EDIT path` | Built-in file tools |
+
+## Transcript Capture
+
+A `SubagentStop` hook (`tools/hooks/save-agent-log.sh`) automatically copies JSONL transcripts from domain subagents into `engagement/evidence/logs/`.
+
+**How it works:**
+
+1. Claude Code fires the `SubagentStop` event when any agent finishes
+2. The hook reads `agent_transcript_path` and `agent_type` from the event JSON
+3. Copies the transcript to `engagement/evidence/logs/{timestamp}-{agent-type}.jsonl`
+
+**Scope:** Only triggers for red-run agents (network-recon, web-discovery, web-exploit, ad-discovery, ad-exploit, password-spray, linux-privesc, windows-privesc, evasion, credential-cracking). Built-in subagents (Explore, Plan, general-purpose) are ignored.
+
+**Graceful degradation:** No engagement directory = hook exits silently with no errors. The retrospective skill parses these logs for post-engagement analysis.
+
+## Event Watcher
+
+The event watcher (`tools/hooks/event-watcher.sh`) is a background poller that monitors the `state_events` table for new interim writes from discovery agents.
+
+**Usage:**
+
+```bash
+# Spawned by orchestrator with run_in_background: true
+bash tools/hooks/event-watcher.sh <cursor> <db_path>
+```
+
+**Behavior:**
+
+- Polls `state_events` every 5 seconds for rows with `id > cursor`
+- When new events are detected, waits 5 seconds (debounce) to let the agent finish its batch
+- Outputs all new events as JSON and exits
+- 10-minute timeout prevents zombie watchers
+
+The orchestrator spawns this in the background and reads its output to get real-time visibility into what discovery agents are finding mid-run — new credentials, vulnerabilities, pivot paths, or blocked techniques.
+
+\!\!\! note "No external dependencies"
+    The event watcher uses Python 3's built-in `sqlite3` module. No sqlite3 CLI binary is required.
+
+## Configuration
+
+### Hook Setup
+
+The `SubagentStop` hook is configured in `.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "SubagentStop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash tools/hooks/save-agent-log.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+The hook always exits 0 to never block Claude Code, regardless of whether logging succeeds.
