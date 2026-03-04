@@ -68,7 +68,7 @@ graph TD
     end
 ```
 
-The orchestrator makes every routing decision. When a skill identifies a vulnerability and says "route to X", the orchestrator looks up the correct agent and spawns it with context — injection point, target technology, working payloads. Agents are stateless; all persistent state lives in SQLite.
+The orchestrator makes every routing decision. When a skilled discovery agent identifies a finding, the orchestrator decides on a new agent+skill combination and spawns it with context — injection point, target technology, working payloads. Agents are stateless; all persistent state lives in SQLite.
 
 See [Architecture](architecture.md) for the full design and [Agents](agents.md) for the agent model.
 
