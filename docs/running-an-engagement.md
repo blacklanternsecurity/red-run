@@ -210,14 +210,41 @@ It presents the surface with chain analysis — how vulnerabilities might connec
 
 ## Skill Routing
 
-The orchestrator picks the right agent and skill from the [routing table](agents.md#routing-table). Context from the current engagement state is passed in the task prompt:
+The orchestrator needs to pick the right skill for each situation. Most of the time, skills tell it what to do next — a discovery skill's decision tree says "if you found SQLi, route to **sql-injection-union**", and the orchestrator looks that up in a hardcoded routing table that maps skill names to agents. But sometimes the orchestrator encounters a situation that doesn't match any hardcoded route — an unusual service, an uncommon vulnerability, a technology the decision trees don't cover. That's where RAG comes in.
+
+### What RAG means here
+
+RAG stands for Retrieval-Augmented Generation. In red-run, it means the orchestrator can search the skill library by describing what it needs in plain English, instead of knowing the exact skill name in advance.
+
+Here's how it works under the hood:
+
+1. **Indexing** — When you run `install.sh`, the indexer (`tools/skill-router/indexer.py`) reads every `SKILL.md` file and extracts structured YAML frontmatter: the skill's description, keywords, tool names, and OPSEC rating. It builds a text document from these fields and computes a vector embedding using `all-MiniLM-L6-v2`, a sentence-transformer model that converts text into 384-dimensional vectors. These vectors are stored in ChromaDB, a local vector database at `tools/skill-router/.chromadb/`.
+
+2. **Searching** — When the orchestrator calls `search_skills("AJP connector on port 8009")`, the skill-router converts that query into a vector using the same model and finds the closest matches by cosine similarity. The `ajp-ghostcat` skill's frontmatter mentions "AJP", "port 8009", "CVE-2020-1938", and "Ghostcat" — its vector is close to the query vector, so it ranks high. Results below 0.4 similarity are filtered out automatically.
+
+3. **Loading** — The orchestrator reviews the search results (each includes the skill's description and OPSEC rating), picks the best match, and tells the agent to load it via `get_skill("ajp-ghostcat")`. The agent gets the full `SKILL.md` content — methodology, payloads, troubleshooting — injected into its context.
+
+The "augmented generation" part is that Claude doesn't rely on its training data to know how to exploit AJP Ghostcat. Instead, the skill's methodology is retrieved from the local library and injected into the prompt, giving the agent precise, tested instructions rather than general knowledge.
+
+### Hardcoded vs dynamic routing
+
+Most routing is hardcoded. Discovery skills have decision trees that cover common scenarios, and the orchestrator has a routing table that maps ~60 skill names to their agents. RAG is the fallback for everything else:
+
+- **Hardcoded**: "Web discovery found SQL injection" → route to `sql-injection-union` via `web-exploit-agent`
+- **Dynamic (RAG)**: "Nmap found AJP on port 8009" → `search_skills("AJP connector")` → finds `ajp-ghostcat` → route via `web-exploit-agent`
+
+The orchestrator validates search results before loading — a high similarity score doesn't guarantee relevance. The embedding model can confuse adjacent techniques (SSRF vs CSRF, IDOR vs ACL-abuse), so the orchestrator reads each result's description to confirm it matches the situation. If nothing fits, it proceeds with general methodology and notes the coverage gap.
+
+### Context passing
+
+When the orchestrator spawns an agent, it passes engagement context in the task prompt:
 
 - Injection point details (URL, parameter, method)
 - Target technology (framework, database, OS version)
 - Working payloads from previous skills
 - Credentials and access levels
 
-See [Agents](agents.md) for the full agent model and routing details.
+See [Agents](agents.md) for the full agent model and routing table.
 
 ## Hard Stops
 
