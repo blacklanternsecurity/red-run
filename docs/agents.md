@@ -134,8 +134,6 @@ Each agent must choose between the Bash tool and the shell-server MCP for comman
 - Sending commands to established shell sessions
 - Interacting with stabilized PTY sessions
 
-> **Tip:** Responder, mitm6, and tcpdump are daemons — they don't read stdin. Monitor their output via log files inside the Docker container (`docker exec CONTAINER cat /path/to/logs`), not via `send_command()`/`read_output()`.
-
 ## Return Summary Format
 
 When an agent finishes, its return summary must include structured findings for the orchestrator to parse:
