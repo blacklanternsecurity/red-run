@@ -1,8 +1,6 @@
 # Running an Engagement
 
-This page describes how the **CTF orchestrator** drives a penetration test from target to objective. The orchestrator is one skill (`skills/orchestrator/SKILL.md`) — a different orchestrator would change this entire workflow.
-
-> **Orchestrator-driven workflow:** Everything described here is the behavior of the built-in CTF orchestrator. The skill library itself is orchestrator-agnostic — you could write a different orchestrator that uses the same skills in a completely different workflow.
+This page describes how the **CTF orchestrator** drives a penetration test from target to objective. The orchestrator is one skill (`skills/orchestrator/SKILL.md`) — a different orchestrator would use the same skill library with completely different workflow logic. See [Architecture](architecture.md#platform-vs-strategy) for more on this separation.
 
 ## Starting a Test
 
