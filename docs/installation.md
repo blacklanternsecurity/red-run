@@ -2,7 +2,9 @@
 
 ## Prerequisites
 
-red-run requires a Linux pentesting VM with the following installed:
+Run red-run in a dedicated VM, not on your daily driver. red-run is [designed so Claude never needs sudo](architecture.md#privilege-boundaries), but it still runs offensive tools, opens listeners, and makes network connections to targets — you want that happening in an isolated environment. A standard pentesting VM (Kali, Parrot, or a minimal Debian/Ubuntu with your tools) works fine.
+
+red-run requires the following installed:
 
 | Requirement | Purpose | Install |
 |-------------|---------|---------|
