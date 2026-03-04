@@ -323,9 +323,20 @@ When objectives are met (or all paths exhausted), the orchestrator:
 
 ### Retrospective
 
-The `retrospective` skill performs post-engagement analysis:
+The `retrospective` skill is how red-run gets better for *you* over time. After an engagement, it reads through everything that happened — the activity log, engagement state, findings, and the raw JSONL transcripts from every agent — and produces a structured analysis of what worked, what didn't, and what to fix.
 
-- Parses agent JSONL transcripts from `engagement/evidence/logs/`
-- Identifies skill routing gaps (where the orchestrator made suboptimal choices)
-- Suggests actionable improvements to skills and routing
-- Helps improve the skill library based on real engagement experience
+It evaluates five things:
+
+1. **Skill routing** — Did the orchestrator pick the right skills? Were any skills skipped that should have been used? Was anything executed inline (without loading a skill) that a skill already covers? This produces a routing ledger showing every decision and whether it was correct.
+
+2. **Knowledge gaps** — For each skill that was used, did it have the right payloads? Did the target hit edge cases the skill didn't cover? Were tool commands correct or did the agent have to improvise? Each gap becomes a specific edit to make.
+
+3. **Missing skills** — Were techniques used manually that should be skills? It cross-references against the full skill inventory via `search_skills()` to distinguish actual coverage gaps from routing gaps (skill exists but wasn't used).
+
+4. **Operational review** — Were OPSEC ratings respected? Were there unnecessary detours? Did the orchestrator chain vulnerabilities efficiently or miss shortcuts?
+
+5. **Critical path** — Maps the actual kill chain and identifies bottlenecks where the engagement stalled.
+
+The output is `engagement/retrospective.md` with a priority-ordered list of actionable items: skill updates, new skills to write, routing fixes, and template changes. After you review and pick which items to prioritize, the retrospective skill makes the edits directly — updating skill files, creating new skills from the template, fixing routing tables — and re-indexes the skill library so changes take effect immediately.
+
+This is the feedback loop that makes the skill library adapt to your targets and methodology. Skills ship as baseline templates; retrospectives refine them based on what you actually encounter.
