@@ -102,7 +102,7 @@ The MCP servers start automatically via `.mcp.json`. Give the orchestrator a tar
 
 > "Scan and attack 10.10.10.5"
 
-> **Yolo mode:** `claude --dangerously-skip-permissions` (yolo mode) is available but **not recommended**. With it active, Claude will chain skills, pop shells, move laterally, and escalate privileges without pausing for confirmation.
+> **Yolo mode:** `claude --dangerously-skip-permissions` is available but **not recommended**. Claude may execute potentially dangerous commands without pausing for confirmation.
 
 ## Uninstall
 
