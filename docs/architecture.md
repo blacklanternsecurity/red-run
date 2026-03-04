@@ -82,7 +82,7 @@ red-run controls agent behavior through layered prompts, not code. Each layer ad
 | **Project** | `CLAUDE.md` | Every conversation | Architecture rules, conventions, skill routing mandate |
 | **Agent** | `agents/<name>.md` | Agent spawns | Role definition, MCP server access, tool usage rules, scope constraints, return format |
 | **Skill** | `skills/<cat>/<name>/SKILL.md` | `get_skill()` call | Technique methodology, payloads, troubleshooting, inter-skill routing |
-| **Dynamic** | Orchestrator's Agent prompt | Each agent invocation | Target info, state summary, previous findings, engagement-specific context |
+| **Dynamic** | Orchestrator's task prompt | Each agent invocation | Target info, state summary, previous findings, engagement-specific context |
 
 The project layer sets universal rules (always load skills via `get_skill()`, never write state directly). The agent layer constrains to a domain (web-exploit-agent only does web techniques, only accesses state-reader). The skill layer provides technique depth (exact payloads, variant detection, troubleshooting). The dynamic prompt carries live engagement state (what's been found, what to focus on, what's failed).
 
