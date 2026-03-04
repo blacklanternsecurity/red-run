@@ -94,17 +94,17 @@ The dashboard parses JSONL lines with `"type":"assistant"` and formats tool call
 
 ## Transcript Capture
 
-A `SubagentStop` hook (`tools/hooks/save-agent-log.sh`) automatically copies JSONL transcripts from domain subagents into `engagement/evidence/logs/`.
+Every agent's full JSONL transcript is automatically saved to `engagement/evidence/logs/` when the agent finishes. This is the accountability layer — the dashboard shows you what agents are doing in real time, and transcripts give you a permanent record of every tool call, command, and decision each agent made.
 
-**How it works:**
+A `SubagentStop` hook (`tools/hooks/save-agent-log.sh`) handles this automatically:
 
 1. Claude Code fires the `SubagentStop` event when any agent finishes
 2. The hook reads `agent_transcript_path` and `agent_type` from the event JSON
 3. Copies the transcript to `engagement/evidence/logs/{timestamp}-{agent-type}.jsonl`
 
-**Scope:** Only triggers for red-run agents (network-recon, web-discovery, web-exploit, ad-discovery, ad-exploit, password-spray, linux-privesc, windows-privesc, evasion, credential-cracking). Built-in subagents (Explore, Plan, general-purpose) are ignored.
+Only red-run agents are captured (network-recon, web-discovery, web-exploit, ad-discovery, ad-exploit, password-spray, linux-privesc, windows-privesc, evasion, credential-cracking). Built-in subagents (Explore, Plan, general-purpose) are ignored.
 
-**Graceful degradation:** No engagement directory = hook exits silently with no errors. The retrospective skill parses these logs for post-engagement analysis.
+No engagement directory = hook exits silently. The retrospective skill parses these logs for post-engagement analysis.
 
 ## Event Watcher
 
