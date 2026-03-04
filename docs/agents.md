@@ -55,8 +55,7 @@ The orchestrator uses this table to match skills to agents. Each agent has acces
 | `evasion-agent` | AV/EDR evasion | skill-router, shell-server, state-reader | av-edr-evasion |
 | `credential-cracking-agent` | Credential cracking | skill-router, state-reader | credential-cracking |
 
-!!! note "Discovery agents use state-interim, not state-reader"
-    Discovery agents (network-recon, web-discovery, ad-discovery, linux-privesc, windows-privesc) use the **state-interim** MCP server, which gives them read access plus four add-only write tools. Technique agents use **state-reader** (fully read-only).
+> **Note:** Discovery agents (network-recon, web-discovery, ad-discovery, linux-privesc, windows-privesc) use the **state-interim** MCP server, which gives them read access plus four add-only write tools. Technique agents use **state-reader** (fully read-only).
 
 ## Discovery vs Technique Agents
 
@@ -64,7 +63,7 @@ Agents fall into two categories with different state access and responsibilities
 
 ### Discovery Agents
 
-Discovery agents **enumerate attack surface** and route to technique skills. They use the **state-interim** MCP server, giving them:
+Discovery agents **enumerate attack surface** and identify vulnerabilities. They return findings and recommended next skills to the orchestrator — they never invoke technique skills themselves. They use the **state-interim** MCP server, giving them:
 
 - Full read access to engagement state
 - Four add-only write tools: `add_credential()`, `add_vuln()`, `add_pivot()`, `add_blocked()`
@@ -135,8 +134,7 @@ Each agent must choose between the Bash tool and the shell-server MCP for comman
 - Sending commands to established shell sessions
 - Interacting with stabilized PTY sessions
 
-!!! tip "Daemon monitoring"
-    Responder, mitm6, and tcpdump are daemons — they don't read stdin. Monitor their output via log files inside the Docker container (`docker exec CONTAINER cat /path/to/logs`), not via `send_command()`/`read_output()`.
+> **Tip:** Responder, mitm6, and tcpdump are daemons — they don't read stdin. Monitor their output via log files inside the Docker container (`docker exec CONTAINER cat /path/to/logs`), not via `send_command()`/`read_output()`.
 
 ## Return Summary Format
 

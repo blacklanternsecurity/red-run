@@ -43,6 +43,7 @@ graph TD
     User --> Orch[Orchestrator]
 
     Orch --> Agents
+    Orch --> MCP
 
     subgraph Agents["Domain Agents"]
         direction LR
@@ -87,7 +88,6 @@ See [Architecture](architecture.md) for the full design and [Agents](agents.md) 
 
 ## Disclaimer
 
-!!! warning "Authorized use only"
-    For use in **authorized security testing and educational contexts only**. Do not use against systems without explicit written permission. Skills are baseline templates — expect gaps and techniques that need validation against real targets. While skills include OPSEC notes where relevant, do not trust red-run to maintain OPSEC in production environments without dedicated review and testing.
-
-    You are responsible for containing Claude on your systems and for any legal consequences under the CFAA or equivalent legislation.
+> **Authorized use only:** For use in **authorized security testing and educational contexts only**. Do not use against systems without explicit written permission. Skills are baseline templates — expect gaps and techniques that need validation against real targets. While skills include OPSEC notes where relevant, do not trust red-run to maintain OPSEC in production environments without dedicated review and testing.
+>
+> You are responsible for containing Claude on your systems and for any legal consequences under the CFAA or equivalent legislation.

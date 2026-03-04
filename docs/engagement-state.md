@@ -122,13 +122,30 @@ Each step is driven by state queries — the orchestrator checks what's known, w
 
 ## Event polling
 
-Each interim write (add_credential, add_vuln, add_pivot, add_blocked) emits a row in the `state_events` table. The orchestrator can poll for real-time visibility into what discovery agents are finding:
+Each interim write (add_credential, add_vuln, add_pivot, add_blocked) emits a row in the `state_events` table.
+
+### Event watcher (push notification)
+
+When the orchestrator spawns a discovery agent, it also spawns `event-watcher.sh` as a background process. This script is a Python loop that polls `state_events` for new rows. When it detects a change, it exits — and the process termination acts as a push notification to the orchestrator. The orchestrator sees the background process end, checks the database for interim findings, and can route accordingly (e.g., spray newly discovered credentials against other targets).
+
+Without this, the orchestrator would have to continuously poll the database itself between agent turns, wasting tokens on repeated `poll_events()` calls that usually return nothing.
+
+```bash
+# Orchestrator spawns this in the background alongside each discovery agent
+bash tools/hooks/event-watcher.sh <cursor> engagement/state.db
+```
+
+The watcher polls every 5 seconds, debounces for 5 seconds after detecting events (to let the agent finish its batch), and has a 10-minute timeout to prevent zombie processes.
+
+### Direct polling
+
+The orchestrator can also query events directly via the state-writer MCP:
 
 ```
 poll_events(since_id=0)  → Returns new events + cursor for next call
 ```
 
-The `event-watcher.sh` hook (`tools/hooks/event-watcher.sh`) can be spawned by the orchestrator to continuously poll events and surface them.
+This is useful for checking what happened after a watcher fires, or when the orchestrator needs to inspect events at specific checkpoints.
 
 ## Manual queries
 
@@ -166,8 +183,7 @@ SELECT id, event_type, table_name, summary, created_at
 FROM state_events ORDER BY id DESC LIMIT 20;
 ```
 
-!!! tip "WAL mode"
-    The database uses WAL mode, so you can query it while the engagement is running without blocking agents. Use `.mode column` and `.headers on` in sqlite3 for readable output.
+> **WAL mode:** The database uses WAL mode, so you can query it while the engagement is running without blocking agents. Use `.mode column` and `.headers on` in sqlite3 for readable output.
 
 ## Schema versioning
 

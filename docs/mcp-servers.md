@@ -47,8 +47,7 @@ All servers are configured in `.mcp.json` at the repo root:
 }
 ```
 
-!!! note
-    The state-server runs as three separate instances with different `--mode` flags. All three share the same `engagement/state.db` file. See [Engagement State](engagement-state.md) for details.
+> **Note:** The state-server runs as three separate instances with different `--mode` flags. All three share the same `engagement/state.db` file. See [Engagement State](engagement-state.md) for details.
 
 ---
 

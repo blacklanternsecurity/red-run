@@ -36,6 +36,7 @@ graph TD
     User --> Orch[Orchestrator]
 
     Orch --> Agents
+    Orch --> MCP
 
     subgraph Agents["Agents"]
         direction LR

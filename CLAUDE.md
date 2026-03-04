@@ -45,7 +45,7 @@ The state-reader, state-interim, and state-writer are three instances of the sam
 
 ### Skill Types
 - **Orchestrator** (`skills/orchestrator/`): Takes a target, runs recon, routes to discovery skills
-- **Discovery** (`skills/<category>/*-discovery/`): Identifies vulnerabilities, routes to technique skills via decision tree
+- **Discovery** (`skills/<category>/*-discovery/`): Identifies vulnerabilities, recommends technique skills via decision tree (orchestrator does the actual routing)
 - **Technique** (`skills/<category>/<technique>/`): Exploits a specific vulnerability class
 
 ### Inter-Skill Routing

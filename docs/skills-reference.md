@@ -10,7 +10,7 @@ The **orchestrator** (`skills/orchestrator/SKILL.md`) takes a target, runs recon
 
 ### Discovery Skills
 
-**Discovery skills** enumerate attack surface and identify vulnerabilities. They route to technique skills via decision trees documented in the skill body. There are 4 discovery skills:
+**Discovery skills** enumerate attack surface and identify vulnerabilities. Their decision trees recommend technique skills, but the agent returns these recommendations to the orchestrator — it never invokes the next skill itself. There are 4 discovery skills:
 
 - `web-discovery` — web application enumeration and vulnerability identification
 - `ad-discovery` — Active Directory enumeration and attack surface mapping
@@ -100,8 +100,7 @@ All AD skills follow a **Kerberos-first authentication** convention — commands
 | `sccm-exploitation` | SCCM enumeration, NAA creds, PXE boot, app deployment | high |
 | `ad-persistence` | DCShadow, Skeleton Key, custom SSP, Golden SAML | high |
 
-!!! tip "Kerberos-first exception"
-    Relay/coercion attacks (`auth-coercion-relay`) are inherently NTLM/network-level. The skill documents why Kerberos auth doesn't apply and notes the NTLM detection surface.
+> **Kerberos-first exception:** Relay/coercion attacks (`auth-coercion-relay`) are inherently NTLM/network-level. The skill documents why Kerberos auth doesn't apply and notes the NTLM detection surface.
 
 ### Privilege Escalation (11 skills)
 
@@ -153,7 +152,7 @@ The orchestrator looks up `kerberos-roasting` in the routing table, spawns the `
 
 - The orchestrator makes every routing decision — agents never load other skills
 - Context (injection point, target technology, working payloads) is passed in the task prompt
-- Discovery skills route to technique skills; technique skills route back to the orchestrator
+- Discovery skills recommend technique skills; technique skills recommend the next step — all routing goes through the orchestrator
 - Skills that achieve RCE route to host discovery for privilege escalation
 
 ## Planned Skills

@@ -40,8 +40,7 @@ opsec: medium
 
 The MCP skill-router indexer builds embedding documents from these fields. `description` provides semantic context for natural-language queries, `keywords` provide exact-match terms, and `tools` enable "what skill uses nmap?" lookups.
 
-!!! tip "Description guidelines"
-    Focus on technique scope and when to use it. Don't include trigger phrases, negative conditions, or OPSEC details — those belong in `keywords` and `opsec` respectively.
+> **Description guidelines:** Focus on technique scope and when to use it. Don't include trigger phrases, negative conditions, or OPSEC details — those belong in `keywords` and `opsec` respectively.
 
 ### Body Structure
 
@@ -89,8 +88,7 @@ current engagement state.
 
 Skills read state to avoid re-testing confirmed vulnerabilities, leverage existing credentials, and check what's been tried.
 
-!!! warning "Discovery vs technique state access"
-    Technique skills use `state-reader` (read-only). Discovery skills use `state-interim` (read + 4 add-only writes). Update this section to match the skill type.
+> **Discovery vs technique state access:** Technique skills use `state-reader` (read-only). Discovery skills use `state-interim` (read + 4 add-only writes). Update this section to match the skill type.
 
 #### 5. Tool Discovery
 
@@ -190,8 +188,7 @@ Skills reference other skills using **bold names** in their escalation sections:
 
 The orchestrator uses these bold references to pick the next skill and agent.
 
-!!! warning "Agents never self-route"
-    Skills must STOP and return when they hit a routing instruction. The agent must not load or execute another skill — the orchestrator decides what runs next.
+> **Agents never self-route:** Skills must STOP and return when they hit a routing instruction. The agent must not load or execute another skill — the orchestrator decides what runs next.
 
 ### Discovery Skill Maintenance
 

@@ -2,8 +2,7 @@
 
 This page describes how the **CTF orchestrator** drives a penetration test from target to objective. The orchestrator is one skill (`skills/orchestrator/SKILL.md`) — a different orchestrator would change this entire workflow.
 
-!!! note "Orchestrator-driven workflow"
-    Everything described here is the behavior of the built-in CTF orchestrator. The skill library itself is orchestrator-agnostic — you could write a different orchestrator that uses the same skills in a completely different workflow.
+> **Orchestrator-driven workflow:** Everything described here is the behavior of the built-in CTF orchestrator. The skill library itself is orchestrator-agnostic — you could write a different orchestrator that uses the same skills in a completely different workflow.
 
 ## Starting a Test
 
@@ -171,8 +170,7 @@ After scope setup, the orchestrator runs reconnaissance.
 
 ### Scan Type Selection
 
-!!! warning "Hard Stop"
-    The orchestrator pauses and asks the operator to choose a scan type before proceeding. This is the first of several **hard stops** — points where the orchestrator requires operator input.
+> **Hard Stop:** The orchestrator pauses and asks the operator to choose a scan type before proceeding. This is the first of several **hard stops** — points where the orchestrator requires operator input.
 
 Options:
 

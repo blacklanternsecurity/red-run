@@ -10,12 +10,11 @@ red-run requires a Linux pentesting VM with the following installed:
 | [uv](https://docs.astral.sh/uv/) | Python package manager for MCP servers | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
 | [Docker](https://docs.docker.com/engine/install/) | Containerized nmap and pentest toolbox | See Docker docs |
 
-!!! note "Docker group membership"
-    Your user must be in the `docker` group to run containers without sudo:
-    ```bash
-    sudo usermod -aG docker $USER
-    # Log out and back in for the group change to take effect
-    ```
+> **Docker group membership:** Your user must be in the `docker` group to run containers without sudo:
+> ```bash
+> sudo usermod -aG docker $USER
+> # Log out and back in for the group change to take effect
+> ```
 
 ## Install
 
@@ -55,8 +54,7 @@ The installer runs five steps:
 
 Symlink mode is recommended for development — changes to skills and agents in the repo take effect immediately without re-running the installer. Copy mode is for machines where the repo won't stay in place.
 
-!!! warning "Repo must stay in place"
-    Regardless of install mode, the repo directory must remain accessible. The skill-router MCP server reads skill files from `skills/` at runtime, and all MCP servers are launched from the `tools/` directory via `.mcp.json`.
+> **Repo must stay in place:** Regardless of install mode, the repo directory must remain accessible. The skill-router MCP server reads skill files from `skills/` at runtime, and all MCP servers are launched from the `tools/` directory via `.mcp.json`.
 
 ## Sandbox configuration
 
@@ -74,8 +72,7 @@ For everything else (file reads, writes, local processing, hash cracking),
 keep sandbox enabled.
 ```
 
-!!! tip "Trail of Bits config"
-    For additional guardrails, consider the [Trail of Bits Claude Code configuration](https://github.com/trailofbits/claude-code-config).
+> **Trail of Bits config:** For additional guardrails, consider the [Trail of Bits Claude Code configuration](https://github.com/trailofbits/claude-code-config).
 
 ## Running
 
@@ -90,8 +87,7 @@ The MCP servers start automatically via `.mcp.json`. Give the orchestrator a tar
 
 > "Scan and attack 10.10.10.5"
 
-!!! warning "Yolo mode"
-    `claude --dangerously-skip-permissions` (yolo mode) is available but **not recommended**. With it active, Claude will chain skills, pop shells, move laterally, and escalate privileges without pausing for confirmation.
+> **Yolo mode:** `claude --dangerously-skip-permissions` (yolo mode) is available but **not recommended**. With it active, Claude will chain skills, pop shells, move laterally, and escalate privileges without pausing for confirmation.
 
 ## Uninstall
 

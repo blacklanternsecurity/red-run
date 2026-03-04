@@ -108,7 +108,17 @@ A `SubagentStop` hook (`tools/hooks/save-agent-log.sh`) automatically copies JSO
 
 ## Event Watcher
 
-The event watcher (`tools/hooks/event-watcher.sh`) is a background poller that monitors the `state_events` table for new interim writes from discovery agents.
+The event watcher (`tools/hooks/event-watcher.sh`) acts as a push notification from discovery agents to the orchestrator. The orchestrator spawns one alongside every discovery agent as a background process.
+
+**How it works:**
+
+1. The orchestrator spawns `event-watcher.sh` with `run_in_background: true` alongside a discovery agent
+2. The script polls `state_events` every 5 seconds for new rows
+3. When a discovery agent writes an interim finding (credential, vuln, pivot, blocked), a new row appears
+4. The watcher detects the change, waits 5 seconds (debounce to let the agent finish its batch), outputs the events as JSON, and **exits**
+5. The process termination notifies the orchestrator, which checks the database for the new findings and can route accordingly — e.g., spraying newly discovered credentials against other targets
+
+Without this, the orchestrator would have to continuously poll the database itself between agent turns, wasting tokens on repeated `poll_events()` calls that usually return nothing.
 
 **Usage:**
 
@@ -117,17 +127,13 @@ The event watcher (`tools/hooks/event-watcher.sh`) is a background poller that m
 bash tools/hooks/event-watcher.sh <cursor> <db_path>
 ```
 
-**Behavior:**
+**Parameters:**
 
-- Polls `state_events` every 5 seconds for rows with `id > cursor`
-- When new events are detected, waits 5 seconds (debounce) to let the agent finish its batch
-- Outputs all new events as JSON and exits
-- 10-minute timeout prevents zombie watchers
+- `cursor` — last `state_events` ID seen (events with `id > cursor` are new)
+- `db_path` — path to `engagement/state.db`
+- 10-minute timeout prevents zombie watchers if no events arrive
 
-The orchestrator spawns this in the background and reads its output to get real-time visibility into what discovery agents are finding mid-run — new credentials, vulnerabilities, pivot paths, or blocked techniques.
-
-\!\!\! note "No external dependencies"
-    The event watcher uses Python 3's built-in `sqlite3` module. No sqlite3 CLI binary is required.
+> **Note:** The event watcher uses Python 3's built-in `sqlite3` module. No sqlite3 CLI binary is required.
 
 ## Configuration
 
