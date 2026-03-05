@@ -51,6 +51,24 @@ The installer sets up the orchestrator, agents, and MCP servers, and indexes `sk
 
 Run from a VM or dedicated pentesting machine. See [Installation docs](https://blacklanternsecurity.github.io/red-run/installation/) for sandbox configuration and troubleshooting.
 
+## State Viewer
+
+Browser-based read-only dashboard for `engagement/state.db` with a kill-chain attack graph and live SSE updates:
+
+```bash
+python3 tools/state-viewer/server.py [--port 8099] [--db engagement/state.db]
+```
+
+Open `http://127.0.0.1:8099` to see targets, credentials, access, vulns, pivots, tunnels, blocked techniques, and an event timeline — all updating in real-time as agents work.
+
+To access from a host machine (when red-run is in a VM), generate an auth token — the server will bind to `0.0.0.0` and require the token to access any page:
+
+```bash
+bash tools/state-viewer/generate-token.sh
+```
+
+See `tools/state-viewer/README.md` for details.
+
 ## Warning
 
 `claude --dangerously-skip-permissions` (yolo mode) is available but **not recommended**. With it active, Claude will chain skills, pop shells, move laterally, and escalate privileges without pausing for confirmation. Avoid `--dangerously-skip-permissions` for maximum safety. You are responsible for containing Claude on your systems and for any legal consequences under the CFAA or equivalent legislation.

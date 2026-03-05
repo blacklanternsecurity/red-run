@@ -821,6 +821,7 @@ def register_write_tools(mcp: FastMCP) -> None:
         secret_type: str = "password",
         domain: str = "",
         source: str = "",
+        via_access_id: int | None = None,
         discovered_by: str = "",
     ) -> str:
         """Add a credential (password, hash, key, token, etc.).
@@ -833,14 +834,16 @@ def register_write_tools(mcp: FastMCP) -> None:
                         certificate, other.
             domain: Domain (for AD credentials).
             source: Where this credential was found.
+            via_access_id: Access ID that led to finding this credential
+                          (for kill-chain provenance). None = provided/external.
             discovered_by: Skill that found this credential.
         """
         conn = _get_db()
         cursor = conn.execute(
             "INSERT INTO credentials "
-            "(username, secret, secret_type, domain, source, discovered_by) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
-            (username, secret, secret_type, domain, source, discovered_by),
+            "(username, secret, secret_type, domain, source, via_access_id, discovered_by) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (username, secret, secret_type, domain, source, via_access_id, discovered_by),
         )
         cred_id = cursor.lastrowid
         conn.commit()
@@ -1039,6 +1042,7 @@ def register_write_tools(mcp: FastMCP) -> None:
         endpoint: str = "",
         details: str = "",
         evidence_path: str = "",
+        via_access_id: int | None = None,
         discovered_by: str = "",
     ) -> str:
         """Add a confirmed vulnerability.
@@ -1052,6 +1056,8 @@ def register_write_tools(mcp: FastMCP) -> None:
             endpoint: Affected endpoint/URL/path.
             details: Technical details.
             evidence_path: Path to evidence file in engagement/evidence/.
+            via_access_id: Access ID that led to finding this vuln
+                          (for kill-chain provenance). None = unauthenticated/recon.
             discovered_by: Skill that found this vulnerability.
         """
         conn = _get_db()
@@ -1065,10 +1071,10 @@ def register_write_tools(mcp: FastMCP) -> None:
         cursor = conn.execute(
             "INSERT INTO vulns "
             "(target_id, title, vuln_type, status, severity, endpoint, "
-            "details, evidence_path, discovered_by) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "details, evidence_path, via_access_id, discovered_by) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (target_id, title, vuln_type, status, severity, endpoint,
-             details, evidence_path, discovered_by),
+             details, evidence_path, via_access_id, discovered_by),
         )
         vuln_id = cursor.lastrowid
         conn.commit()
@@ -1342,6 +1348,7 @@ def register_interim_tools(mcp: FastMCP) -> None:
         secret_type: str = "password",
         domain: str = "",
         source: str = "",
+        via_access_id: int | None = None,
         discovered_by: str = "",
     ) -> str:
         """Add a credential (password, hash, key, token, etc.).
@@ -1354,14 +1361,16 @@ def register_interim_tools(mcp: FastMCP) -> None:
                         certificate, other.
             domain: Domain (for AD credentials).
             source: Where this credential was found.
+            via_access_id: Access ID that led to finding this credential
+                          (for kill-chain provenance). None = provided/external.
             discovered_by: Skill that found this credential.
         """
         conn = _get_db()
         cursor = conn.execute(
             "INSERT INTO credentials "
-            "(username, secret, secret_type, domain, source, discovered_by) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
-            (username, secret, secret_type, domain, source, discovered_by),
+            "(username, secret, secret_type, domain, source, via_access_id, discovered_by) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (username, secret, secret_type, domain, source, via_access_id, discovered_by),
         )
         cred_id = cursor.lastrowid
         summary = (
@@ -1389,6 +1398,7 @@ def register_interim_tools(mcp: FastMCP) -> None:
         endpoint: str = "",
         details: str = "",
         evidence_path: str = "",
+        via_access_id: int | None = None,
         discovered_by: str = "",
     ) -> str:
         """Add a confirmed vulnerability.
@@ -1402,6 +1412,8 @@ def register_interim_tools(mcp: FastMCP) -> None:
             endpoint: Affected endpoint/URL/path.
             details: Technical details.
             evidence_path: Path to evidence file in engagement/evidence/.
+            via_access_id: Access ID that led to finding this vuln
+                          (for kill-chain provenance). None = unauthenticated/recon.
             discovered_by: Skill that found this vulnerability.
         """
         conn = _get_db()
@@ -1415,10 +1427,10 @@ def register_interim_tools(mcp: FastMCP) -> None:
         cursor = conn.execute(
             "INSERT INTO vulns "
             "(target_id, title, vuln_type, status, severity, endpoint, "
-            "details, evidence_path, discovered_by) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "details, evidence_path, via_access_id, discovered_by) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (target_id, title, vuln_type, status, severity, endpoint,
-             details, evidence_path, discovered_by),
+             details, evidence_path, via_access_id, discovered_by),
         )
         vuln_id = cursor.lastrowid
         summary = f"{title} [{severity}]"

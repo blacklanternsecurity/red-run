@@ -9,7 +9,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 SCHEMA_SQL = """\
 PRAGMA journal_mode=WAL;
@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS credentials (
     domain        TEXT NOT NULL DEFAULT '',
     source        TEXT NOT NULL DEFAULT '',
     cracked       INTEGER NOT NULL DEFAULT 0,
+    via_access_id INTEGER REFERENCES access(id) ON DELETE SET NULL,
     notes         TEXT NOT NULL DEFAULT '',
     discovered_by TEXT NOT NULL DEFAULT '',
     created_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
@@ -106,6 +107,7 @@ CREATE TABLE IF NOT EXISTS vulns (
     endpoint      TEXT NOT NULL DEFAULT '',
     details       TEXT NOT NULL DEFAULT '',
     evidence_path TEXT NOT NULL DEFAULT '',
+    via_access_id INTEGER REFERENCES access(id) ON DELETE SET NULL,
     discovered_by TEXT NOT NULL DEFAULT '',
     created_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
     updated_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
@@ -214,6 +216,19 @@ def _migrate_v2_to_v3(conn: sqlite3.Connection) -> None:
         """)
 
 
+def _migrate_v3_to_v4(conn: sqlite3.Connection) -> None:
+    """Migrate schema from v3 to v4: add via_access_id to credentials and vulns.
+
+    Adds a nullable FK to access(id) for provenance tracking — which access
+    session led to the discovery of this credential or vulnerability.
+    """
+    for table in ("credentials", "vulns"):
+        cols = [r[1] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()]
+        if "via_access_id" not in cols:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN via_access_id INTEGER REFERENCES access(id) ON DELETE SET NULL")
+    conn.commit()
+
+
 def init_db(db_path: str | Path) -> sqlite3.Connection:
     """Create or open the state database and apply schema.
 
@@ -231,6 +246,8 @@ def init_db(db_path: str | Path) -> sqlite3.Connection:
     # Run migrations for existing databases
     if current_version == 2:
         _migrate_v2_to_v3(conn)
+    if current_version <= 3:
+        _migrate_v3_to_v4(conn)
 
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()

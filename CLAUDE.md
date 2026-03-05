@@ -52,6 +52,7 @@ Agent source files live in `agents/` (version controlled), installed to `~/.clau
 | state-interim | `tools/state-server/` | Read + 5 add-only writes (discovery agents + pivoting-agent) |
 | state-writer | `tools/state-server/` | Full engagement state management (orchestrator only) |
 | browser-server | `tools/browser-server/` | Headless browser automation (web agents) |
+| state-viewer | `tools/state-viewer/` | Read-only web dashboard for state.db (operator use, not MCP) |
 
 The state-reader, state-interim, and state-writer are three instances of the same server running in different modes. Discovery agents use state-interim to write actionable findings mid-run. Technique agents use state-reader (read-only). The orchestrator uses state-writer for full read/write access. See each server's `README.md` for tool details.
 
@@ -115,6 +116,7 @@ when making changes.
 | Agents (`agents/`) | `<agent-name>.md` | Self-contained — no separate README |
 | Hooks (`tools/hooks/`) | `README.md` | Update when hook scripts change |
 | Dashboard (`tools/agent-dashboard/`) | `README.md` | Update when dashboard modes or keybindings change |
+| State viewer (`tools/state-viewer/`) | `README.md` | Update when endpoints, features, or auth changes |
 
 **When modifying a tool server:** If you change tools, parameters, behavior, or
 dependencies in a `tools/*/` server, update its `README.md` in the same commit.
@@ -174,6 +176,9 @@ red-run/
       server.py           # FastMCP server — runs as state-reader (read) or state-writer (read+write)
       schema.py           # SQLite schema creation and migration
       pyproject.toml       # Python dependencies (mcp)
+    state-viewer/         # Read-only web dashboard for state.db
+      README.md            # Server documentation
+      server.py           # Stdlib HTTP server — inline HTML dashboard, SSE live updates
     hooks/                # Claude Code hooks
       save-agent-log.sh   # SubagentStop hook — copies JSONL transcripts to engagement/evidence/logs/
       event-watcher.sh    # Background event poller — spawned by orchestrator to watch state_events
