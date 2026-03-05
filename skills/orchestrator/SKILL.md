@@ -33,6 +33,14 @@ vulnerabilities, chain them for maximum impact, and route to the correct
 technique skills for exploitation. All testing is under explicit written
 authorization.
 
+> **NEVER SPAWN AGENTS WITHOUT OPERATOR APPROVAL.** Before every agent
+> invocation — discovery, technique, spray, cracking, any subagent — present
+> the routing decision to the operator and wait for explicit approval. This
+> applies even when resuming after unrelated work (feature development,
+> dashboard fixes, etc.). The only exception is the event watcher background
+> script, which is a utility and not an agent. When presenting the decision,
+> state: what skill, what agent, what target, and why. Then wait.
+
 > **DO NOT RUN SCANNING TOOLS.** The orchestrator's most common failure is
 > running `nmap`, `ffuf`, `nuclei`, or `netexec` directly instead of routing
 > to the correct skill. You are a router, not a scanner. If you are about to
@@ -111,6 +119,7 @@ The only commands the orchestrator may execute directly are:
 - Skill-router MCP tools (`get_skill`, `search_skills`, `list_skills`) — skill routing
 - `getent hosts <hostname>` — hostname resolution verification (local-only, no network traffic)
 - `ldapsearch -x -H ldap://TARGET -b "DC=..." -s base lockoutThreshold lockOutObservationWindow lockoutDuration minPwdLength pwdProperties` — lockout policy query (safety-critical pre-spray check, single base-scope read, not enumeration)
+- `ps aux | grep <tool>`, `kill <pid>` — subprocess cleanup after `TaskStop` (see Subprocess Cleanup below)
 
 Everything else — nmap, netexec, ffuf, nuclei, httpx, sqlmap, curl, nc, evil-winrm,
 any tool that sends traffic to a target — MUST go through the appropriate skill
@@ -136,6 +145,41 @@ goes through **web-exploit-agent** or **web-discovery-agent**.
 
 **If you are unsure whether a command is on the allowed list, it is not.
 Route to a skill.**
+
+### Subprocess Cleanup After TaskStop
+
+**CRITICAL: `TaskStop` kills the agent but NOT its child processes.**
+
+When an agent spawns long-running tools via the Bash tool (hashcat, nxc,
+ffuf, nmap, responder, etc.), those processes run in separate process groups.
+`TaskStop` terminates the agent's Claude process, but the tools keep running
+as orphans — consuming CPU, holding file locks, and potentially conflicting
+with subsequent agents.
+
+**After every `TaskStop` on a skill agent, immediately check for and kill
+orphaned subprocesses:**
+
+```bash
+# Find orphaned processes from killed agent
+ps aux | grep -E 'hashcat|nxc|netexec|ffuf|nmap|responder|mitm6|ntlmrelayx|certipy|bloodhound|manspider|gobuster|feroxbuster|nuclei|sqlmap' | grep -v grep
+
+# Kill them (use the PIDs from the ps output)
+kill <pid1> <pid2> ...
+
+# Verify they're gone
+ps aux | grep -E '<tool>' | grep -v grep
+```
+
+Do this for EVERY `TaskStop` — fork resolution kills, manual agent kills,
+and cleanup kills. The one-liner pattern:
+
+```bash
+# Kill all orphaned hashcat processes (example)
+pkill -f 'hashcat.*kerberoast' 2>/dev/null || true
+```
+
+Use targeted `pkill -f` patterns that match the specific command rather
+than broad tool names, to avoid killing processes from still-running agents.
 
 ### Subagent Delegation
 
@@ -179,17 +223,35 @@ The agent will:
 
 **Operator live-tail.** After spawning any background agent, append its
 label and output path to the dashboard file (one `label:path` per line),
-then print a short hint. When launching the **first** agent of a batch,
-truncate the file; subsequent agents in the same batch append.
+then print a short hint.
+
+**Dashboard file write rules — ALWAYS APPEND (`>>`) unless safe to truncate.**
 
 The dashboard file lives at `tools/agent-dashboard/.dashboard` (relative to
-repo root). Use the Bash tool to write it.
+repo root).
+
+- **Append (`>>`)** — the default. Use for EVERY new agent spawn.
+- **Truncate (`>`)** — ONLY when launching the first agent of a brand-new
+  batch AND no agents from any prior batch are still running. Check with
+  `ps aux | grep -c 'agentId'` or by verifying all prior agent task IDs
+  have completed before truncating.
+- **Never remove individual entries.** When an agent completes while others
+  are still running, leave its line in the file. The operator can dismiss
+  completed panes from the dashboard UI with the `d` key. Removing a line
+  while the agent (or its hashcat/spray subprocess) is still running makes
+  it invisible to the operator.
+
+If in doubt, **append**. A duplicate entry in the dashboard is harmless;
+a missing entry hides the agent's output from the operator.
 
 ```bash
-# First agent in batch — truncate
-echo "web-discovery:/tmp/.../output" > tools/agent-dashboard/.dashboard
-# Second agent — append
-echo "ad-discovery:/tmp/.../output" >> tools/agent-dashboard/.dashboard
+# SAFE — always works (append)
+echo "web-discovery:/tmp/.../output" >> tools/agent-dashboard/.dashboard
+
+# ONLY when ALL prior agents are done — start fresh
+echo "ad-discovery:/tmp/.../output" > tools/agent-dashboard/.dashboard
+# Then append subsequent agents in the same batch
+echo "web-discovery:/tmp/.../output" >> tools/agent-dashboard/.dashboard
 ```
 
 After writing, always print this hint:
@@ -886,7 +948,7 @@ Common chains that produce shell access on a host:
 > prefer evil-winrm for transferring tools and scripts to Windows targets.
 > Its `upload`/`download` commands are more reliable than SMB file transfer.
 >
-> **2. Route to the appropriate discovery skill.**
+> **2. Route to host discovery (mandatory on every host).**
 > Do NOT run `sudo -l`, `find -perm -4000`, `whoami /priv`, `net user`, or any
 > host enumeration commands inline. Spawn:
 >
@@ -900,7 +962,19 @@ Common chains that produce shell access on a host:
 > abuse, cron/MOTD exploitation, kernel exploits, token impersonation, etc.).
 >
 > This applies every time new shell access is gained — including after lateral
-> movement to a new host.
+> movement to a new host. **Host discovery runs on ALL hosts — including DCs.**
+> DCs are Windows hosts with network interfaces, scheduled tasks, installed
+> software, local services, and firewall rules that only host-level enumeration
+> reveals. Skipping host discovery on DCs means missing additional NICs (critical
+> for pivoting to internal subnets), Hyper-V infrastructure, stored credentials
+> in scheduled tasks, and local privilege escalation vectors.
+>
+> **3. Additionally route to AD discovery on Domain Controllers.**
+> After host discovery completes on a DC (detected by ports 88+389+3268), also
+> spawn **ad-discovery-agent** with skill `ad-discovery`. AD discovery covers
+> the AD-specific attack surface: ADCS templates, delegation, ACLs, Kerberos
+> attacks, BloodHound paths. Host discovery and AD discovery are complementary
+> — run both sequentially (host discovery first, then AD discovery).
 >
 > **File exfiltration:** When retrieving files from a target (loot, backups,
 > configs, databases), follow the File Exfiltration decision tree in the skill
@@ -931,16 +1005,27 @@ When reading the state summary (via `get_state_summary()`), the orchestrator sho
    the appropriate discovery agent. Do not enumerate privilege escalation vectors
    inline.
 
-   **DC detection heuristic**: If the target has ports 88 (Kerberos) + 389/636
-   (LDAP) + 3268/3269 (Global Catalog), it is a Domain Controller. **Always
-   route to ad-discovery-agent with `ad-discovery`**, never windows-privesc-agent
-   with `windows-discovery`. On a DC, privilege escalation is an AD problem
-   (ADCS abuse, delegation, ACLs, credential dumping), not a local Windows
-   problem (services, DLL hijacking, tokens). `windows-discovery` wastes an
-   agent invocation and misses the AD attack surface entirely.
+   **Host discovery is mandatory on every host with shell access.** Always
+   spawn the appropriate host discovery agent first:
+   - Windows target → **windows-privesc-agent** with `windows-discovery`
+   - Linux target → **linux-privesc-agent** with `linux-discovery`
 
-   For non-DC Windows hosts: spawn **windows-privesc-agent** with `windows-discovery`.
-   For Linux hosts: spawn **linux-privesc-agent** with `linux-discovery`.
+   **DC detection heuristic**: If the target has ports 88 (Kerberos) + 389/636
+   (LDAP) + 3268/3269 (Global Catalog), it is a Domain Controller. After
+   host discovery completes, **additionally** route to **ad-discovery-agent**
+   with `ad-discovery`. DCs need BOTH:
+   - **Host discovery** (windows-discovery): network interfaces, routes,
+     ARP cache, scheduled tasks, installed software, services, firewall
+     rules, local privesc vectors — everything WinPEAS covers. This reveals
+     additional NICs and internal subnets (critical for pivoting), Hyper-V
+     infrastructure, stored credentials, and local attack surface.
+   - **AD discovery** (ad-discovery): ADCS templates, delegation, ACLs,
+     Kerberos attacks, BloodHound paths — the AD-specific attack surface.
+
+   Run them sequentially: host discovery first (reveals network topology),
+   then AD discovery (maps AD attack paths). Never skip host discovery on
+   a DC — it's the only way to find additional network interfaces for
+   pivoting to internal subnets.
 3. **Check for unchained access** — can existing access reach new targets?
 4. **Check credentials** — have all found credentials been tested against all
    services?

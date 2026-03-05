@@ -27,7 +27,11 @@ tail -f <output_file> | python3 tools/agent-dashboard/tail-agent.py
 
 ### Multi-agent dashboard mode
 
-Curses-based split-pane view showing multiple agents side by side:
+Curses-based split-pane view showing multiple agents side by side.
+Only active agents (output file written within the last 60 seconds) are
+displayed. When an agent completes, its pane is automatically removed.
+Completed agents are still accessible via the agent browser (`b`).
+If no agents are active, the dashboard sits idle until one spawns.
 
 ```bash
 # Explicit label:path pairs
@@ -83,10 +87,29 @@ file is empty, showing "Waiting for agents..." until entries appear.
 | `PgUp` | Page up |
 | `G` / `End` | Jump to bottom (resume live follow) |
 | `g` / `Home` | Jump to top |
+| `d` | Dismiss focused pane (double-tap within 2s to confirm) |
+| `b` | Open agent browser — add completed agents back to the dashboard |
 | `q` / `Ctrl-C` | Quit |
 
 The status bar shows `LIVE` when auto-following or `scrolled +N` when
 scrolled up. Scrolling to the bottom re-enables live follow.
+
+### Agent browser
+
+Press `b` to open a modal overlay listing all agent output files from the
+current session's tasks directory, sorted by most recent first. The browser
+extracts skill names from agent JSONL transcripts for readable labels.
+
+| Key | Action (in browser) |
+|-----|---------------------|
+| `j` / `Down` | Move cursor down |
+| `k` / `Up` | Move cursor up |
+| `Enter` | Add selected agent as a new pane |
+| `b` / `Escape` | Close browser |
+
+This lets you review completed agents that have already left the dashboard,
+or re-add dismissed panes. The `--tasks-dir` flag (auto-set by `dashboard.sh`)
+controls where the browser looks for output files.
 
 ## Color coding
 
