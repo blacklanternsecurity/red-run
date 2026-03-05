@@ -365,6 +365,8 @@ def dashboard(agents: list[tuple[str, str]], agents_file: str = "",
     threads: list[threading.Thread] = []
     # Map filepath -> (pane, thread) for hot-reload bookkeeping
     pane_map: dict[str, tuple[AgentPane, threading.Thread]] = {}
+    # Paths dismissed by the user — never re-add via hot-reload
+    dismissed_paths: set[str] = set()
 
     def _start_pane(pane: AgentPane) -> threading.Thread:
         t = threading.Thread(target=tail_thread, args=(pane, stop_event), daemon=True)
@@ -418,9 +420,9 @@ def dashboard(agents: list[tuple[str, str]], agents_file: str = "",
                         new_paths = {path for _, path in new_agents}
                         old_paths = set(pane_map.keys())
 
-                        # Add new panes
+                        # Add new panes (skip dismissed ones)
                         for label, path in new_agents:
-                            if path not in old_paths:
+                            if path not in old_paths and path not in dismissed_paths:
                                 p = AgentPane(label, path, len(panes) % len(PANE_COLORS))
                                 t = _start_pane(p)
                                 panes.append(p)
@@ -460,7 +462,7 @@ def dashboard(agents: list[tuple[str, str]], agents_file: str = "",
                         elif key == curses.KEY_DOWN or key == ord("j"):
                             if browser_items:
                                 browser_cursor = min(len(browser_items) - 1, browser_cursor + 1)
-                        elif key == 10 or key == curses.KEY_ENTER:  # Enter to add
+                        elif key == ord("a") or key == 10 or key == curses.KEY_ENTER:  # a/Enter to add
                             if browser_items and browser_cursor < len(browser_items):
                                 label, path, _, in_dash = browser_items[browser_cursor]
                                 if not in_dash:
@@ -469,8 +471,25 @@ def dashboard(agents: list[tuple[str, str]], agents_file: str = "",
                                     panes.append(p)
                                     threads.append(t)
                                     pane_map[path] = (p, t)
+                                    dismissed_paths.discard(path)  # un-dismiss
                                     focused = len(panes) - 1
-                                browser_open = False
+                                    # Update this item's in_dashboard flag
+                                    browser_items[browser_cursor] = (label, path, browser_items[browser_cursor][2], True)
+                        elif key == ord("d"):  # d to remove from dashboard
+                            if browser_items and browser_cursor < len(browser_items):
+                                label, path, _, in_dash = browser_items[browser_cursor]
+                                if in_dash and path in pane_map:
+                                    old_pane, _ = pane_map.pop(path)
+                                    if old_pane in panes:
+                                        panes.remove(old_pane)
+                                    dismissed_paths.add(path)
+                                    # Update this item's in_dashboard flag
+                                    browser_items[browser_cursor] = (label, path, browser_items[browser_cursor][2], False)
+                                    # Clamp focused pane index
+                                    if panes:
+                                        focused = min(focused, len(panes) - 1)
+                                    else:
+                                        focused = 0
                     elif panes:
                         # --- Normal pane key handling ---
                         fp = panes[focused]
@@ -508,6 +527,7 @@ def dashboard(agents: list[tuple[str, str]], agents_file: str = "",
                                 # Second press within 2s — actually dismiss
                                 dismissed = panes.pop(focused)
                                 pane_map.pop(dismissed.filepath, None)
+                                dismissed_paths.add(dismissed.filepath)
                                 if panes:
                                     focused = min(focused, len(panes) - 1)
                                 else:
@@ -731,7 +751,7 @@ def dashboard(agents: list[tuple[str, str]], agents_file: str = "",
             # --- Status bar ---
             if browser_open:
                 n = len(browser_items)
-                status = f" Agent Browser: {n} agent{'s' if n != 1 else ''}  |  ● = in dashboard  |  j/k: navigate  Enter: add  b/Esc: close  q: quit "
+                status = f" Agent Browser: {n} agent{'s' if n != 1 else ''}  |  ● = in dashboard  |  a: add  d: remove  j/k: navigate  b/Esc: close  q: quit "
                 status_attr = curses.color_pair(color_pairs["cyan"]) | curses.A_REVERSE
             elif panes:
                 fp = panes[focused]
