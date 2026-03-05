@@ -2,6 +2,16 @@
 
 Claude Code skill library for penetration testing and CTF work.
 
+## Engagement Workflow
+
+**MANDATORY:** When the user mentions targets, attacking, scanning, pentesting,
+or references an existing engagement (resuming, continuing, next steps, status),
+invoke the `red-run-orchestrator` skill via the Skill tool IMMEDIATELY — before
+reading state, running tools, or generating any analysis. The orchestrator skill
+contains all routing logic, approval gates, and state management rules. Never
+manually call state-server MCP tools, run attack commands, or present engagement
+analysis from the main thread without the orchestrator skill loaded.
+
 ## Token Budget
 
 Every token costs money and latency. Consider token impact when making ANY
@@ -228,6 +238,15 @@ The MCP indexer builds embedding documents from these structured fields. `descri
 - **Discovery skill maintenance**: When creating a new technique skill, update the corresponding discovery skill's routing table to include it. `web-discovery` must route to every web technique skill.
 - **AD OPSEC: Kerberos-first authentication**: All AD skills default to Kerberos authentication via ccache to avoid NTLM-specific detections (Event 4776, CrowdStrike Identity Module PTH signatures). Each AD skill's Prerequisites section includes the `getTGT.py` → `KRB5CCNAME` → `-k -no-pass` workflow. All embedded tool commands use Kerberos auth flags: Impacket (`-k -no-pass`), NetExec (`--use-kcache`), Certipy (`-k`), bloodyAD (`-k`). Skills where Kerberos auth doesn't apply (relay, coercion, password spraying) explicitly state why and note the NTLM detection surface.
 - **Attackbox-first transfer**: Never download exploits, scripts, or tools directly to the target from the internet. Targets may lack outbound access, and operators must review files before execution on target. Workflow: (1) download/clone on attackbox, (2) review, (3) serve via `python3 -m http.server` or transfer with `scp`/`nc`/base64, (4) pull from target. Inline source code in heredocs is fine — the operator can read it in the skill.
+
+## Permission Mode
+
+red-run requires `--dangerously-skip-permissions` (yolo mode). Subagents work
+autonomously — running shell commands and MCP calls as part of each skill
+invocation. In regular permission mode, background agents cannot surface
+permission prompts to the operator; tool calls are silently denied and agents
+stall. The orchestrator's approval gates (operator confirms every routing
+decision before agent spawn) provide the human-in-the-loop control.
 
 ## Sandbox
 
