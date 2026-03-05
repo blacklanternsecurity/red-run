@@ -948,7 +948,7 @@ Common chains that produce shell access on a host:
 > prefer evil-winrm for transferring tools and scripts to Windows targets.
 > Its `upload`/`download` commands are more reliable than SMB file transfer.
 >
-> **2. Route to the appropriate discovery skill.**
+> **2. Route to host discovery (mandatory on every host).**
 > Do NOT run `sudo -l`, `find -perm -4000`, `whoami /priv`, `net user`, or any
 > host enumeration commands inline. Spawn:
 >
@@ -962,7 +962,19 @@ Common chains that produce shell access on a host:
 > abuse, cron/MOTD exploitation, kernel exploits, token impersonation, etc.).
 >
 > This applies every time new shell access is gained — including after lateral
-> movement to a new host.
+> movement to a new host. **Host discovery runs on ALL hosts — including DCs.**
+> DCs are Windows hosts with network interfaces, scheduled tasks, installed
+> software, local services, and firewall rules that only host-level enumeration
+> reveals. Skipping host discovery on DCs means missing additional NICs (critical
+> for pivoting to internal subnets), Hyper-V infrastructure, stored credentials
+> in scheduled tasks, and local privilege escalation vectors.
+>
+> **3. Additionally route to AD discovery on Domain Controllers.**
+> After host discovery completes on a DC (detected by ports 88+389+3268), also
+> spawn **ad-discovery-agent** with skill `ad-discovery`. AD discovery covers
+> the AD-specific attack surface: ADCS templates, delegation, ACLs, Kerberos
+> attacks, BloodHound paths. Host discovery and AD discovery are complementary
+> — run both sequentially (host discovery first, then AD discovery).
 >
 > **File exfiltration:** When retrieving files from a target (loot, backups,
 > configs, databases), follow the File Exfiltration decision tree in the skill
@@ -993,16 +1005,27 @@ When reading the state summary (via `get_state_summary()`), the orchestrator sho
    the appropriate discovery agent. Do not enumerate privilege escalation vectors
    inline.
 
-   **DC detection heuristic**: If the target has ports 88 (Kerberos) + 389/636
-   (LDAP) + 3268/3269 (Global Catalog), it is a Domain Controller. **Always
-   route to ad-discovery-agent with `ad-discovery`**, never windows-privesc-agent
-   with `windows-discovery`. On a DC, privilege escalation is an AD problem
-   (ADCS abuse, delegation, ACLs, credential dumping), not a local Windows
-   problem (services, DLL hijacking, tokens). `windows-discovery` wastes an
-   agent invocation and misses the AD attack surface entirely.
+   **Host discovery is mandatory on every host with shell access.** Always
+   spawn the appropriate host discovery agent first:
+   - Windows target → **windows-privesc-agent** with `windows-discovery`
+   - Linux target → **linux-privesc-agent** with `linux-discovery`
 
-   For non-DC Windows hosts: spawn **windows-privesc-agent** with `windows-discovery`.
-   For Linux hosts: spawn **linux-privesc-agent** with `linux-discovery`.
+   **DC detection heuristic**: If the target has ports 88 (Kerberos) + 389/636
+   (LDAP) + 3268/3269 (Global Catalog), it is a Domain Controller. After
+   host discovery completes, **additionally** route to **ad-discovery-agent**
+   with `ad-discovery`. DCs need BOTH:
+   - **Host discovery** (windows-discovery): network interfaces, routes,
+     ARP cache, scheduled tasks, installed software, services, firewall
+     rules, local privesc vectors — everything WinPEAS covers. This reveals
+     additional NICs and internal subnets (critical for pivoting), Hyper-V
+     infrastructure, stored credentials, and local attack surface.
+   - **AD discovery** (ad-discovery): ADCS templates, delegation, ACLs,
+     Kerberos attacks, BloodHound paths — the AD-specific attack surface.
+
+   Run them sequentially: host discovery first (reveals network topology),
+   then AD discovery (maps AD attack paths). Never skip host discovery on
+   a DC — it's the only way to find additional network interfaces for
+   pivoting to internal subnets.
 3. **Check for unchained access** — can existing access reach new targets?
 4. **Check credentials** — have all found credentials been tested against all
    services?
