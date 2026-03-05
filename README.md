@@ -69,9 +69,13 @@ bash tools/state-viewer/generate-token.sh
 
 See `tools/state-viewer/README.md` for details.
 
-## Warning
+## Permission Mode
 
-`claude --dangerously-skip-permissions` (yolo mode) is available but **not recommended**. With it active, Claude will chain skills, pop shells, move laterally, and escalate privileges without pausing for confirmation. Avoid `--dangerously-skip-permissions` for maximum safety. You are responsible for containing Claude on your systems and for any legal consequences under the CFAA or equivalent legislation.
+red-run **requires** `claude --dangerously-skip-permissions` (yolo mode). Subagents work autonomously — running shell commands, MCP tool calls, and network operations as part of each skill invocation. In regular permission mode, background agents cannot surface permission prompts to the operator; tool calls are silently denied and agents stall.
+
+The orchestrator presents every routing decision for operator approval before spawning agents. You choose what to run — agents handle execution.
+
+red-run is a **proof of concept** tested only in CTF environments. Do not use it in production engagements. Run from an isolated VM or dedicated pentesting machine. You are responsible for containing Claude on your systems and for any legal consequences under the CFAA or equivalent legislation.
 
 ## Disclaimer
 

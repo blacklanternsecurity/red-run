@@ -102,7 +102,7 @@ The MCP servers start automatically via `.mcp.json`. Give the orchestrator a tar
 
 > "Scan and attack 10.10.10.5"
 
-> **Yolo mode:** `claude --dangerously-skip-permissions` is available but **not recommended**. Claude may execute potentially dangerous commands without pausing for confirmation.
+> **Required:** Run with `claude --dangerously-skip-permissions` (yolo mode). Subagents work autonomously and cannot surface permission prompts in regular mode — tool calls are silently denied and agents stall. The orchestrator still requires operator approval before spawning each agent, but does not require approval for every agent tool invocation.
 
 ## Uninstall
 
