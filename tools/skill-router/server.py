@@ -12,8 +12,15 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 from pathlib import Path
+
+# Suppress HF Hub warnings and telemetry (no need to phone home for local embeddings)
+import os
+
+logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
+os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
 
 import chromadb
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
