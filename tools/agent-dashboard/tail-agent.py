@@ -190,6 +190,9 @@ def _init_colors() -> dict[str, int]:
     # Pair for border
     curses.init_pair(len(cmap) + 2, curses.COLOR_WHITE, -1)
     pairs["border"] = len(cmap) + 2
+    # Pair for stopped indicator
+    curses.init_pair(len(cmap) + 3, curses.COLOR_RED, -1)
+    pairs["stopped"] = len(cmap) + 3
     return pairs
 
 
@@ -310,17 +313,67 @@ def _extract_label(filepath: str) -> str:
     return basename
 
 
-def _is_agent_active(filepath: str, threshold: float = 60.0) -> bool:
-    """Check if an agent output file is still being written to.
+def _is_agent_active(filepath: str) -> bool:
+    """Check if an agent is still running.
 
-    An agent is considered active if its output file's mtime is within
-    `threshold` seconds of now. When an agent completes, its JSONL file
-    stops being appended to and mtime goes stale.
+    For JSONL agent transcripts (symlinks), two checks:
+    1. If the last line is a completion message (assistant with
+       stop_reason != "tool_use") AND mtime > 5s ago → stopped.
+       The 5s debounce prevents flicker between turns.
+    2. If mtime > 30s ago (file not written to in 30s) → stopped.
+       Catches killed agents (TaskStop) whose last line is "user"
+       or "progress" rather than a clean completion message.
+
+    Fallback: mtime threshold for non-JSONL files (bash background tasks).
     """
     try:
+        if os.path.islink(filepath):
+            target = os.readlink(filepath)
+            if target.endswith(".jsonl") and os.path.exists(target):
+                mtime = os.path.getmtime(target)
+                age = time.time() - mtime
+                # Clean completion: JSONL signal + 5s debounce
+                if age > 5.0 and _jsonl_has_final_message(target):
+                    return False
+                # Killed/crashed: no writes in 30s = dead
+                if age > 30.0:
+                    return False
+                return True
+        # Fallback for non-symlinks (bash background tasks)
         mtime = os.path.getmtime(filepath)
-        return (time.time() - mtime) < threshold
+        return (time.time() - mtime) < 120.0
     except OSError:
+        return False
+
+
+def _jsonl_has_final_message(filepath: str) -> bool:
+    """Check if a JSONL transcript ends with a completion message.
+
+    A completed agent ends with type=assistant, stop_reason != "tool_use".
+    Returns True if the agent is done, False if still running.
+    """
+    try:
+        with open(filepath, "rb") as f:
+            f.seek(0, 2)
+            size = f.tell()
+            if size == 0:
+                return False
+            chunk_size = min(8192, size)
+            f.seek(-chunk_size, 2)
+            chunk = f.read().decode("utf-8", errors="replace")
+
+        lines = chunk.strip().split("\n")
+        if not lines:
+            return False
+
+        last = json.loads(lines[-1])
+        if last.get("type") == "assistant":
+            msg = last.get("message", {})
+            if isinstance(msg, dict):
+                stop_reason = msg.get("stop_reason")
+                return stop_reason != "tool_use"
+        return False
+    except (json.JSONDecodeError, OSError, KeyError):
         return False
 
 
@@ -458,12 +511,21 @@ def dashboard(agents: list[tuple[str, str]], agents_file: str = "",
                                 if old_pane in panes:
                                     panes.remove(old_pane)
 
-                # Auto-remove completed agents
+                # Auto-discover new agents from tasks directory
+                if tasks_dir:
+                    displayed = set(pane_map.keys())
+                    for label, path, mtime, in_dash in _discover_agents(tasks_dir, displayed):
+                        if not in_dash and path not in dismissed_paths and path not in completed_paths:
+                            if _is_agent_active(path):
+                                p = AgentPane(label, path, len(panes) % len(PANE_COLORS))
+                                t = _start_pane(p)
+                                panes.append(p)
+                                threads.append(t)
+                                pane_map[path] = (p, t)
+
+                # Track completed agents (no longer auto-removed — they show *stopped* in header)
                 for path in list(pane_map.keys()):
-                    if not _is_agent_active(path) and path not in dismissed_paths:
-                        old_pane, _ = pane_map.pop(path)
-                        if old_pane in panes:
-                            panes.remove(old_pane)
+                    if not _is_agent_active(path):
                         completed_paths.add(path)
 
                 # Clamp focused index
@@ -492,35 +554,31 @@ def dashboard(agents: list[tuple[str, str]], agents_file: str = "",
                         elif key == curses.KEY_DOWN or key == ord("j"):
                             if browser_items:
                                 browser_cursor = min(len(browser_items) - 1, browser_cursor + 1)
-                        elif key == ord("a") or key == 10 or key == curses.KEY_ENTER:  # a/Enter to add
+                        elif key == ord(" ") or key == ord("a") or key == 10 or key == curses.KEY_ENTER:  # Space/a/Enter to toggle
                             if browser_items and browser_cursor < len(browser_items):
                                 label, path, _, in_dash = browser_items[browser_cursor]
-                                if not in_dash:
+                                if in_dash and path in pane_map:
+                                    # Remove from dashboard
+                                    old_pane, _ = pane_map.pop(path)
+                                    if old_pane in panes:
+                                        panes.remove(old_pane)
+                                    dismissed_paths.add(path)
+                                    browser_items[browser_cursor] = (label, path, browser_items[browser_cursor][2], False)
+                                    if panes:
+                                        focused = min(focused, len(panes) - 1)
+                                    else:
+                                        focused = 0
+                                elif not in_dash:
+                                    # Add to dashboard
                                     p = AgentPane(label, path, len(panes) % len(PANE_COLORS))
                                     t = _start_pane(p)
                                     panes.append(p)
                                     threads.append(t)
                                     pane_map[path] = (p, t)
-                                    dismissed_paths.discard(path)  # un-dismiss
-                                    completed_paths.discard(path)  # un-complete
+                                    dismissed_paths.discard(path)
+                                    completed_paths.discard(path)
                                     focused = len(panes) - 1
-                                    # Update this item's in_dashboard flag
                                     browser_items[browser_cursor] = (label, path, browser_items[browser_cursor][2], True)
-                        elif key == ord("d"):  # d to remove from dashboard
-                            if browser_items and browser_cursor < len(browser_items):
-                                label, path, _, in_dash = browser_items[browser_cursor]
-                                if in_dash and path in pane_map:
-                                    old_pane, _ = pane_map.pop(path)
-                                    if old_pane in panes:
-                                        panes.remove(old_pane)
-                                    dismissed_paths.add(path)
-                                    # Update this item's in_dashboard flag
-                                    browser_items[browser_cursor] = (label, path, browser_items[browser_cursor][2], False)
-                                    # Clamp focused pane index
-                                    if panes:
-                                        focused = min(focused, len(panes) - 1)
-                                    else:
-                                        focused = 0
                     elif panes:
                         # --- Normal pane key handling ---
                         fp = panes[focused]
@@ -638,13 +696,27 @@ def dashboard(agents: list[tuple[str, str]], agents_file: str = "",
                     pane_color_name = PANE_COLORS[pane.color_idx]
                     pane_pair = color_pairs[pane_color_name]
 
-                    # Draw header — highlight focused pane
-                    header = pane.label.center(col_width)[:col_width]
+                    # Draw header — highlight focused pane, show stopped indicator
+                    is_active = _is_agent_active(pane.filepath)
+                    if is_active:
+                        header = pane.label.center(col_width)[:col_width]
+                    else:
+                        header_text = f"{pane.label}  *stopped*"
+                        header = header_text.center(col_width)[:col_width]
                     hdr_attr = curses.color_pair(pane_pair) | curses.A_BOLD
                     if pi == focused:
                         hdr_attr |= curses.A_REVERSE
                     try:
                         stdscr.addnstr(0, x_off, header, col_width, hdr_attr)
+                        # Overlay *stopped* in red
+                        if not is_active:
+                            stop_tag = "*stopped*"
+                            tag_pos = header.find(stop_tag)
+                            if tag_pos >= 0:
+                                stop_attr = curses.color_pair(color_pairs["stopped"]) | curses.A_BOLD
+                                if pi == focused:
+                                    stop_attr |= curses.A_REVERSE
+                                stdscr.addnstr(0, x_off + tag_pos, stop_tag, col_width - tag_pos, stop_attr)
                     except curses.error:
                         pass
 
@@ -782,7 +854,7 @@ def dashboard(agents: list[tuple[str, str]], agents_file: str = "",
             # --- Status bar ---
             if browser_open:
                 n = len(browser_items)
-                status = f" Agent Browser: {n} agent{'s' if n != 1 else ''}  |  ● = in dashboard  |  a: add  d: remove  j/k: navigate  b/Esc: close  q: quit "
+                status = f" Agent Browser: {n} agent{'s' if n != 1 else ''}  |  ● = in dashboard  |  Space: toggle  j/k: navigate  b/Esc: close  q: quit "
                 status_attr = curses.color_pair(color_pairs["cyan"]) | curses.A_REVERSE
             elif panes:
                 fp = panes[focused]

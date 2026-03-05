@@ -17,6 +17,10 @@ keywords:
   - scan this IP
   - scan this subnet
   - enumerate this box
+  - scan through tunnel
+  - pivot scan
+  - proxychains nmap
+  - internal network recon
 tools:
   - nmap
   - nuclei
@@ -144,10 +148,12 @@ Your return summary must include:
 
 ## Prerequisites
 
-- Network access to target(s) — direct or via pivot
+- Network access to target(s) — direct or via pivot tunnel
 - Target IP, hostname, or CIDR range
 - Scope confirmation (which IPs/ranges are authorized)
 - nmap installed (core tool — all other tools optional)
+- **If scanning through a tunnel:** check engagement state for tunnel details
+  (type, local endpoint, requires_proxychains, proxychains config path)
 
 ## Privileged Commands
 
@@ -241,6 +247,157 @@ grep "Status: Up" discovery.gnmap | awk '{print $2}' > live_hosts.txt
 ```
 
 Present the list of live hosts. Ask which to scan further or proceed with all.
+
+## Pivot Mode — Scanning Through a Tunnel
+
+When the orchestrator says you're scanning through a tunnel (chisel SOCKS, SSH
+dynamic forward, ligolo, etc.), **everything changes**. Nmap through proxychains
+is extremely slow — a /24 with top-1000 ports means 256,000 TCP connect attempts
+through SOCKS, each timeout ~15 seconds. A full subnet scan can take hours and
+often times out.
+
+**Check the engagement state** (`get_state_summary()`) for tunnel details. The
+Tunnels section tells you the tunnel type, local endpoint, whether proxychains
+is required, and which hosts are already known-live.
+
+### The nmap MCP Server Does NOT Support Proxychains
+
+The `nmap_scan` MCP tool runs nmap directly — it cannot route through SOCKS
+proxies. When scanning through a tunnel that requires proxychains, you MUST use
+Bash with `dangerouslyDisableSandbox: true` instead of the nmap MCP server.
+
+All nmap commands through proxychains require these flags:
+```bash
+proxychains4 -f <config_path> nmap -sT -Pn -n [other options] TARGET
+```
+- `-sT` — TCP connect scan (only scan type that works through SOCKS)
+- `-Pn` — skip host discovery (ICMP doesn't work through SOCKS)
+- `-n` — no DNS resolution (avoid DNS leaks outside the tunnel)
+- No `-sS`, `-sU`, `-O`, or raw-socket features — SOCKS is TCP-only
+
+### Two-Phase Approach (Required for Pivot Scanning)
+
+**Never scan an entire subnet with nmap through proxychains.** Instead, use a
+fast Phase 1 to find live hosts, then targeted Phase 2 for port/service detail.
+
+#### Phase 1: Fast Host Discovery
+
+Use lightweight methods that are much faster than nmap through SOCKS. Try these
+in order — use whichever works for your access level on the pivot host.
+
+**Option A — Commands on the pivot host via existing shell session.**
+If you have a shell on the pivot host (WinRM, SSH, reverse shell), run discovery
+commands directly on it. No proxychains overhead — these execute locally on the
+internal network.
+
+Windows pivot host:
+```powershell
+# ARP cache — already-known neighbors (instant)
+arp -a
+
+# DNS zone dump — if pivot host is a DC or has DNS access
+Get-DnsServerResourceRecord -ZoneName <domain> -RRType A | Select-Object HostName, @{N='IP';E={$_.RecordData.IPv4Address}}
+
+# Ping sweep (fast, covers the subnet)
+1..254 | ForEach-Object { $ip="192.168.100.$_"; if(Test-Connection -Count 1 -Quiet -TimeoutSeconds 1 $ip){$ip} }
+
+# PowerShell TCP port check on specific hosts (confirm specific services)
+Test-NetConnection -ComputerName 192.168.100.2 -Port 445 -InformationLevel Quiet
+```
+
+Linux pivot host:
+```bash
+# ARP cache
+arp -a
+
+# Ping sweep
+for i in $(seq 1 254); do ping -c1 -W1 192.168.100.$i &>/dev/null && echo "192.168.100.$i alive" & done; wait
+
+# Bash TCP check (no tools needed)
+for port in 22 80 135 445 3389 5985; do
+  (echo >/dev/tcp/192.168.100.2/$port) 2>/dev/null && echo "192.168.100.2:$port open"
+done
+```
+
+**Option B — Single-port sweep through proxychains.**
+If you can't run commands on the pivot host, sweep one common port across the
+subnet. Much faster than scanning many ports per host.
+
+```bash
+# SMB sweep — fast, catches Windows hosts
+proxychains4 -f <config> nxc smb 192.168.100.0/24 --timeout 5 2>&1 | grep -v "timeout"
+
+# Or nmap with a SINGLE port — minimize SOCKS overhead
+proxychains4 -f <config> nmap -sT -Pn -n -p 445 192.168.100.0/24 --open -oG pivot_discovery.gnmap
+```
+
+**Option C — Combined approach (best results).**
+Run ARP + ping sweep on the pivot host first, then validate with a single-port
+proxychains sweep to catch hosts that block ICMP.
+
+After Phase 1, collect the list of confirmed live hosts. **Only these hosts
+proceed to Phase 2.**
+
+#### Phase 2: Targeted Port Scanning
+
+Scan ONLY the live hosts found in Phase 1. Use focused port lists, not `-p-`.
+
+```bash
+# Common Windows ports — covers most AD/enterprise services
+proxychains4 -f <config> nmap -sT -Pn -n -p 21,22,25,53,80,88,110,135,139,143,389,443,445,464,587,636,993,995,1433,2049,3268,3306,3389,5432,5985,5986,8080,8443,9389 <live_host> -oA pivot_scan_HOSTNAME
+
+# If you already know the OS (e.g., from Phase 1 SMB banner), narrow further:
+# Windows server — core ports
+proxychains4 -f <config> nmap -sT -Pn -n -p 80,88,135,139,389,443,445,636,1433,3268,3389,5985,5986,8080 <live_host> -oA pivot_scan_HOSTNAME
+
+# Linux server — core ports
+proxychains4 -f <config> nmap -sT -Pn -n -p 21,22,25,53,80,110,139,143,443,445,993,2049,3306,5432,8080 <live_host> -oA pivot_scan_HOSTNAME
+```
+
+**Service version detection** — only on confirmed open ports:
+```bash
+# After finding open ports, run -sV on JUST those ports
+proxychains4 -f <config> nmap -sT -Pn -n -sV -p <open_ports_csv> <live_host> -oA pivot_svc_HOSTNAME
+```
+
+**Timing matters.** Through SOCKS, `-T4` can cause excessive timeouts. Use `-T3`
+or even `-T2` for reliability. Add `--max-retries 2 --host-timeout 300s` to
+prevent individual hosts from stalling the entire scan.
+
+### Alternative: Static nmap on Pivot Host
+
+For the fastest results, upload a static nmap binary to the pivot host and scan
+locally. This avoids all SOCKS overhead.
+
+```bash
+# Download static nmap on attackbox (NOT on target)
+# https://github.com/andrew-d/static-binaries or compile yourself
+
+# Transfer to pivot host (via existing shell session)
+# Use base64, certutil, or python http server + curl/wget
+
+# Run locally on pivot host — full speed, no proxychains
+./nmap -sT -Pn -p- 192.168.100.0/24 -oG /tmp/internal_scan.gnmap
+
+# Pull results back to attackbox for analysis
+```
+
+This is more invasive (leaves artifacts on the pivot host) but orders of
+magnitude faster. Use when speed matters more than stealth.
+
+### Pivot Mode Summary
+
+| Method | Speed | Invasiveness | When to use |
+|--------|-------|--------------|-------------|
+| Commands on pivot host | Fast | Low | Have shell access, quick discovery |
+| Single-port proxychains sweep | Medium | Low | No shell, need to find hosts |
+| Targeted nmap through proxychains | Slow | Low | Port/service detail on known hosts |
+| Static nmap on pivot host | Fastest | High | Large subnet, speed critical |
+| Full subnet nmap through proxychains | **Never** | N/A | **Don't do this** |
+
+After pivot scanning, continue with Step 3 (service enumeration) for each
+discovered host. All service enumeration tools (nxc, smbclient, ldapsearch,
+etc.) work through proxychains — prefix them the same way.
 
 ## Step 2: Port Scanning
 
@@ -1034,3 +1191,11 @@ OS, any credentials or access found.
 ### Nmap XML parsing fails
 - Ensure scan completed (check for `</nmaprun>` closing tag).
 - If scan was interrupted, partial XML is unusable — re-run with `-oA` to get all formats.
+
+### Nmap through proxychains times out or takes forever
+- **Never scan an entire /24 with nmap through proxychains.** Use the two-phase
+  approach in the Pivot Mode section.
+- Use `-T3` or `-T2` instead of `-T4` — aggressive timing causes SOCKS timeouts.
+- Add `--max-retries 2 --host-timeout 300s` to bound individual hosts.
+- Scan fewer ports: use a targeted list instead of `--top-ports 1000` or `-p-`.
+- If all else fails, upload a static nmap binary to the pivot host and scan locally.
