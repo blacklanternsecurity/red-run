@@ -27,7 +27,11 @@ tail -f <output_file> | python3 tools/agent-dashboard/tail-agent.py
 
 ### Multi-agent dashboard mode
 
-Curses-based split-pane view showing multiple agents side by side:
+Curses-based split-pane view showing multiple agents side by side.
+Only active agents (output file written within the last 60 seconds) are
+displayed. When an agent completes, its pane is automatically removed.
+Completed agents are still accessible via the agent browser (`b`).
+If no agents are active, the dashboard sits idle until one spawns.
 
 ```bash
 # Explicit label:path pairs

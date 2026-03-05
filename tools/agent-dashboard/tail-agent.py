@@ -310,6 +310,20 @@ def _extract_label(filepath: str) -> str:
     return basename
 
 
+def _is_agent_active(filepath: str, threshold: float = 60.0) -> bool:
+    """Check if an agent output file is still being written to.
+
+    An agent is considered active if its output file's mtime is within
+    `threshold` seconds of now. When an agent completes, its JSONL file
+    stops being appended to and mtime goes stale.
+    """
+    try:
+        mtime = os.path.getmtime(filepath)
+        return (time.time() - mtime) < threshold
+    except OSError:
+        return False
+
+
 def _discover_agents(tasks_dir: str, displayed_paths: set[str]) -> list[tuple[str, str, float, bool]]:
     """Discover agent output files, returning (label, path, mtime, in_dashboard) sorted newest-first.
 
@@ -356,9 +370,11 @@ def dashboard(agents: list[tuple[str, str]], agents_file: str = "",
     added/removed to match.  The dashboard stays open even when the file
     is empty — it just shows "waiting for agents".
     """
+    # Filter to only active agents on startup
+    active_agents = [(l, p) for l, p in agents if _is_agent_active(p)]
     panes: list[AgentPane] = [
         AgentPane(label, path, i % len(PANE_COLORS))
-        for i, (label, path) in enumerate(agents)
+        for i, (label, path) in enumerate(active_agents)
     ]
 
     stop_event = threading.Event()
@@ -367,6 +383,8 @@ def dashboard(agents: list[tuple[str, str]], agents_file: str = "",
     pane_map: dict[str, tuple[AgentPane, threading.Thread]] = {}
     # Paths dismissed by the user — never re-add via hot-reload
     dismissed_paths: set[str] = set()
+    # Paths auto-removed because agent completed — re-addable via browser
+    completed_paths: set[str] = set()
 
     def _start_pane(pane: AgentPane) -> threading.Thread:
         t = threading.Thread(target=tail_thread, args=(pane, stop_event), daemon=True)
@@ -405,11 +423,13 @@ def dashboard(agents: list[tuple[str, str]], agents_file: str = "",
         browser_scroll = 0
 
         while True:
-            # --- Hot-reload agents file ---
-            if agents_file:
-                reload_counter += 1
-                if reload_counter >= 10:  # every ~1 second
-                    reload_counter = 0
+            # --- Periodic checks (~1s interval) ---
+            reload_counter += 1
+            if reload_counter >= 10:
+                reload_counter = 0
+
+                # Hot-reload agents file
+                if agents_file:
                     try:
                         mtime = os.path.getmtime(agents_file)
                     except OSError:
@@ -420,27 +440,37 @@ def dashboard(agents: list[tuple[str, str]], agents_file: str = "",
                         new_paths = {path for _, path in new_agents}
                         old_paths = set(pane_map.keys())
 
-                        # Add new panes (skip dismissed ones)
+                        # Add new panes (only if active + not dismissed)
                         for label, path in new_agents:
                             if path not in old_paths and path not in dismissed_paths:
-                                p = AgentPane(label, path, len(panes) % len(PANE_COLORS))
-                                t = _start_pane(p)
-                                panes.append(p)
-                                threads.append(t)
-                                pane_map[path] = (p, t)
+                                if _is_agent_active(path):
+                                    p = AgentPane(label, path, len(panes) % len(PANE_COLORS))
+                                    t = _start_pane(p)
+                                    panes.append(p)
+                                    threads.append(t)
+                                    pane_map[path] = (p, t)
+                                    completed_paths.discard(path)
 
-                        # Remove stale panes
+                        # Remove panes no longer in .dashboard file
                         for path in old_paths - new_paths:
                             if path in pane_map:
                                 old_pane, _ = pane_map.pop(path)
                                 if old_pane in panes:
                                     panes.remove(old_pane)
 
-                        # Clamp focused index
-                        if panes:
-                            focused = min(focused, len(panes) - 1)
-                        else:
-                            focused = 0
+                # Auto-remove completed agents
+                for path in list(pane_map.keys()):
+                    if not _is_agent_active(path) and path not in dismissed_paths:
+                        old_pane, _ = pane_map.pop(path)
+                        if old_pane in panes:
+                            panes.remove(old_pane)
+                        completed_paths.add(path)
+
+                # Clamp focused index
+                if panes:
+                    focused = min(focused, len(panes) - 1)
+                else:
+                    focused = 0
 
             # Clear stale dismiss confirmation
             if dismiss_pending and (time.monotonic() - dismiss_time) >= 2.0:
@@ -472,6 +502,7 @@ def dashboard(agents: list[tuple[str, str]], agents_file: str = "",
                                     threads.append(t)
                                     pane_map[path] = (p, t)
                                     dismissed_paths.discard(path)  # un-dismiss
+                                    completed_paths.discard(path)  # un-complete
                                     focused = len(panes) - 1
                                     # Update this item's in_dashboard flag
                                     browser_items[browser_cursor] = (label, path, browser_items[browser_cursor][2], True)
