@@ -47,7 +47,7 @@ The orchestrator spawns domain-specific subagents for each skill invocation:
 
 Each invocation: agent loads one skill via `get_skill()`, executes methodology, saves evidence, and returns findings. The orchestrator parses the return summary, records state changes via the state-writer MCP, and makes the next routing decision. Discovery agents and the pivoting-agent use state-interim for mid-run writes; technique agents are read-only.
 
-**Inline fallback**: If subagents aren't installed, the orchestrator loads skills inline via `get_skill()` in the main thread.
+**Inline fallback**: If subagents aren't installed, the orchestrator **DOES NOT** load skills inline via `get_skill()` in the main thread. STOP and have the operator fix the issue. Skills are only loaded inline in pentest mode during exploitation activity (see ## Permission Mode) or when explicitly requested by the operator.
 
 Agent source files live in `agents/` (version controlled), installed to `~/.claude/agents/` by install.sh.
 
