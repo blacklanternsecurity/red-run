@@ -80,9 +80,9 @@ In pentest mode, the orchestrator requires an active nftables firewall before sp
 
 Edit the scope and activate:
 
-    sudo bash tools/engagement-firewall/firewall.sh
+    sudo bash tools/firewall/firewall.sh
 
-See `tools/engagement-firewall/README.md` for details and live target additions.
+See `tools/firewall/README.md` for details and live target additions.
 
 ## Running
 

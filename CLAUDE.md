@@ -259,8 +259,8 @@ tool call, decoupling agent autonomy from the main session's permission mode.
 
 In pentest mode, the orchestrator requires an active nftables firewall that
 restricts outbound traffic to Anthropic API + scope targets. Static scripts
-live in `tools/engagement-firewall/`. The operator edits scope and runs with
-sudo. See `tools/engagement-firewall/README.md` and docs/architecture.md.
+live in `tools/firewall/`. The operator edits scope and runs with
+sudo. See `tools/firewall/README.md` and docs/architecture.md.
 
 ## Installation
 

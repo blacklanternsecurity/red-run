@@ -428,7 +428,7 @@ ping -c 1 -W 2 1.1.1.1
 Outbound internet access detected (ping 1.1.1.1 succeeded). The nftables
 firewall is not active. This can happen after a reboot or manual teardown.
 
-Re-activate: sudo bash tools/engagement-firewall/firewall.sh
+Re-activate: sudo bash tools/firewall/firewall.sh
 
 Confirm when active.
 ```
@@ -860,8 +860,8 @@ ping -c 1 -W 2 1.1.1.1
 Outbound internet access detected (ping 1.1.1.1 succeeded). The engagement
 firewall must be active before proceeding.
 
-Edit scope targets in: tools/engagement-firewall/firewall.sh
-Then run: sudo bash tools/engagement-firewall/firewall.sh
+Edit scope targets in: tools/firewall/firewall.sh
+Then run: sudo bash tools/firewall/firewall.sh
 
 Confirm when active.
 ```
