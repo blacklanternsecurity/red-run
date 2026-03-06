@@ -565,24 +565,28 @@ function renderGraph() {
     addNode(`host:${t.host}`, 'host', t.host, sub, `${t.os} ${t.role}\n${ports}`.trim());
   }
 
-  // Vulns
+  // Vulns — add all initially, prune dead-ends after edges are built
   const sevColors = { critical:'#f85149', high:'#d29922', medium:'#e3b341', low:'#58a6ff', info:'#8b949e' };
   for (const v of state.vulns) {
     const host = v.host || 'unknown';
     const sub = v.severity.toUpperCase();
     addNode(`vuln:${v.id}`, 'vuln', v.title, sub, `${v.severity} | ${v.status}\n${v.endpoint}\n${v.details||''}`.trim());
-    // Store severity for coloring
     nodeMap[`vuln:${v.id}`].severity = v.severity;
     if (nodeMap[`host:${host}`]) {
       edges.push({ from: `host:${host}`, to: `vuln:${v.id}`, style: 'pending' });
     }
   }
 
-  // Credentials
+  // Credentials — pre-provided creds link from Attacker
+  const providedPattern = /\b(provided|scope|pre-engagement|given|initial|pentest)\b/i;
   for (const c of state.credentials) {
     const label = c.domain ? `${c.domain}\\${c.username}` : c.username;
     const sub = c.secret_type + (c.cracked ? ' (cracked)' : '');
-    addNode(`cred:${c.id}`, 'cred', label, sub, `${c.secret_type}${c.cracked?' (cracked)':''}\n${c.source}`);
+    addNode(`cred:${c.id}`, 'cred', label, sub, `${c.secret_type}${c.cracked?' (cracked)':''}\nsource: ${c.source}`);
+    if (c.source && providedPattern.test(c.source)) {
+      edges.push({ from: 'attacker', to: `cred:${c.id}`, style: 'confirmed' });
+      continue;
+    }
     let linked = false;
     for (const v of state.vulns) {
       if (c.source && (c.source.toLowerCase().includes(v.vuln_type.toLowerCase()) ||
@@ -659,6 +663,26 @@ function renderGraph() {
   for (const t of state.targets) {
     if (!pivotDests.has(t.host)) {
       edges.push({ from: 'attacker', to: `host:${t.host}`, style: 'confirmed' });
+    }
+  }
+
+  // Prune dead-end vulns: remove vuln nodes that have no outbound edges
+  // (they didn't lead to creds, access, or anything else — keep them in tables only)
+  const vulnOutbound = new Set();
+  for (const e of edges) {
+    if (e.from.startsWith('vuln:')) vulnOutbound.add(e.from);
+  }
+  const deadVulns = new Set();
+  for (const n of nodes) {
+    if (n.type === 'vuln' && !vulnOutbound.has(n.id)) deadVulns.add(n.id);
+  }
+  if (deadVulns.size) {
+    // Remove dead vuln nodes and their inbound edges
+    for (let i = nodes.length - 1; i >= 0; i--) {
+      if (deadVulns.has(nodes[i].id)) { delete nodeMap[nodes[i].id]; nodes.splice(i, 1); }
+    }
+    for (let i = edges.length - 1; i >= 0; i--) {
+      if (deadVulns.has(edges[i].to)) edges.splice(i, 1);
     }
   }
 
