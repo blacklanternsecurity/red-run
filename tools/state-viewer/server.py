@@ -606,6 +606,7 @@ function renderGraph() {
   }
 
   // Access
+  const credLinkedAccess = []; // track access nodes linked via creds for host bridging
   for (const a of state.access) {
     const label = `${a.username}@${a.host}`;
     const sub = `${a.access_type} | ${a.privilege}`;
@@ -615,7 +616,9 @@ function renderGraph() {
       const cLabel = c.domain ? `${c.domain}\\${c.username}` : c.username;
       if (a.username && (a.username === c.username || a.username === cLabel)) {
         edges.push({ from: `cred:${c.id}`, to: `access:${a.id}`, style: a.active ? 'confirmed' : 'blocked' });
-        linked = true; break;
+        linked = true;
+        credLinkedAccess.push({ accessId: `access:${a.id}`, host: a.host });
+        break;
       }
     }
     if (!linked && nodeMap[`host:${a.host}`]) {
@@ -629,6 +632,13 @@ function renderGraph() {
       if (!vlinked) {
         edges.push({ from: `host:${a.host}`, to: `access:${a.id}`, style: a.active ? 'confirmed' : 'blocked' });
       }
+    }
+  }
+  // Bridge: cred-linked access -> host, so downstream nodes (vulns, pivots,
+  // blocked) that hang off the host node remain connected in the chain
+  for (const { accessId, host } of credLinkedAccess) {
+    if (nodeMap[`host:${host}`]) {
+      edges.push({ from: accessId, to: `host:${host}`, style: 'confirmed' });
     }
   }
 
@@ -660,8 +670,26 @@ function renderGraph() {
   }
 
   // Connect attacker to initial targets (no inbound pivots)
+  // Skip hosts already reachable via provided-cred chain (attacker->cred->access on host)
+  const hostsViaProvidedCred = new Set();
+  for (const e of edges) {
+    if (e.from === 'attacker' && e.to.startsWith('cred:')) {
+      // Find access nodes this cred leads to
+      const credId = e.to;
+      for (const e2 of edges) {
+        if (e2.from === credId && e2.to.startsWith('access:')) {
+          // Find which host this access is on
+          const accNode = nodeMap[e2.to];
+          if (accNode) {
+            const atHost = accNode.label.split('@')[1];
+            if (atHost) hostsViaProvidedCred.add(atHost);
+          }
+        }
+      }
+    }
+  }
   for (const t of state.targets) {
-    if (!pivotDests.has(t.host)) {
+    if (!pivotDests.has(t.host) && !hostsViaProvidedCred.has(t.host)) {
       edges.push({ from: 'attacker', to: `host:${t.host}`, style: 'confirmed' });
     }
   }
