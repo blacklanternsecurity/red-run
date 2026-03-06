@@ -241,18 +241,18 @@ The agent will:
 label and JSONL transcript path to the dashboard file (one `label:path`
 per line), then print a short hint.
 
-**Path selection:** The Agent tool returns an `output_file` path, but this
-symlink is not always created. Instead, construct the JSONL path from the
-returned `agentId`:
+**Path selection:** The Agent tool returns an `agentId`. Use `find` to
+locate the JSONL file across all session directories — this survives
+context compactions (which change the session ID mid-conversation):
 
+```bash
+find ~/.claude/projects/-$(pwd | tr / - | sed 's/^-//')/*/subagents/ \
+  -name "agent-<agentId>.jsonl" 2>/dev/null
 ```
-~/.claude/projects/-<cwd-with-slashes-replaced-by-dashes>/<session-id>/subagents/agent-<agentId>.jsonl
-```
 
-To find the session ID, check an existing agent's JSONL path or run:
-`ls -t ~/.claude/projects/-$(pwd | tr / - | sed 's/^-//')/*/subagents/ 2>/dev/null | head -1`
-
-If the JSONL path cannot be determined, fall back to `output_file`.
+**Do NOT cache the session directory.** Compactions create a new session
+ID, so agents spawned after compaction land in a different directory than
+agents spawned before it. Always resolve from the `agentId`.
 
 **Dashboard file write rules — ALWAYS APPEND (`>>`) unless safe to truncate.**
 
