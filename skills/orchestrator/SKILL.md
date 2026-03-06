@@ -738,12 +738,8 @@ If `engagement/state.db` already exists (the user said "resume", "continue",
 1. Call `get_state_summary()` to load the full engagement state.
 2. Read the engagement mode from the summary header (`**Mode: ctf**` or
    `**Mode: pentest**`). Do NOT re-ask mode selection — it's stored in state.
-3. **If pentest mode**: run the firewall check:
-   ```bash
-   ping -c 1 -W 2 1.1.1.1
-   ```
-   If ping succeeds → firewall is down → hard stop (same message as
-   Firewall Gate in Step 1).
+3. **If pentest mode**: run the Pentest Mode Gates (permission mode check +
+   firewall check) — same as Step 1. Hard stop on yolo mode or firewall down.
 4. Print a concise status briefing for the operator: mode, targets, current
    access, key vulns, active tunnels, blocked paths.
 5. Append to `activity.md`:
@@ -840,12 +836,44 @@ and appears in every `get_state_summary()` response.
 # Findings
 ```
 
-### Firewall Gate (Pentest Mode Only)
+### Pentest Mode Gates
 
 **Skip this section entirely in CTF mode.**
 
-In pentest mode, the engagement firewall must be active before any agent
-spawns. Check by pinging an external IP:
+Two safety checks before any agent spawns in pentest mode:
+
+#### 1. Permission Mode Check
+
+Pentest mode requires normal permission mode (NOT `--dangerously-skip-permissions`).
+Technique skills run inline in the main thread — the operator must see and approve
+each command via Claude Code's native permission prompts. Yolo mode bypasses
+these prompts, defeating the purpose of pentest mode.
+
+Check by attempting a Bash command that would normally require approval.
+If the command runs without a permission prompt appearing, yolo mode is active.
+
+Alternatively, simply ask the operator:
+
+```
+[orchestrator] Pentest mode requires normal permission mode.
+
+Are you running with --dangerously-skip-permissions (yolo mode)?
+If yes, please restart Claude Code without that flag:
+
+    cd red-run && claude
+
+Pentest mode runs technique skills inline with permission prompts — the
+operator approves every command. Yolo mode bypasses these prompts.
+
+If you want full autonomous execution, select CTF mode instead.
+```
+
+If the operator confirms they are NOT in yolo mode, proceed. If they are,
+hard stop until they restart or switch to CTF mode.
+
+#### 2. Firewall Check
+
+The engagement firewall must be active. Check by pinging an external IP:
 
 ```bash
 ping -c 1 -W 2 1.1.1.1
@@ -870,8 +898,9 @@ Do NOT spawn any agents or continue the engagement until the operator
 confirms the firewall is active. After confirmation, re-run the ping check
 to verify it now fails. Log to `engagement/activity.md`:
 ```
-### [YYYY-MM-DD HH:MM:SS] orchestrator → firewall verified
-- Engagement firewall (inet redrun) active
+### [YYYY-MM-DD HH:MM:SS] orchestrator → pentest gates verified
+- Permission mode: normal (not yolo)
+- Engagement firewall active
 ```
 
 ## Step 2: Reconnaissance
