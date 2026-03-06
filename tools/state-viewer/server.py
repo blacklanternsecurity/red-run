@@ -659,15 +659,7 @@ function renderGraph() {
     }
   }
 
-  // Blocked — subtitle with reason (truncated)
-  for (const b of state.blocked) {
-    const host = b.host || 'unknown';
-    const sub = b.reason.length > 20 ? b.reason.slice(0,18)+'..' : b.reason;
-    addNode(`blocked:${b.id}`, 'blocked', b.technique, sub, `${b.reason}\nretry: ${b.retry}`);
-    if (nodeMap[`host:${host}`]) {
-      edges.push({ from: `host:${host}`, to: `blocked:${b.id}`, style: 'blocked' });
-    }
-  }
+  // Blocked — tables only, not in graph
 
   // Connect attacker to initial targets (no inbound pivots)
   // Skip hosts already reachable via provided-cred chain (attacker->cred->access on host)
@@ -740,7 +732,7 @@ function renderGraph() {
   // Unvisited nodes get layer based on type
   for (const n of nodes) {
     if (!visited.has(n.id)) {
-      n.layer = { host: 1, vuln: 2, cred: 3, access: 4, blocked: 2 }[n.type] || 1;
+      n.layer = { host: 1, vuln: 2, cred: 3, access: 4 }[n.type] || 1;
     }
   }
 
@@ -805,7 +797,6 @@ function renderGraph() {
     vuln: { fill: '#3d1f00', stroke: '#d29922' },
     cred: { fill: '#1f0d3d', stroke: '#bc8cff' },
     access: { fill: '#0d3d0d', stroke: '#3fb950' },
-    blocked: { fill: '#3d0d0d', stroke: '#f85149' },
   };
 
   function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
@@ -839,11 +830,6 @@ function renderGraph() {
     if (n.type === 'vuln') {
       const cx = p.x + p.w/2, cy = p.y + p.h/2, rx = p.w/2, ry = p.h/2;
       shape = `<polygon points="${cx},${cy-ry} ${cx+rx},${cy} ${cx},${cy+ry} ${cx-rx},${cy}" fill="${c.fill}" stroke="${stroke}"/>`;
-    } else if (n.type === 'blocked') {
-      shape = `<rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" rx="3" fill="${c.fill}" stroke="${stroke}"/>`;
-      const x1=p.x+4, y1=p.y+4, x2=p.x+14, y2=p.y+14;
-      shape += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${stroke}" stroke-width="2"/>`;
-      shape += `<line x1="${x2}" y1="${y1}" x2="${x1}" y2="${y2}" stroke="${stroke}" stroke-width="2"/>`;
     } else if (n.type === 'access') {
       shape = `<rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" rx="4" fill="${c.fill}" stroke="${stroke}"/>`;
       shape += `<rect x="${p.x+3}" y="${p.y+3}" width="${p.w-6}" height="${p.h-6}" rx="2" fill="none" stroke="${stroke}" stroke-width="0.5"/>`;
@@ -870,7 +856,6 @@ function renderGraph() {
     { shape: 'diamond', fill: '#3d1f00', stroke: '#d29922', label: 'Vuln' },
     { shape: 'hex', fill: '#1f0d3d', stroke: '#bc8cff', label: 'Credential' },
     { shape: 'dblrect', fill: '#0d3d0d', stroke: '#3fb950', label: 'Access' },
-    { shape: 'xrect', fill: '#3d0d0d', stroke: '#f85149', label: 'Blocked' },
   ];
   const edgeLegend = [
     { cls: 'edge-confirmed', label: 'Exploited' },
@@ -893,10 +878,6 @@ function renderGraph() {
     } else if (item.shape === 'dblrect') {
       svgHtml += `<rect x="${lx}" y="${iy}" width="${iw}" height="${ih}" rx="2" fill="${item.fill}" stroke="${item.stroke}" stroke-width="1.5"/>`;
       svgHtml += `<rect x="${lx+2}" y="${iy+2}" width="${iw-4}" height="${ih-4}" rx="1" fill="none" stroke="${item.stroke}" stroke-width="0.5"/>`;
-    } else if (item.shape === 'xrect') {
-      svgHtml += `<rect x="${lx}" y="${iy}" width="${iw}" height="${ih}" rx="2" fill="${item.fill}" stroke="${item.stroke}" stroke-width="1.5"/>`;
-      svgHtml += `<line x1="${lx+3}" y1="${iy+3}" x2="${lx+iw-3}" y2="${iy+ih-3}" stroke="${item.stroke}" stroke-width="1.5"/>`;
-      svgHtml += `<line x1="${lx+iw-3}" y1="${iy+3}" x2="${lx+3}" y2="${iy+ih-3}" stroke="${item.stroke}" stroke-width="1.5"/>`;
     } else {
       svgHtml += `<rect x="${lx}" y="${iy}" width="${iw}" height="${ih}" rx="3" fill="${item.fill}" stroke="${item.stroke}" stroke-width="1.5"/>`;
     }
