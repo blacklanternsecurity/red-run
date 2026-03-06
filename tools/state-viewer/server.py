@@ -657,6 +657,10 @@ function renderGraph() {
         edges.push({ from: `host:${a.host}`, to: `access:${a.id}`, style: a.active ? 'confirmed' : 'blocked' });
       }
     }
+    // Always link access → host (access represents being ON that host)
+    if (nodeMap[`host:${a.host}`] && !hostsViaProvidedCred.has(a.host)) {
+      edges.push({ from: `access:${a.id}`, to: `host:${a.host}`, style: 'confirmed' });
+    }
   }
 
   // Pivots — rendered as labeled edges, not nodes
@@ -666,19 +670,21 @@ function renderGraph() {
     const style = pivotStyles[p.status] || 'pending';
     const methodShort = (p.method || 'pivot').split(/[.\-,]/)[0].trim().slice(0, 40);
     const label = methodShort + (p.status !== 'exploited' ? ` (${p.status})` : '');
-    // Find best source: active access on source host, or the host itself
+    // Find best source host node — pivots are host-to-host reachability
     // Source text may be descriptive (e.g. "DC01.pirate.htb (10.129.244.95) - gMSA...")
     let fromId = null;
-    for (const a of state.access) {
-      if (a.active && (a.host === p.source || p.source.includes(a.host))) {
-        fromId = `access:${a.id}`; break;
+    if (nodeMap[`host:${p.source}`]) {
+      fromId = `host:${p.source}`;
+    } else {
+      for (const h of targetHosts) {
+        if (p.source.includes(h) && nodeMap[`host:${h}`]) { fromId = `host:${h}`; break; }
       }
     }
+    // Fall back to access node if no host matched
     if (!fromId) {
-      if (nodeMap[`host:${p.source}`]) fromId = `host:${p.source}`;
-      else {
-        for (const h of targetHosts) {
-          if (p.source.includes(h) && nodeMap[`host:${h}`]) { fromId = `host:${h}`; break; }
+      for (const a of state.access) {
+        if (a.active && (a.host === p.source || p.source.includes(a.host))) {
+          fromId = `access:${a.id}`; break;
         }
       }
     }
