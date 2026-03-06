@@ -569,8 +569,7 @@ function renderGraph() {
   const sevColors = { critical:'#f85149', high:'#d29922', medium:'#e3b341', low:'#58a6ff', info:'#8b949e' };
   for (const v of state.vulns) {
     const host = v.host || 'unknown';
-    const sub = v.severity.toUpperCase();
-    addNode(`vuln:${v.id}`, 'vuln', v.title, sub, `${v.severity} | ${v.status}\n${v.endpoint}\n${v.details||''}`.trim());
+    addNode(`vuln:${v.id}`, 'vuln', v.title, '', `${v.severity} | ${v.status}\n${v.endpoint}\n${v.details||''}`.trim());
     nodeMap[`vuln:${v.id}`].severity = v.severity;
     if (nodeMap[`host:${host}`]) {
       edges.push({ from: `host:${host}`, to: `vuln:${v.id}`, style: 'pending' });
@@ -744,7 +743,7 @@ function renderGraph() {
   }
   const maxLayer = Math.max(...Object.keys(layers).map(Number));
 
-  const nodeW = 150, nodeH = 44, layerGap = 200, rowGap = 60, padX = 60, padY = 40;
+  const nodeW = 180, nodeH = 44, layerGap = 230, rowGap = 60, padX = 60, padY = 40;
   const positions = {};
 
   for (let l = 0; l <= maxLayer; l++) {
@@ -807,8 +806,8 @@ function renderGraph() {
     const p = positions[n.id];
     if (!p) continue;
     const c = colors[n.type] || colors.host;
-    const label = esc(trunc(n.label, 20));
-    const sub = n.sub ? esc(trunc(n.sub, 24)) : '';
+    const label = esc(trunc(n.label, 26));
+    const sub = n.sub ? esc(trunc(n.sub, 30)) : '';
     const detailEsc = escAttr(n.detail);
     const hasSub = !!sub;
     // Text Y positions: single line centered, two lines offset
