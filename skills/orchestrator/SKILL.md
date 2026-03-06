@@ -132,7 +132,7 @@ The only commands the orchestrator may execute directly are:
 - State-writer MCP tools (`init_engagement`, `add_target`, `add_credential`, `add_access`, `add_vuln`, `add_pivot`, `add_blocked`, `add_tunnel`, `update_tunnel`, and their update variants) — engagement state
 - State-reader MCP tools (`get_state_summary`, `get_targets`, `get_credentials`, `get_access`, `get_vulns`, `get_pivot_map`, `get_blocked`, `get_tunnels`, `poll_events`) — state queries
 - Skill-router MCP tools (`get_skill`, `search_skills`, `list_skills`) — skill routing
-- `nft list tables 2>/dev/null | grep -q 'inet redrun'` — firewall check (pentest mode only)
+- `ping -c 1 -W 2 1.1.1.1` — firewall check (pentest mode only, ping succeeding = firewall DOWN)
 - `getent hosts <hostname>` — hostname resolution verification (local-only, no network traffic)
 - `ldapsearch -x -H ldap://TARGET -b "DC=..." -s base lockoutThreshold lockOutObservationWindow lockoutDuration minPwdLength pwdProperties` — lockout policy query (safety-critical pre-spray check, single base-scope read, not enumeration)
 - `ps aux | grep <tool>`, `kill <pid>` — subprocess cleanup after `TaskStop` (see Subprocess Cleanup below)
@@ -415,16 +415,18 @@ agents work regardless of whether the operator launched with yolo or not.
 
 **Pre-spawn firewall check (pentest mode only):**
 
-Before EVERY agent spawn in pentest mode, verify the firewall is still active:
+Before EVERY agent spawn in pentest mode, verify the firewall is blocking
+outbound internet traffic:
 ```bash
-nft list tables 2>/dev/null | grep -q 'inet redrun'
+ping -c 1 -W 2 1.1.1.1
 ```
-If exit code is non-zero → hard stop:
+- **Ping fails** (exit code non-zero) → firewall is active, proceed
+- **Ping succeeds** (exit code 0) → firewall is DOWN, hard stop:
 ```
 [orchestrator] HARD STOP — engagement firewall is down (pentest mode)
 
-The nftables firewall (inet redrun) is no longer active. This can happen
-after a reboot or manual teardown.
+Outbound internet access detected (ping 1.1.1.1 succeeded). The nftables
+firewall is not active. This can happen after a reboot or manual teardown.
 
 Re-activate: sudo bash tools/engagement-firewall/firewall.sh
 
@@ -738,9 +740,10 @@ If `engagement/state.db` already exists (the user said "resume", "continue",
    `**Mode: pentest**`). Do NOT re-ask mode selection — it's stored in state.
 3. **If pentest mode**: run the firewall check:
    ```bash
-   nft list tables 2>/dev/null | grep -q 'inet redrun'
+   ping -c 1 -W 2 1.1.1.1
    ```
-   If not active → hard stop (same message as Firewall Gate in Step 1).
+   If ping succeeds → firewall is down → hard stop (same message as
+   Firewall Gate in Step 1).
 4. Print a concise status briefing for the operator: mode, targets, current
    access, key vulns, active tunnels, blocked paths.
 5. Append to `activity.md`:
@@ -842,16 +845,20 @@ and appears in every `get_state_summary()` response.
 **Skip this section entirely in CTF mode.**
 
 In pentest mode, the engagement firewall must be active before any agent
-spawns. Check:
+spawns. Check by pinging an external IP:
 
 ```bash
-nft list tables 2>/dev/null | grep -q 'inet redrun'
+ping -c 1 -W 2 1.1.1.1
 ```
 
-**If exit code is non-zero (firewall not active) — hard stop:**
+- **Ping fails** → firewall is active, proceed
+- **Ping succeeds** → firewall is DOWN, hard stop:
 
 ```
 [orchestrator] HARD STOP — engagement firewall required (pentest mode)
+
+Outbound internet access detected (ping 1.1.1.1 succeeded). The engagement
+firewall must be active before proceeding.
 
 Edit scope targets in: tools/engagement-firewall/firewall.sh
 Then run: sudo bash tools/engagement-firewall/firewall.sh
@@ -860,8 +867,8 @@ Confirm when active.
 ```
 
 Do NOT spawn any agents or continue the engagement until the operator
-confirms the firewall is active. After confirmation, re-run the check to
-verify. Log to `engagement/activity.md`:
+confirms the firewall is active. After confirmation, re-run the ping check
+to verify it now fails. Log to `engagement/activity.md`:
 ```
 ### [YYYY-MM-DD HH:MM:SS] orchestrator → firewall verified
 - Engagement firewall (inet redrun) active
