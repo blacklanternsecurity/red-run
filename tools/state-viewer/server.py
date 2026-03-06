@@ -19,12 +19,14 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import ipaddress
 import hmac
 import json
 import sqlite3
 import time
 from http import cookies
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import socket
 from pathlib import Path
 from urllib.parse import unquote_plus
 
@@ -66,6 +68,30 @@ def _verify_session_cookie(cookie_val: str, token: str) -> bool:
         return False
     expected = hmac.new(token.encode(), ts_str.encode(), hashlib.sha256).hexdigest()
     return hmac.compare_digest(sig, expected)
+
+
+def _get_local_ips() -> list[str]:
+    """Return all non-loopback IPv4 addresses on this host."""
+    ips = []
+    try:
+        for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
+            addr = info[4][0]
+            if not ipaddress.ip_address(addr).is_loopback:
+                ips.append(addr)
+    except Exception:
+        pass
+    # Fallback: UDP connect trick for hosts where gethostname doesn't resolve
+    if not ips:
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("10.255.255.255", 1))
+            addr = s.getsockname()[0]
+            s.close()
+            if not ipaddress.ip_address(addr).is_loopback:
+                ips.append(addr)
+        except Exception:
+            pass
+    return sorted(set(ips))
 
 
 # ---------------------------------------------------------------------------
@@ -941,6 +967,11 @@ def main():
 
     server = ThreadingHTTPServer((bind_addr, args.port), Handler)
     print(f"state-viewer: http://{bind_addr}:{args.port}")
+    if bind_addr == "0.0.0.0":
+        for ip in _get_local_ips():
+            print(f"  remote:     http://{ip}:{args.port}")
+        print(f"\nIf your VM uses NAT, access via http://localhost:{args.port} on the host")
+        print(f"after adding a port forwarding rule (host {args.port} -> guest {args.port}).")
     print(f"database: {db_path}")
     try:
         server.serve_forever()
