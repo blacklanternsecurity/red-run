@@ -777,8 +777,8 @@ Use `AskUserQuestion`:
 **Question — Engagement mode** (single-select):
 - Header: "Engagement mode"
 - Options:
-  - CTF mode — Full autonomous execution, all skills delegated to agents, no firewall required
   - Pentest mode — Technique skills run inline with permission prompts, discovery skills delegated, engagement firewall required
+  - CTF mode — Full autonomous execution, all skills delegated to agents, no firewall required
 
 Record the selection. Pass it to `init_engagement()` in the next step.
 
