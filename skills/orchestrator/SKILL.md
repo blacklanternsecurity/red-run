@@ -844,32 +844,15 @@ Two safety checks before any agent spawns in pentest mode:
 
 #### 1. Permission Mode Check
 
-Pentest mode requires normal permission mode (NOT `--dangerously-skip-permissions`).
-Technique skills run inline in the main thread — the operator must see and approve
-each command via Claude Code's native permission prompts. Yolo mode bypasses
-these prompts, defeating the purpose of pentest mode.
-
-Check by attempting a Bash command that would normally require approval.
-If the command runs without a permission prompt appearing, yolo mode is active.
-
-Alternatively, simply ask the operator:
+Ask the operator to confirm they are NOT in yolo mode:
 
 ```
-[orchestrator] Pentest mode requires normal permission mode.
-
-Are you running with --dangerously-skip-permissions (yolo mode)?
-If yes, please restart Claude Code without that flag:
-
-    cd red-run && claude
-
-Pentest mode runs technique skills inline with permission prompts — the
-operator approves every command. Yolo mode bypasses these prompts.
-
-If you want full autonomous execution, select CTF mode instead.
+[orchestrator] Pentest mode requires normal permissions (not --dangerously-skip-permissions).
+Confirm you are NOT in yolo mode.
 ```
 
-If the operator confirms they are NOT in yolo mode, proceed. If they are,
-hard stop until they restart or switch to CTF mode.
+If confirmed, proceed. If they are in yolo mode, hard stop — restart
+with `claude` or switch to CTF mode.
 
 #### 2. Firewall Check
 
