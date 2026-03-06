@@ -491,8 +491,8 @@ function renderTables() {
       for (const col of def.cols) {
         const fmt = def.fmt[col];
         const val = fmt ? fmt(row) : (row[col] ?? '');
-        const plain = String(val).replace(/<[^>]*>/g, '');
-        html += `<td title="${plain.replace(/"/g,'&quot;')}"><div class="cell">${val}</div></td>`;
+        const tip = row[col] != null ? String(row[col]) : String(val).replace(/<[^>]*>/g, '');
+        html += `<td title="${tip.replace(/"/g,'&quot;')}"><div class="cell">${val}</div></td>`;
       }
       html += '</tr>';
     }
