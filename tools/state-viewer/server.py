@@ -491,8 +491,9 @@ function renderTables() {
       for (const col of def.cols) {
         const fmt = def.fmt[col];
         const val = fmt ? fmt(row) : (row[col] ?? '');
-        const tip = row[col] != null ? String(row[col]) : String(val).replace(/<[^>]*>/g, '');
-        html += `<td title="${tip.replace(/"/g,'&quot;')}"><div class="cell">${val}</div></td>`;
+        const raw = row[col];
+        const tip = (raw != null && typeof raw !== 'object') ? String(raw) : String(val).replace(/<[^>]*>/g, '');
+        html += `<td><div class="cell" data-tip="${tip.replace(/"/g,'&quot;')}">${val}</div></td>`;
       }
       html += '</tr>';
     }
@@ -501,6 +502,18 @@ function renderTables() {
   }
   container.innerHTML = html;
 }
+
+// Show tooltip only when cell content is clipped
+document.addEventListener('mouseenter', e => {
+  const cell = e.target.closest('.cell[data-tip]');
+  if (!cell) return;
+  const td = cell.parentElement;
+  if (cell.scrollHeight > cell.clientHeight || cell.scrollWidth > cell.clientWidth) {
+    td.title = cell.dataset.tip;
+  } else {
+    td.title = '';
+  }
+}, true);
 
 function getCellValue(row, col, def) {
   const fmt = def.fmt[col];
