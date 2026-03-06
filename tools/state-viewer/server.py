@@ -565,18 +565,28 @@ function renderGraph() {
     addNode(`host:${t.host}`, 'host', t.host, sub, `${t.os} ${t.role}\n${ports}`.trim());
   }
 
-  // Vulns — add all initially, prune dead-ends after edges are built
+  // Pre-create access nodes so via_access_id references resolve during vuln/cred processing
+  for (const a of state.access) {
+    const label = `${a.username}@${a.host}`;
+    const sub = `${a.access_type} | ${a.privilege}`;
+    addNode(`access:${a.id}`, 'access', label, sub, `${a.access_type} | ${a.privilege}\n${a.method}`);
+  }
+
+  // Vulns — use via_access_id for provenance, fall back to host link
   const sevColors = { critical:'#f85149', high:'#d29922', medium:'#e3b341', low:'#58a6ff', info:'#8b949e' };
   for (const v of state.vulns) {
     const host = v.host || 'unknown';
     addNode(`vuln:${v.id}`, 'vuln', v.title, '', `${v.severity} | ${v.status}\n${v.endpoint}\n${v.details||''}`.trim());
     nodeMap[`vuln:${v.id}`].severity = v.severity;
-    if (nodeMap[`host:${host}`]) {
+    // Explicit provenance: via_access_id links vuln to the access that discovered it
+    if (v.via_access_id && nodeMap[`access:${v.via_access_id}`]) {
+      edges.push({ from: `access:${v.via_access_id}`, to: `vuln:${v.id}`, style: 'pending' });
+    } else if (nodeMap[`host:${host}`]) {
       edges.push({ from: `host:${host}`, to: `vuln:${v.id}`, style: 'pending' });
     }
   }
 
-  // Credentials — pre-provided creds link from Attacker
+  // Credentials — use via_access_id for explicit provenance, heuristics as fallback
   const providedPattern = /\b(provided|scope|pre-engagement|given|initial|pentest)\b/i;
   const providedCredIds = new Set(); // cred IDs that are pre-provided
   for (const c of state.credentials) {
@@ -588,6 +598,12 @@ function renderGraph() {
       providedCredIds.add(c.id);
       continue;
     }
+    // Explicit provenance: via_access_id links cred to the access that discovered it
+    if (c.via_access_id && nodeMap[`access:${c.via_access_id}`]) {
+      edges.push({ from: `access:${c.via_access_id}`, to: `cred:${c.id}`, style: 'confirmed' });
+      continue;
+    }
+    // Heuristic fallback: match source text to vuln types/titles
     let linked = false;
     for (const v of state.vulns) {
       if (c.source && (c.source.toLowerCase().includes(v.vuln_type.toLowerCase()) ||
@@ -606,12 +622,9 @@ function renderGraph() {
     }
   }
 
-  // Access
+  // Access edges (nodes already created above)
   const hostsViaProvidedCred = new Set(); // hosts reached via provided creds
   for (const a of state.access) {
-    const label = `${a.username}@${a.host}`;
-    const sub = `${a.access_type} | ${a.privilege}`;
-    addNode(`access:${a.id}`, 'access', label, sub, `${a.access_type} | ${a.privilege}\n${a.method}`);
     let linked = false;
     for (const c of state.credentials) {
       const cLabel = c.domain ? `${c.domain}\\${c.username}` : c.username;
