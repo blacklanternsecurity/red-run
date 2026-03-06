@@ -849,7 +849,7 @@ def dashboard(agents: list[tuple[str, str]], agents_file: str = "",
             stdscr.erase()
 
             if not panes and not browser_open:
-                # No agents — show waiting message
+                # No agents — show waiting message (status bar still drawn below)
                 msg = "Waiting for agents..."
                 try:
                     stdscr.addnstr(max_y // 2, max(0, (max_x - len(msg)) // 2),
@@ -859,9 +859,6 @@ def dashboard(agents: list[tuple[str, str]], agents_file: str = "",
                                    hint, max_x, curses.A_DIM)
                 except curses.error:
                     pass
-                stdscr.refresh()
-                time.sleep(0.1)
-                continue
 
             # --- Draw panes ---
             if panes:
