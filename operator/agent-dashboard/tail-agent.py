@@ -548,6 +548,48 @@ def _discover_agents(tasks_dir: str, displayed_paths: set[str]) -> list[tuple[st
     return results
 
 
+def _build_browser_list(
+    tasks_dir: str,
+    displayed_paths: set[str],
+    panes: list["AgentPane"],
+    agents_file: str,
+) -> list[tuple[str, str, float, bool]]:
+    """Build the unified browser list: discovered agents + currently displayed panes.
+
+    Ensures every pane visible on the dashboard also appears in the browser
+    (with in_dash=True), even if its file is older than the 24h discovery cutoff.
+    """
+    items = _discover_agents(tasks_dir, displayed_paths)
+    seen = {os.path.realpath(path) for _, path, _, _ in items}
+
+    # Add currently-displayed panes that _discover_agents missed (>24h old)
+    for pane in panes:
+        resolved = os.path.realpath(pane.filepath)
+        if resolved not in seen:
+            try:
+                mtime = os.path.getmtime(pane.filepath)
+            except OSError:
+                continue
+            seen.add(resolved)
+            items.append((pane.label, pane.filepath, mtime, True))
+
+    # Add .dashboard entries that aren't displayed yet and weren't discovered
+    if agents_file:
+        for label, path in _read_agents_file(agents_file):
+            resolved = os.path.realpath(path)
+            if resolved not in seen and os.path.exists(path):
+                try:
+                    mtime = os.path.getmtime(path)
+                except OSError:
+                    continue
+                seen.add(resolved)
+                in_dash = path in displayed_paths or resolved in displayed_paths
+                items.append((label, path, mtime, in_dash))
+
+    items.sort(key=lambda x: x[2], reverse=True)
+    return items
+
+
 def _infer_tasks_dir(panes: list[AgentPane]) -> str:
     """Infer the tasks directory from existing pane filepaths."""
     for pane in panes:
@@ -592,11 +634,11 @@ def dashboard(agents: list[tuple[str, str]], agents_file: str = "",
     added/removed to match.  The dashboard stays open even when the file
     is empty — it just shows "waiting for agents".
     """
-    # Filter to only active agents on startup
-    active_agents = [(l, p) for l, p in agents if _is_agent_active(p)]
+    # Load all agents from .dashboard on startup (active and completed)
     panes: list[AgentPane] = [
         AgentPane(label, path, i % len(PANE_COLORS))
-        for i, (label, path) in enumerate(active_agents)
+        for i, (label, path) in enumerate(agents)
+        if os.path.exists(path) or (os.path.islink(path) and os.path.exists(os.readlink(path)))
     ]
 
     stop_event = threading.Event()
@@ -667,16 +709,15 @@ def dashboard(agents: list[tuple[str, str]], agents_file: str = "",
                         new_paths = {path for _, path in new_agents}
                         old_paths = set(pane_map.keys())
 
-                        # Add new panes (only if active + not dismissed)
+                        # Add new panes from .dashboard (active or completed, not dismissed)
                         for label, path in new_agents:
                             if path not in old_paths and path not in dismissed_paths:
-                                if _is_agent_active(path):
-                                    p = AgentPane(label, path, len(panes) % len(PANE_COLORS))
-                                    t = _start_pane(p)
-                                    panes.append(p)
-                                    threads.append(t)
-                                    pane_map[path] = (p, t)
-                                    completed_paths.discard(path)
+                                p = AgentPane(label, path, len(panes) % len(PANE_COLORS))
+                                t = _start_pane(p)
+                                panes.append(p)
+                                threads.append(t)
+                                pane_map[path] = (p, t)
+                                completed_paths.discard(path)
 
                         # Remove panes no longer in .dashboard file
                         for path in old_paths - new_paths:
@@ -737,12 +778,16 @@ def dashboard(agents: list[tuple[str, str]], agents_file: str = "",
                         elif key == ord(" ") or key == ord("a") or key == 10 or key == curses.KEY_ENTER:  # Space/a/Enter to toggle
                             if browser_items and browser_cursor < len(browser_items):
                                 label, path, _, in_dash = browser_items[browser_cursor]
-                                if in_dash and path in pane_map:
+                                # Resolve path for pane_map lookup (browser may have .output symlink, pane_map has .jsonl)
+                                resolved_path = os.path.realpath(path)
+                                pane_key = path if path in pane_map else (resolved_path if resolved_path in pane_map else None)
+                                if in_dash and pane_key is not None:
                                     # Remove from dashboard
-                                    old_pane, _ = pane_map.pop(path)
+                                    old_pane, _ = pane_map.pop(pane_key)
                                     if old_pane in panes:
                                         panes.remove(old_pane)
                                     dismissed_paths.add(path)
+                                    dismissed_paths.add(resolved_path)
                                     browser_items[browser_cursor] = (label, path, browser_items[browser_cursor][2], False)
                                     if panes:
                                         focused = min(focused, len(panes) - 1)
@@ -756,7 +801,9 @@ def dashboard(agents: list[tuple[str, str]], agents_file: str = "",
                                     threads.append(t)
                                     pane_map[path] = (p, t)
                                     dismissed_paths.discard(path)
+                                    dismissed_paths.discard(resolved_path)
                                     completed_paths.discard(path)
+                                    completed_paths.discard(resolved_path)
                                     focused = len(panes) - 1
                                     browser_items[browser_cursor] = (label, path, browser_items[browser_cursor][2], True)
                     elif panes:
@@ -811,7 +858,8 @@ def dashboard(agents: list[tuple[str, str]], agents_file: str = "",
                             if not tasks_dir:
                                 tasks_dir = _infer_tasks_dir(panes)
                             displayed = set(p.filepath for p in panes)
-                            browser_items = _discover_agents(tasks_dir, displayed)
+                            browser_items = _build_browser_list(
+                                tasks_dir, displayed, panes, agents_file)
                             browser_cursor = 0
                             browser_scroll = 0
                             browser_open = True
@@ -822,7 +870,8 @@ def dashboard(agents: list[tuple[str, str]], agents_file: str = "",
                             if not tasks_dir:
                                 tasks_dir = _infer_tasks_dir(panes)
                             displayed = set(p.filepath for p in panes)
-                            browser_items = _discover_agents(tasks_dir, displayed)
+                            browser_items = _build_browser_list(
+                                tasks_dir, displayed, panes, agents_file)
                             browser_cursor = 0
                             browser_scroll = 0
                             browser_open = True
@@ -970,7 +1019,7 @@ def dashboard(agents: list[tuple[str, str]], agents_file: str = "",
                         pass
 
                 # Title bar
-                title = " Agent Browser "
+                title = f" Agent Browser ({len(browser_items)}) "
                 try:
                     stdscr.addnstr(overlay_y, overlay_x + (overlay_w - len(title)) // 2,
                                    title, overlay_w, curses.A_BOLD | curses.A_REVERSE)
@@ -1015,15 +1064,13 @@ def dashboard(agents: list[tuple[str, str]], agents_file: str = "",
 
                         row = overlay_y + 2 + i
                         if idx == browser_cursor:
-                            if in_dash:
-                                attr = curses.color_pair(color_pairs["dim"]) | curses.A_BOLD
-                            else:
-                                attr = curses.color_pair(color_pairs["cyan"]) | curses.A_BOLD
+                            # Focused item: bold highlight
+                            attr = curses.color_pair(color_pairs["cyan"]) | curses.A_BOLD
                         else:
+                            # Non-focused: reverse video (visible on overlay bg)
+                            attr = curses.A_REVERSE
                             if in_dash:
-                                attr = curses.A_REVERSE | curses.A_DIM
-                            else:
-                                attr = curses.A_REVERSE
+                                attr |= curses.A_BOLD
                         try:
                             stdscr.addnstr(row, overlay_x + 1, line_text.ljust(overlay_w - 2),
                                            overlay_w - 2, attr)
