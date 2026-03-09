@@ -37,36 +37,9 @@ See [Installation](installation.md) for prerequisites and detailed setup.
 
 ## How it works
 
-```mermaid
-graph TD
-    User([Operator])
-    User --> Orch[Orchestrator]
-
-    Orch --> Agents
-    Orch --> MCP
-
-    subgraph Agents["Domain Agents"]
-        direction LR
-        NetRecon[network-recon] ~~~ WebDisc[web-discovery] ~~~ WebExpl[web-exploit]
-        ADDisc[ad-discovery] ~~~ ADExpl[ad-exploit] ~~~ LinPE[linux-privesc]
-        WinPE[windows-privesc] ~~~ PwSpray[password-spray] ~~~ Evasion[evasion]
-    end
-
-    Agents --> MCP
-
-    subgraph MCP["MCP Servers"]
-        direction LR
-        NmapSrv[nmap] ~~~ BrowserSrv[browser] ~~~ ShellSrv[shell]
-        SkillRouter[skill-router] ~~~ StateSrv[state]
-    end
-
-    Orch --> Engage
-
-    subgraph Engage["engagement/"]
-        direction LR
-        Evidence[evidence/] ~~~ DB[(state.db)]
-    end
-```
+<p align="center">
+  <img src="architecture.svg" width="700" alt="Architecture diagram: Operator → Orchestrator → Agents → MCP Servers → engagement/">
+</p>
 
 The orchestrator makes every routing decision. When a skilled discovery agent identifies a finding, the orchestrator decides on a new agent+skill combination and spawns it with context — injection point, target technology, working payloads. Agents are stateless; all persistent state lives in SQLite.
 
@@ -80,7 +53,7 @@ See [Architecture](architecture.md) for the full design and [Agents](agents.md) 
 | [Dependencies](dependencies.md) | Attackbox tool inventory — everything skills need pre-installed |
 | [Architecture](architecture.md) | Orchestrator, agents, skill lifecycle |
 | [MCP Servers](mcp-servers.md) | The 5 MCP servers and their tools |
-| [Agents](agents.md) | Domain agent model and routing |
+| [Agents](agents.md) | Agent model and routing |
 | [Engagement State](engagement-state.md) | SQLite schema, 3-mode architecture, chaining |
 | [Writing Skills](writing-skills.md) | Skill format, conventions, templates |
 | [Skills Reference](skills-reference.md) | Full skill inventory by category |
