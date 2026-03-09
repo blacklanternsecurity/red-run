@@ -47,7 +47,7 @@ The orchestrator spawns domain-specific subagents for each skill invocation:
 
 Each invocation: agent loads one skill via `get_skill()`, executes methodology, saves evidence, and returns findings. The orchestrator parses the return summary, records state changes via the state-writer MCP, and makes the next routing decision. Discovery agents and the pivoting-agent use state-interim for mid-run writes; technique agents are read-only.
 
-**Inline fallback**: If subagents aren't installed, the orchestrator loads skills inline via `get_skill()` in the main thread.
+**Inline fallback**: If subagents aren't installed, the orchestrator **DOES NOT** load skills inline via `get_skill()` in the main thread. STOP and have the operator fix the issue. Skills are only loaded inline in pentest mode during exploitation activity (see ## Permission Mode) or when explicitly requested by the operator.
 
 Agent source files live in `agents/` (version controlled), installed to `~/.claude/agents/` by install.sh.
 
@@ -62,7 +62,7 @@ Agent source files live in `agents/` (version controlled), installed to `~/.clau
 | state-interim | `tools/state-server/` | Read + 5 add-only writes (discovery agents + pivoting-agent) |
 | state-writer | `tools/state-server/` | Full engagement state management (orchestrator only) |
 | browser-server | `tools/browser-server/` | Headless browser automation (web agents) |
-| state-viewer | `tools/state-viewer/` | Read-only web dashboard for state.db (operator use, not MCP) |
+| state-dashboard | `operator/state-dashboard/` | Read-only web dashboard for state.db (operator use, not MCP) |
 
 The state-reader, state-interim, and state-writer are three instances of the same server running in different modes. Discovery agents use state-interim to write actionable findings mid-run. Technique agents use state-reader (read-only). The orchestrator uses state-writer for full read/write access. See each server's `README.md` for tool details.
 
@@ -120,13 +120,12 @@ when making changes.
 | Component | Documentation | Rule |
 |-----------|--------------|------|
 | Repo root | `README.md` | Update when architecture, installation, or user-facing behavior changes |
-| Docs site | `docs/*.md` | Human-facing reference. Update when features, architecture, or workflows change |
+| Docs site | `docs/*.md` | Human-facing reference. Update when features, architecture, or workflows change. `docs/dependencies.md` tracks all external tool dependencies referenced by skills. |
 | MCP servers (`tools/*/`) | `README.md` per server | **Required.** Update when tools, parameters, behavior, or prerequisites change |
 | Skills (`skills/*/`) | `SKILL.md` | Self-contained — no separate README |
 | Agents (`agents/`) | `<agent-name>.md` | Self-contained — no separate README |
 | Hooks (`tools/hooks/`) | `README.md` | Update when hook scripts change |
-| Dashboard (`tools/agent-dashboard/`) | `README.md` | Update when dashboard modes or keybindings change |
-| State viewer (`tools/state-viewer/`) | `README.md` | Update when endpoints, features, or auth changes |
+| Operator tools (`operator/*/`) | `README.md` per tool | Update when behavior, usage, or prerequisites change |
 
 **When modifying a tool server:** If you change tools, parameters, behavior, or
 dependencies in a `tools/*/` server, update its `README.md` in the same commit.
@@ -186,12 +185,23 @@ red-run/
       server.py           # FastMCP server — runs as state-reader (read) or state-writer (read+write)
       schema.py           # SQLite schema creation and migration
       pyproject.toml       # Python dependencies (mcp)
-    state-viewer/         # Read-only web dashboard for state.db
-      README.md            # Server documentation
-      server.py           # Stdlib HTTP server — inline HTML dashboard, SSE live updates
     hooks/                # Claude Code hooks
       save-agent-log.sh   # SubagentStop hook — copies JSONL transcripts to engagement/evidence/logs/
       event-watcher.sh    # Background event poller — spawned by orchestrator to watch state_events
+  operator/               # Operator-facing tools (run manually, not MCP)
+    agent-dashboard/      # Live multi-pane agent monitoring
+      README.md            # Tool documentation
+      tail-agent.py       # JSONL transcript parser + curses dashboard
+      dashboard.sh        # Wrapper script
+    state-dashboard/      # Read-only web dashboard for state.db
+      README.md            # Tool documentation
+      server.py           # Stdlib HTTP server — inline HTML dashboard, SSE live updates
+      start.sh            # Wrapper script
+      generate-token.sh   # Auth token generator for remote access
+    firewall/             # Engagement network firewall (nftables)
+      README.md            # Tool documentation
+      firewall.sh         # Activate firewall with scope targets
+      teardown.sh         # Remove firewall rules
 ```
 
 ## Skill File Format
@@ -259,8 +269,8 @@ tool call, decoupling agent autonomy from the main session's permission mode.
 
 In pentest mode, the orchestrator requires an active nftables firewall that
 restricts outbound traffic to Anthropic API + scope targets. Static scripts
-live in `tools/firewall/`. The operator edits scope and runs with
-sudo. See `tools/firewall/README.md` and docs/architecture.md.
+live in `operator/engagement-firewall/`. The operator edits scope and runs with
+sudo. See `operator/engagement-firewall/README.md` and docs/architecture.md.
 
 ## Installation
 
