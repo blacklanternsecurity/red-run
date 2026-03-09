@@ -30,48 +30,9 @@ The orchestrator contract is simple: read state, pick a skill, spawn an agent, r
 
 ## Architecture Overview
 
-```mermaid
-graph TD
-    User([Operator])
-    User --> Orch[Orchestrator]
-
-    Orch --> Agents
-    Orch --> MCP
-
-    subgraph Agents["Agents"]
-        direction LR
-        NetRecon[network-recon] ~~~ WebDisc[web-discovery] ~~~ WebExpl[web-exploit] ~~~ ADDisc[ad-discovery] ~~~ ADExpl[ad-exploit]
-        LinPE[linux-privesc] ~~~ WinPE[windows-privesc] ~~~ PwSpray[password-spray] ~~~ Evasion[evasion] ~~~ CredCrack[credential-cracking]
-    end
-
-    Agents --> MCP
-
-    subgraph MCP["MCP Servers"]
-        direction LR
-        NmapSrv[nmap-server] ~~~ BrowserSrv[browser-server] ~~~ ShellSrv[shell-server] ~~~ SkillRouter[skill-router] ~~~ StateR[state-reader] ~~~ StateI[state-interim] ~~~ StateW[state-writer]
-    end
-
-    Agents --> Engage
-
-    subgraph Engage["engagement/"]
-        direction LR
-        Evidence[evidence/] ~~~ DB[(state.db)] ~~~ ScopeMD[scope.md] ~~~ ActivityMD[activity.md] ~~~ FindingsMD[findings.md]
-    end
-
-    Orch --> Engage
-
-    classDef orch fill:#2d3748,stroke:#e2e8f0,color:#e2e8f0,stroke-width:2px
-    classDef agent fill:#2b6cb0,stroke:#bee3f8,color:#bee3f8
-    classDef mcp fill:#2f855a,stroke:#c6f6d5,color:#c6f6d5
-    classDef storage fill:#744210,stroke:#fefcbf,color:#fefcbf
-    classDef user fill:#553c9a,stroke:#e9d8fd,color:#e9d8fd
-
-    class Orch orch
-    class NetRecon,WebDisc,WebExpl,ADDisc,ADExpl,PwSpray,LinPE,WinPE,Evasion,CredCrack agent
-    class SkillRouter,NmapSrv,ShellSrv,BrowserSrv,StateR,StateI,StateW mcp
-    class DB,ScopeMD,ActivityMD,FindingsMD,Evidence storage
-    class User user
-```
+<p align="center">
+  <img src="architecture.svg" width="700" alt="Architecture diagram: Operator → Orchestrator → Agents → MCP Servers → engagement/">
+</p>
 
 ## Prompt Architecture
 
@@ -112,33 +73,9 @@ See [Agents](agents.md) for the full agent model and routing table.
 
 What happens inside a single agent invocation:
 
-```mermaid
-flowchart LR
-    subgraph Orchestrator
-        Pick[Pick skill + agent] --> Spawn[Spawn via Agent tool]
-    end
-
-    subgraph Agent["Agent (one invocation)"]
-        Load["get_skill('skill-name')"] --> ReadState["get_state_summary()"]
-        ReadState --> Execute[Follow methodology<br>step by step]
-        Execute --> SaveEvidence[Save to<br>engagement/evidence/]
-        SaveEvidence --> Report[Return summary:<br>findings + recommendations]
-    end
-
-    subgraph Hook["SubagentStop Hook"]
-        Transcript[Copy JSONL transcript<br>→ evidence/logs/]
-    end
-
-    Spawn --> Load
-    Report --> Parse[Parse return summary]
-    Report -.-> Transcript
-
-    subgraph Orchestrator2["Orchestrator (post-skill)"]
-        Parse --> Record["Record state:<br>add_vuln, add_credential, ..."]
-        Record --> Log[Update activity.md<br>+ findings.md]
-        Log --> Next["get_state_summary()<br>→ next decision"]
-    end
-```
+<p align="center">
+  <img src="lifecycle.svg" width="700" alt="Skill invocation lifecycle: Orchestrator → Agent execution → Orchestrator post-skill, with loop">
+</p>
 
 1. **Orchestrator picks** a skill and the correct agent from the routing table
 2. **Agent loads** the skill via `get_skill()` from the skill-router MCP
