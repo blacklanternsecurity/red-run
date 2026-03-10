@@ -268,7 +268,7 @@ check_active_directory() {
     section "Active Directory"
 
     local p
-    if p=$(find_pipx bloodhound bloodhound-python || find_cmd bloodhound-python); then
+    if p=$(find_pipx bloodhound bloodhound-python || find_cmd bloodhound-python || find_cmd bloodhound-ce-python); then
         pass "BloodHound CE (collector)" "$p"
     else fail "BloodHound CE" "pipx install bloodhound"; fi
 
