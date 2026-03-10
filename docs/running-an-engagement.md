@@ -12,7 +12,7 @@ pentest 192.168.1.0/24
 hack school.flight.htb
 ```
 
-Any of these trigger phrases work: `attack`, `pentest`, `hack`, `scan`, `assess`, `test`, `pop`, `engage`, or `CTF target`.
+Any of these trigger phrases work: `pwn`, `attack`, `pentest`, `hack`, `scan`, `assess`, `test`, `pop`, `engage`, or `CTF target`.
 
 ### Scope Gathering
 
