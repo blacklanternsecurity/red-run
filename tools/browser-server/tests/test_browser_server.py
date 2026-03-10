@@ -5,13 +5,21 @@ Tests _html_to_markdown() (pure function, no Playwright) and server creation.
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
 # Add server directory to path so we can import server module
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from server import MAX_CONTENT_SIZE, _html_to_markdown, create_server
+from server import (
+    MAX_CONTENT_SIZE,
+    _browser_key,
+    _html_to_markdown,
+    _load_configured_proxy_url,
+    _normalize_proxy_url,
+    create_server,
+)
 
 
 class TestHtmlToMarkdown:
@@ -65,6 +73,57 @@ class TestHtmlToMarkdown:
         assert "Text" in md
         assert "Link" in md
         assert "example.com" in md
+
+
+class TestProxyNormalization:
+    def test_empty_proxy_returns_none(self):
+        assert _normalize_proxy_url("") is None
+
+    def test_adds_default_http_scheme(self):
+        assert _normalize_proxy_url("127.0.0.1:8080") == "http://127.0.0.1:8080"
+
+    def test_preserves_supported_scheme(self):
+        assert _normalize_proxy_url("https://127.0.0.1:8443") == (
+            "https://127.0.0.1:8443"
+        )
+
+    def test_rejects_missing_port(self):
+        try:
+            _normalize_proxy_url("127.0.0.1")
+        except ValueError as exc:
+            assert "port is required" in str(exc)
+        else:
+            raise AssertionError("expected ValueError for missing proxy port")
+
+    def test_rejects_paths(self):
+        try:
+            _normalize_proxy_url("http://127.0.0.1:8080/burp")
+        except ValueError as exc:
+            assert "bare host:port listener" in str(exc)
+        else:
+            raise AssertionError("expected ValueError for proxy path")
+
+    def test_browser_key_uses_direct_sentinel(self):
+        assert _browser_key(None) == "__direct__"
+        assert _browser_key("http://127.0.0.1:8080") == "http://127.0.0.1:8080"
+
+
+class TestConfiguredProxy:
+    def test_missing_config_returns_none(self, monkeypatch, tmp_path):
+        monkeypatch.setattr("server._PROXY_CONFIG_PATH", tmp_path / "web-proxy.json")
+        assert _load_configured_proxy_url() is None
+
+    def test_disabled_config_returns_none(self, monkeypatch, tmp_path):
+        config = tmp_path / "web-proxy.json"
+        config.write_text(json.dumps({"enabled": False, "proxy_url": "http://127.0.0.1:8080"}))
+        monkeypatch.setattr("server._PROXY_CONFIG_PATH", config)
+        assert _load_configured_proxy_url() is None
+
+    def test_enabled_config_returns_normalized_proxy(self, monkeypatch, tmp_path):
+        config = tmp_path / "web-proxy.json"
+        config.write_text(json.dumps({"enabled": True, "proxy_url": "127.0.0.1:8080"}))
+        monkeypatch.setattr("server._PROXY_CONFIG_PATH", config)
+        assert _load_configured_proxy_url() == "http://127.0.0.1:8080"
 
 
 class TestServerCreation:

@@ -14,7 +14,7 @@ The orchestrator never executes technique skills directly. Instead, it spawns a 
 6. **Agent returns** a structured summary of findings
 7. **Orchestrator parses** the summary and records state changes
 
-Each agent invocation is stateless — agents don't persist between skills. The orchestrator passes context (injection points, working payloads, target technology) in the task prompt.
+Each agent invocation is stateless — agents don't persist between skills. The orchestrator passes context (injection points, working payloads, target technology, and operator-selected web proxy listeners when applicable) in the task prompt.
 
 ```mermaid
 flowchart LR

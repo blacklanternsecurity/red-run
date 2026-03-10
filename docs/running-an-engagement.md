@@ -76,7 +76,11 @@ This pattern repeats when web discovery finds virtual hosts that need resolution
 
 ### Web Discovery
 
-If HTTP/HTTPS ports are found, the orchestrator spawns the `web-discovery-agent` with the `web-discovery` skill. This performs content discovery, technology fingerprinting, parameter fuzzing, and vulnerability identification.
+If HTTP/HTTPS ports are found, the **first thing** the orchestrator does is hit a **Web proxy** hard stop. The operator can enable Burp on loopback (`127.0.0.1`), enable Burp on a dedicated proxy IP (for example a VPN or bridged interface), or skip proxying entirely. The operator also selects the listener port.
+
+If Burp proxying is enabled, the orchestrator records the listener URL in `engagement/scope.md`, writes `engagement/web-proxy.json` for browser defaults, and writes `engagement/web-proxy.sh` for CLI tools so subsequent web agents route through the same Burp listener. If the operator skips proxying, those files are still written in direct mode so the original no-proxy behavior is preserved explicitly.
+
+Only after that decision is made does the orchestrator spawn the `web-discovery-agent` with the `web-discovery` skill. This performs content discovery, technology fingerprinting, parameter fuzzing, and vulnerability identification.
 
 ## Attack Surface Presentation
 
@@ -125,6 +129,7 @@ When the orchestrator spawns an agent, it passes engagement context in the task 
 - Injection point details (URL, parameter, method)
 - Target technology (framework, database, OS version)
 - Working payloads from previous skills
+- Burp proxy listener (`http://IP:PORT`) when the operator enabled capture
 - Credentials and access levels
 
 See [Agents](agents.md) for the full agent model and routing table.
@@ -136,6 +141,7 @@ The orchestrator has several points where it **must** pause for operator input:
 | Hard Stop | When | Why |
 |-----------|------|-----|
 | **Scan type** | Before reconnaissance | Operator controls scan intensity and stealth |
+| **Web proxy** | Immediately after HTTP/HTTPS ports are found | Operator decides whether Burp captures web traffic, which IP it binds to, and which port to use |
 | **Hostname resolution** | New hostnames discovered | `/etc/hosts` changes require sudo |
 | **Password spray intensity** | New usernames discovered | Spray intensity affects account lockout risk |
 | **Vhost resolution** | Web discovery finds virtual hosts | Same as hostname resolution |

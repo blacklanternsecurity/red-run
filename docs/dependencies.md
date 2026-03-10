@@ -48,6 +48,7 @@ your PATH points. Run `bash preflight.sh` to verify.
 | Tool | Skills | Install |
 |------|--------|---------|
 | ffuf | web-discovery | `go install github.com/ffuf/ffuf/v2@latest` |
+| Burp Suite | web-discovery, most web exploitation skills | Optional but recommended for proxy capture; install from PortSwigger packages or tarball |
 | sqlmap | sql-injection-union, sql-injection-error, sql-injection-blind, sql-injection-stacked | `sudo apt install sqlmap` |
 | wpscan | web-discovery | `sudo gem install wpscan` |
 | arjun | web-discovery | `pipx install arjun` |

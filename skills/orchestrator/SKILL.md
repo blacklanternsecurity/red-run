@@ -311,6 +311,9 @@ to try — the orchestrator provides context, not restrictions.
 - **RIGHT:** *"Discovery found: basic PHP content (<?php) is blocked by
   content inspection. PHP short tags also blocked. The skill's full bypass
   methodology has not been tested yet."*
+- **ALSO RIGHT:** *"Web proxy: http://127.0.0.1:8080. Route all
+  attackbox-originated HTTP(S) traffic for this skill through that listener,
+  including browser_open(proxy=...) and CLI web tooling."*
 
 The technique skill contains curated bypass sequences (alternative extensions,
 config file uploads, magic bytes, polyglots, etc.) that the discovery agent
@@ -726,19 +729,24 @@ If `engagement/state.db` already exists (the user said "resume", "continue",
 "pick it up", "next steps", "where were we", etc.), **skip Step 1** entirely:
 
 1. Call `get_state_summary()` to load the full engagement state.
-2. Read the engagement mode from the summary header (`**Mode: ctf**` or
+2. Read `engagement/scope.md` if it exists. Recover operator-controlled
+   workflow choices that are not stored in state (especially the `## Web Proxy`
+   section). If a web proxy decision already exists, ensure the helper files
+   `engagement/web-proxy.json` and `engagement/web-proxy.sh` match that
+   decision before any web agent is spawned.
+3. Read the engagement mode from the summary header (`**Mode: ctf**` or
    `**Mode: pentest**`). Do NOT re-ask mode selection — it's stored in state.
-3. **If pentest mode**: run the Pentest Mode Gates (permission mode check +
+4. **If pentest mode**: run the Pentest Mode Gates (permission mode check +
    firewall check) — same as Step 1. Hard stop on yolo mode or firewall down.
-4. Print a concise status briefing for the operator: mode, targets, current
+5. Print a concise status briefing for the operator: mode, targets, current
    access, key vulns, active tunnels, blocked paths.
-5. Append to `activity.md`:
+6. Append to `activity.md`:
    ```
    ### [YYYY-MM-DD HH:MM:SS] orchestrator → resumed
    - Engagement resumed (mode: <ctf|pentest>). State loaded from state.db.
    ```
-6. Run the **Step 5 decision logic** to determine the next action.
-7. Present the recommended next action to the operator and wait for approval
+7. Run the **Step 5 decision logic** to determine the next action.
+8. Present the recommended next action to the operator and wait for approval
    before spawning any agents.
 
 Do NOT re-initialize scope, re-create the engagement directory, or re-run
@@ -798,6 +806,9 @@ mkdir -p engagement/evidence/logs
 
 ## Objectives
 - <goals>
+
+## Web Proxy
+- undecided until the first HTTP/HTTPS service is discovered
 ```
 
 **engagement/scope.md** — record mode under scope:
@@ -940,13 +951,19 @@ Wait for the agent to return before proceeding to attack surface mapping.
 
 ### Web Discovery (if HTTP/HTTPS found)
 
-STOP. Spawn **web-discovery-agent** with skill `web-discovery`:
+Before any web agent runs, trigger the **Web Proxy Setup** hard stop if
+`engagement/scope.md` does not already record a `## Web Proxy` decision for
+this engagement. This must be the **first** operator prompt after web ports are
+identified.
+
+STOP. After the proxy decision is recorded, spawn **web-discovery-agent** with
+skill `web-discovery`:
 
 ```
 Agent(
     subagent_type="web-discovery-agent",
     mode="bypassPermissions",
-    prompt="Load skill 'web-discovery'. Target: <URL>. Tech stack: <from recon>. Mode: <ctf|pentest>.",
+    prompt="Load skill 'web-discovery'. Target: <URL>. Tech stack: <from recon>. Mode: <ctf|pentest>. Web proxy: <http://IP:PORT or 'disabled by operator'>. Source engagement/web-proxy.sh before every Bash-driven HTTP(S) command. If a proxy is configured, route all attackbox-originated HTTP(S) traffic through it, pass the same value to browser_open(proxy=...) or rely on engagement/web-proxy.json, and do not send direct requests outside the proxy.",
     description="Web discovery on <target>"
 )
 ```
@@ -1039,8 +1056,10 @@ Route to discovery skills based on attack surface. Pass along:
 ### Web Applications
 
 STOP. Spawn **web-discovery-agent** with skill `web-discovery`. Pass: target
-URL, technology stack, any credentials. Do not execute ffuf,
-httpx, or nuclei commands inline.
+URL, technology stack, any credentials, and the stored web proxy decision from
+`engagement/scope.md` (`http://IP:PORT` or "disabled by operator"), and tell
+the agent to source `engagement/web-proxy.sh` before Bash-driven HTTP(S)
+commands. Do not execute ffuf, httpx, or nuclei commands inline.
 
 ### Active Directory
 
@@ -1585,6 +1604,158 @@ When a technique agent returns with an "AV/EDR Blocked" section in its summary:
    - AV blocked <skill-name> on <target>: <detection details>
    - Routed to evasion-agent → <outcome>
    ```
+
+### Web Proxy Setup
+
+When HTTP/HTTPS services are found, the orchestrator MUST trigger this hard
+stop **before** spawning `web-discovery-agent` or `web-exploit-agent`, unless
+`engagement/scope.md` already records a `## Web Proxy` decision.
+
+**This is the first prompt after web ports are identified.** Do not ask about
+vhosts, attack paths, or exploitation until the operator explicitly chooses to
+proxy web traffic through Burp or skip proxying.
+
+**Purpose:** Capture attackbox-originated HTTP(S) traffic in Burp Suite while
+preserving operator control over listener binding and port selection. This
+applies to browser-server sessions and CLI web tooling (`curl`, `ffuf`,
+`wpscan`, `sqlmap`, etc.) that originate from the attackbox. It does **not**
+apply to reverse shells, nmap, or non-HTTP protocols.
+
+**Persistence helpers:** The orchestrator should keep the choice in three
+places:
+- `engagement/scope.md` — operator-readable record
+- `engagement/web-proxy.json` — machine-readable default for browser-server
+- `engagement/web-proxy.sh` — shell snippet that web agents source before
+  Bash-driven HTTP(S) commands
+
+**When to trigger:**
+- Immediately after recon records any HTTP/HTTPS service or web URL
+- Before the first `web-discovery-agent` spawn of the engagement
+- Before any later `web-exploit-agent` spawn if no proxy decision is recorded
+- On resume when web work is pending and `scope.md` has no `## Web Proxy`
+  section or only an undecided placeholder
+
+**Hard stop procedure:**
+
+1. Collect the discovered web services (host, port, scheme, service banner)
+2. Read `engagement/scope.md`
+3. If `scope.md` already contains a concrete `## Web Proxy` decision:
+   - `Enabled: yes` with a listener URL → reuse it, include it in future web
+     agent prompts, and continue without re-asking
+   - `Enabled: no` → continue without re-asking and pass
+     `Web proxy: disabled by operator` to future web agents
+4. Otherwise, present the hard stop context:
+   ```
+   [orchestrator] HARD STOP — web proxy decision required
+
+   HTTP/HTTPS services were discovered:
+     - https://target1:443
+     - http://target2:8080
+
+   Before web discovery starts, decide whether to route attackbox-originated
+   HTTP(S) traffic through Burp Suite for request/response capture.
+   ```
+5. Use `AskUserQuestion` with **two questions**:
+
+   **Question 1 — Proxy location** (single-select):
+   - Header: "Web proxy"
+   - Options:
+     - Loopback listener (Recommended) — use Burp on `127.0.0.1`
+     - Dedicated proxy IP — bind Burp to another attackbox IP (enter the IP in `Other`)
+     - No proxy — send web traffic directly
+
+   **Question 2 — Listener port** (single-select):
+   - Header: "Proxy port"
+   - Options:
+     - 8080 (Recommended) — default Burp listener
+     - 8081 — alternate listener
+     - Custom port — enter a different port in `Other`
+
+   Parsing rules:
+   - If **Loopback listener** is selected, use IP `127.0.0.1`
+   - If **Dedicated proxy IP** is selected, read the IP from that question's
+     `Other` text input; if none is provided, hard stop and ask again
+   - If **No proxy** is selected, ignore the port question
+   - If **Custom port** is selected, read the port from the port question's
+     `Other` text input; if invalid or missing, hard stop and ask again
+
+6. After the operator responds:
+   - **No proxy**:
+     - Update `engagement/scope.md`:
+       ```markdown
+       ## Web Proxy
+       - Enabled: no
+       - Listener: none
+       - Decision: operator skipped Burp capture
+       ```
+     - Append to `engagement/activity.md`:
+       ```
+       ### [YYYY-MM-DD HH:MM:SS] orchestrator → web-proxy
+       - HTTP/HTTPS services found on <targets>
+       - Operator chose direct web traffic (no Burp proxy)
+       ```
+     - Write `engagement/web-proxy.json`:
+       ```json
+       {"enabled": false, "proxy_url": ""}
+       ```
+     - Write `engagement/web-proxy.sh`:
+       ```bash
+       #!/usr/bin/env bash
+       unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY all_proxy ALL_PROXY
+       export RR_WEB_PROXY_ENABLED=0
+       export RR_WEB_PROXY_URL=
+       ```
+     - Continue to web-discovery with `Web proxy: disabled by operator`
+
+   - **Loopback listener** or **Dedicated proxy IP**:
+     - Build the listener URL as `http://<ip>:<port>`
+     - Present a confirmation hard stop:
+       ```
+       [orchestrator] HARD STOP — start Burp listener
+
+       Configure Burp Suite Proxy → Options → Proxy listeners to listen on:
+         http://<ip>:<port>
+
+       Confirm when the listener is up. No web agent will be spawned until the
+       Burp listener is ready.
+       ```
+     - Wait for explicit operator confirmation
+     - Update `engagement/scope.md`:
+       ```markdown
+       ## Web Proxy
+       - Enabled: yes
+       - Listener: http://<ip>:<port>
+       - Binding: <loopback|dedicated>
+       ```
+     - Append to `engagement/activity.md`:
+       ```
+       ### [YYYY-MM-DD HH:MM:SS] orchestrator → web-proxy
+       - HTTP/HTTPS services found on <targets>
+       - Burp listener configured: http://<ip>:<port> (<loopback|dedicated>)
+       ```
+     - Write `engagement/web-proxy.json`:
+       ```json
+       {"enabled": true, "proxy_url": "http://<ip>:<port>"}
+       ```
+     - Write `engagement/web-proxy.sh`:
+       ```bash
+       #!/usr/bin/env bash
+       export RR_WEB_PROXY_ENABLED=1
+       export RR_WEB_PROXY_URL='http://<ip>:<port>'
+       export http_proxy="$RR_WEB_PROXY_URL"
+       export https_proxy="$RR_WEB_PROXY_URL"
+       export HTTP_PROXY="$RR_WEB_PROXY_URL"
+       export HTTPS_PROXY="$RR_WEB_PROXY_URL"
+       export all_proxy="$RR_WEB_PROXY_URL"
+       export ALL_PROXY="$RR_WEB_PROXY_URL"
+       ```
+
+7. For every subsequent web agent prompt in this engagement:
+   - If enabled, include `Web proxy: http://<ip>:<port>`
+   - If disabled, include `Web proxy: disabled by operator`
+   - Tell the agent to source `engagement/web-proxy.sh` before every
+     Bash-driven HTTP(S) command
+8. Do not spawn any web agent until this procedure is complete
 
 ### Hosts File Update
 
