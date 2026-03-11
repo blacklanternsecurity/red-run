@@ -529,6 +529,7 @@ When the watcher fires, read the JSON output and evaluate each event:
 
 | Event Type | Actionable? | Follow-up Action |
 |------------|-------------|-----------------|
+| vuln w/ "FLAG:" in summary | Always — immediate | Notify operator with prominent callout (see Flag Capture section). Do not interrupt running agent. |
 | credential | Always | Authenticated enumeration or spray against services |
 | vuln (high/critical) | When a technique skill exists | Spawn technique agent |
 | vuln (medium/low/info) | Display only | Note for later |
@@ -1082,6 +1083,70 @@ Common chains that produce shell access on a host:
 > **File exfiltration:** When retrieving files from a target (loot, backups,
 > configs, databases), follow the File Exfiltration decision tree in the skill
 > template — prefer direct download (HTTP, SCP, SMB) over base64 encoding.
+
+### Flag Capture (CTF Speed Priority)
+
+**First blood wins.** When spawning any agent that has shell access on a
+target — discovery, privesc, or technique — append the **flag capture
+directive** to the agent prompt. This is an orchestrator-injected instruction,
+not part of any skill or agent definition.
+
+**When to append the directive:**
+- Every host discovery spawn (linux-discovery, windows-discovery)
+- Every privesc technique spawn (sudo/SUID, token impersonation, kernel, etc.)
+- Every post-exploitation spawn that runs commands on a host
+- Any agent that gains NEW access as part of its skill (e.g., file-upload-bypass
+  produces a web shell, kerberos-delegation produces a DA ticket + shell)
+
+**Do NOT append for:** network-recon, web-discovery, ad-discovery, password-
+spraying, credential-cracking, evasion — these don't have shell access on a
+target host.
+
+**The directive** (append verbatim to the agent prompt, substituting variables):
+
+```
+FLAG CAPTURE (do this FIRST, before enumeration):
+Check for flags immediately upon gaining or using shell access. Read these
+paths and report any content found:
+- Linux: /root/root.txt, /root/proof.txt, /home/*/user.txt, /home/*/local.txt
+- Windows: C:\Users\Administrator\Desktop\root.txt, C:\Users\*\Desktop\user.txt, C:\Users\*\Desktop\proof.txt
+If a path is not readable with current privileges, skip it silently.
+For each flag found, IMMEDIATELY call add_vuln with:
+  target=<TARGET_HOST>, title="FLAG: <filename> (<username>)",
+  vuln_type="flag", severity="critical",
+  details="<flag contents>", discovered_by="<your agent name>"
+Then continue with your skill methodology — do not stop or wait.
+```
+
+**Orchestrator handling when a flag event arrives:**
+
+When the event watcher or `poll_events()` surfaces a vuln event where the
+summary contains "FLAG:", immediately notify the operator with a prominent
+callout:
+
+```
+**FLAG CAPTURED on <host>**
+  File: <filename>
+  User: <privilege level>
+  Flag: <contents>
+  Agent: <which agent found it>
+```
+
+Log to `engagement/activity.md`:
+```
+### [YYYY-MM-DD HH:MM:SS] FLAG CAPTURED on <host>
+- File: <filename>, User: <privilege level>
+- Flag: <contents>
+- Found by: <agent name> during <skill name>
+```
+
+Do not interrupt the running agent — it continues enumeration normally. The
+flag is already in state via the agent's interim write.
+
+**Lateral movement and privesc re-check:** After every privilege escalation
+(user → root/SYSTEM/admin), the next agent spawn includes the directive again.
+Higher privileges unlock flag paths that were unreadable before (e.g.,
+`/root/root.txt` after privesc).
 
 **Lateral Movement:**
 - Credentials from one host → test against all others in scope
