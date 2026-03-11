@@ -258,6 +258,40 @@ recommending **linux-sudo-suid-capabilities**. Pass: hostname, current user,
 polkit version, pkexec SUID status, accountsservice presence. Do not execute
 exploitation commands inline.
 
+**PAM Environment Injection + Polkit Active Session Bypass:**
+
+On SUSE/openSUSE (and potentially other distros), `pam_env.so` may be configured
+with `user_readenv=1`, allowing users to inject environment variables via
+`~/.pam_environment` that are read *before* `pam_systemd.so` registers the
+session with logind. This enables hijacking session properties to gain
+`Active=yes` status on an SSH session — unlocking all polkit `allow_active`
+policies without authentication.
+
+```bash
+# Check PAM config for user_readenv=1
+grep -r "user_readenv" /etc/pam.d/ 2>/dev/null
+
+# Check current session properties
+loginctl show-session "$XDG_SESSION_ID" 2>/dev/null | grep -E "Active|State|Seat|Type"
+
+# Enumerate polkit actions with allow_active=yes
+pkaction --verbose 2>/dev/null | grep -B5 "allow_active.*yes" | grep -E "^org\.|allow_active"
+```
+
+**What to look for:**
+
+| Finding | Meaning | Route To |
+|---------|---------|----------|
+| `user_readenv=1` in PAM config | Can inject XDG_SEAT/XDG_VTNR via ~/.pam_environment | **linux-sudo-suid-capabilities** |
+| `Active=no` + `user_readenv=1` | SSH session can be upgraded to Active=yes | **linux-sudo-suid-capabilities** |
+| `allow_active=yes` on udisks2, systemd, or other dangerous actions | Active session can perform privileged operations without auth | **linux-sudo-suid-capabilities** |
+
+If `user_readenv=1` is found AND polkit actions with `allow_active=yes` exist
+→ STOP. Return to orchestrator recommending **linux-sudo-suid-capabilities**.
+Pass: hostname, current user, PAM config showing user_readenv, loginctl session
+output, list of allow_active polkit actions (especially udisks2 loop-setup,
+filesystem resize/check). Do not execute exploitation commands inline.
+
 ## Step 4: SUID/SGID and Capabilities
 
 ```bash
@@ -655,10 +689,13 @@ Based on enumeration findings, route to the appropriate technique skill:
 `sudo -l` returns usable entries, SUID binaries with GTFOBins matches, sudo version
 vulnerable to CVE-2021-3156 (VERIFIED with `sudoedit -s '\'`) or CVE-2019-14287,
 capabilities on binaries, polkit CVE-2021-4034 (pkexec SUID) or CVE-2021-3560
-(polkit < 0.117 + accountsservice + dbus-send)
+(polkit < 0.117 + accountsservice + dbus-send), PAM `user_readenv=1` with
+polkit `allow_active=yes` on dangerous actions (udisks2 loop-setup/resize,
+systemd reboot/poweroff)
 → STOP. Return to orchestrator recommending **linux-sudo-suid-capabilities**.
   Pass: hostname, current user, specific findings (sudo entries / SUID binaries /
-  capabilities / polkit version and pkexec SUID status), kernel version.
+  capabilities / polkit version and pkexec SUID status / PAM user_readenv +
+  polkit allow_active actions), kernel version.
   Do not execute privilege escalation commands inline.
 
 ### Scheduled Task / Service Vectors Found
