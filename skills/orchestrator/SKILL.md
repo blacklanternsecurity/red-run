@@ -66,7 +66,7 @@ through a domain subagent (preferred) or inline via `get_skill()` (fallback).
 
 ### Primary Path: Subagent Delegation
 
-1. Look up the skill in the **Skill-to-Agent Routing Table** (see Subagent
+1. Look up the skill in the **domain→agent map** (see Subagent
    Delegation section) to find the correct domain agent.
 2. Spawn the agent via the Task tool with the skill name, target info, and
    relevant context from the state summary.
@@ -337,42 +337,31 @@ never load a second skill or route to other skills — when the skill text says
 installed), **STOP** and have the operator fix the issue. Skills are only
 loaded inline when explicitly requested by the operator.
 
-#### Skill-to-Agent Routing Table
+#### Domain→Agent Map
 
-Use this table to pick the right agent for each skill:
+Derive the correct agent from the skill's **category** (returned by
+`search_skills()`) and **name prefix**. This replaces per-skill routing —
+new skills route automatically when they follow naming conventions.
 
-| Skill | Agent | Why |
-|-------|-------|-----|
-| network-recon | network-recon-agent | Needs nmap MCP |
-| smb-exploitation | network-recon-agent | Network-level exploitation |
-| pivoting-tunneling | pivoting-agent | Tunnel setup + verification (sonnet) |
-| web-discovery | web-discovery-agent | Web enumeration + attack surface mapping |
-| sql-injection-union, sql-injection-blind, sql-injection-error, sql-injection-stacked | web-exploit-agent | Web |
-| xss-reflected, xss-stored, xss-dom | web-exploit-agent | Web |
-| ssti-twig, ssti-jinja2, ssti-freemarker | web-exploit-agent | Web |
-| command-injection, python-code-injection | web-exploit-agent | Web |
-| ajp-ghostcat | web-exploit-agent | Web (Tomcat AJP exploitation) |
-| tomcat-manager-deploy | web-exploit-agent | Web (Tomcat Manager WAR deployment) |
-| ssrf, lfi, file-upload-bypass, smb-share-webshell, xxe | web-exploit-agent | Web |
-| deserialization-java, deserialization-dotnet, deserialization-php | web-exploit-agent | Web |
-| jwt-attacks, request-smuggling, nosql-injection, ldap-injection | web-exploit-agent | Web |
-| idor, cors-misconfiguration, csrf | web-exploit-agent | Web |
-| oauth-attacks, password-reset-poisoning, 2fa-bypass, race-condition | web-exploit-agent | Web |
-| ad-discovery | ad-discovery-agent | AD enumeration + attack surface mapping |
-| kerberos-roasting, kerberos-delegation, kerberos-ticket-forging | ad-exploit-agent | Kerberos attacks |
-| adcs-template-abuse, adcs-access-and-relay, adcs-persistence | ad-exploit-agent | ADCS abuse |
-| acl-abuse, credential-dumping, pass-the-hash | ad-exploit-agent | AD |
-| password-spraying | password-spray-agent | Service-agnostic credential spraying (haiku) |
-| gpo-abuse, trust-attacks, ad-persistence, auth-coercion-relay, sccm-exploitation | ad-exploit-agent | AD |
-| linux-discovery | linux-privesc-agent | Linux host enum |
-| linux-sudo-suid-capabilities, linux-cron-service-abuse, linux-file-path-abuse, linux-kernel-exploits | linux-privesc-agent | Linux privesc |
-| container-escapes | linux-privesc-agent | Container context (Linux) |
-| windows-discovery | windows-privesc-agent | Windows host enum |
-| windows-token-impersonation, windows-service-dll-abuse, windows-uac-bypass | windows-privesc-agent | Windows privesc |
-| windows-credential-harvesting, windows-kernel-exploits | windows-privesc-agent | Windows privesc |
-| av-edr-evasion | evasion-agent | AV/EDR bypass payload generation |
-| credential-cracking | credential-cracking-agent | Local-only cracking, parallelizable with other technique skills (haiku) |
-| retrospective | _(inline — no agent needed)_ | Post-engagement, no target interaction |
+| Category | Agent Rule |
+|----------|-----------|
+| `network` | `network-recon-agent` — exception: `pivoting-tunneling` → `pivoting-agent` |
+| `web` | `*-discovery` → `web-discovery-agent`; all others → `web-exploit-agent` |
+| `ad` | `*-discovery` → `ad-discovery-agent`; all others → `ad-exploit-agent` |
+| `privesc` | `linux-*` → `linux-privesc-agent`; `windows-*` → `windows-privesc-agent`; `container-*` → `linux-privesc-agent` |
+| `credential` | `password-spray-agent` |
+| `post-exploit` | `credential-cracking-agent` |
+| `evasion` | `evasion-agent` |
+| `retrospective` | _(inline — no agent)_ |
+
+**Resolution logic:**
+1. `search_skills(query)` → get skill `name` + `category`
+2. Look up `category` in the table above
+3. Apply the prefix/name rule if the category has multiple agents
+4. Spawn the matched agent with `get_skill("<name>")`
+
+**If a skill doesn't match any rule** (new category, unusual name), determine
+the domain from its description and use the closest agent.
 
 #### Agent Spawning
 
@@ -613,21 +602,36 @@ When a skill completes and returns control to the orchestrator:
    ReverseAllowProxy true + encoder cmd/echo for cmd payloads").
 5. Append to `engagement/activity.md` with skill outcome
 6. Append to `engagement/findings.md` if vulnerabilities were confirmed
-7. **Check for new usernames** — if the skill returned usernames not
+7. **Record failed approaches as blocked:** If the agent was killed
+   (`TaskStop`) or returned without achieving its stated goal, call
+   `add_blocked()` for each distinct approach the agent attempted. Extract
+   approaches from:
+   - The agent's return summary (for clean returns)
+   - `TaskOutput(block: false)` partial output (for killed agents)
+   - The orchestrator's own knowledge of what context was passed to the agent
+   Record each with an accurate `retry` value:
+   - `"no"` — approach is fundamentally invalid (wrong CVE, patched vuln)
+   - `"with_context"` — approach might work with different parameters or
+     strategy (e.g., different trigger mechanism, different port)
+   - `"later"` — approach needs something not yet available (new creds,
+     different access level)
+   This ensures subsequent agents see prior failures in `get_state_summary()`
+   and don't repeat dead-end approaches.
+8. **Check for new usernames** — if the skill returned usernames not
    previously in state, trigger the **Usernames Found** hard stop before
    continuing. This applies to ANY skill that discovers users: network-recon
    (RPC/LDAP null session), web-discovery (user enumeration), ad-discovery
    (BloodHound/LDAP), SQLi (user table dump), credential-dumping (SAM/LSASS),
    or any other source.
-8. Call `get_state_summary()` for routing decision
-9. Run the Step 5 decision logic
-10. Route to the next skill based on updated state
+9. Call `get_state_summary()` for routing decision
+10. Run the Step 5 decision logic
+11. Route to the next skill based on updated state
 
 #### Parallel Path Returns
 
 When a returning agent was part of a parallel run (see **Parallel Execution**),
 steps 1–6 above still apply — parse findings, record state, record workarounds,
-log activity, log findings. Steps 7–10 are replaced by the **Race Resolution** procedure. Do not
+log activity, log findings. Steps 7–11 are replaced by the **Race Resolution** procedure. Do not
 run decision logic or route to the next skill until all parallel agents have
 completed or been killed.
 
@@ -849,13 +853,33 @@ MCP access and will handle scanning directly.
 
 Network-recon will:
 1. Run host discovery (for subnets) and port scanning per the selected type
-2. Enumerate services on each open port with quick-win checks (anonymous access,
-   default creds, known CVEs)
-3. Perform OS fingerprinting
-4. Run vulnerability scanning (NSE scripts, nuclei)
-5. Return routing recommendations for next steps
+2. Perform OS fingerprinting
+3. Return a port/service map with routing recommendations
 
-Wait for the agent to return before proceeding to attack surface mapping.
+Wait for the agent to return. Then route to service-specific enumeration skills
+based on discovered ports (see **Service Enumeration Routing** below).
+
+### Service Enumeration Routing (after network-recon)
+
+Based on the port/service map from network-recon, spawn enumeration agents for
+each service category found. These can run in parallel when independent.
+
+| Ports Found | Skill | Agent |
+|-------------|-------|-------|
+| 139, 445 (SMB) | `smb-enumeration` | network-recon-agent |
+| 1433, 3306, 5432, 1521, 27017, 6379 (databases) | `database-enumeration` | network-recon-agent |
+| 21, 22, 3389, 5900-5910, 5985/5986 (remote access) | `remote-access-enumeration` | network-recon-agent |
+| 53, 25/465/587, 161, 623, 2049, 69, 111/135, 80/443 (infra) | `infrastructure-enumeration` | network-recon-agent |
+| 80, 443, 8080, 8443 (HTTP/HTTPS) | `web-discovery` | web-discovery-agent |
+| 88 + 389 + 445 (AD) | `ad-discovery` | ad-discovery-agent |
+
+**Parallel enumeration**: When multiple service categories are found (typical),
+present them as parallel paths. SMB + database + remote-access + infrastructure
+enumeration are independent and can run simultaneously via network-recon-agent.
+Web discovery and AD discovery are also independent of network enumeration.
+
+Pass the relevant port list to each enumeration agent so it only runs sections
+for open ports on the target.
 
 ### Web Discovery (if HTTP/HTTPS found)
 
@@ -1167,27 +1191,40 @@ Higher privileges unlock flag paths that were unreadable before (e.g.,
 When reading the state summary (via `get_state_summary()`), the orchestrator should:
 
 1. **Check for unexploited vulns** — spawn the appropriate agent with the
-   technique skill (look up in Skill-to-Agent Routing Table).
+   technique skill (look up in domain→agent map).
 
-   **CVE verification gate:** When a discovery agent returns a specific CVE
-   identifier as part of its routing recommendation, do NOT blindly trust the
-   vulnerability class label. Before routing to a technique skill, spawn a
-   general-purpose research agent (Opus model) to confirm the CVE's actual
-   vulnerability class:
+   **CVE verification gate (MANDATORY):** When ANY agent — discovery, exploit,
+   or the orchestrator itself — references a specific CVE identifier, you MUST
+   verify it before spawning an exploit agent. This gate is blocking — no
+   exploit agent launches until verification completes.
+
+   **Step 1 — Version check (instant, do this first):** Compare the target's
+   software version (from recon/state) against the CVE's affected range. If
+   the target version is patched, STOP — do not spawn an exploit agent. Log
+   the CVE as inapplicable in activity.md and move on. This catches the
+   majority of false positives with zero cost.
+
+   **Step 2 — Class verification (if version is vulnerable or unknown):**
+   Spawn a research agent to confirm the vulnerability class and exploitation
+   method:
    ```
    Agent(
-       prompt="Research CVE-XXXX-XXXXX. What is the exact vulnerability class
-       (SSRF, file write, path traversal, deserialization, injection, etc.)?
-       What component/parameter is affected? Is there a public PoC? Return:
-       vulnerability class, affected endpoint, and exploitation methodology.",
+       prompt="Research CVE-XXXX-XXXXX. Return: (1) affected versions,
+       (2) exact vulnerability class (SSRF, command injection, path traversal,
+       deserialization, etc.), (3) vulnerable endpoint and parameter,
+       (4) exploitation methodology, (5) public PoC URLs if any.",
        description="CVE research: CVE-XXXX-XXXXX",
        model="opus"
    )
    ```
-   If the research confirms the class matches the discovery agent's label →
-   route normally. If the class is different → route to the correct technique
-   skill. This adds ~1-2 minutes but prevents misrouting entire agent
-   invocations to the wrong skill.
+   If the research confirms the class matches → route normally. If the class
+   is different → route to the correct technique skill. If the target version
+   is confirmed patched by research → do not route.
+
+   **Why this is mandatory:** Agents hallucinate CVE exploitation details.
+   They know CVE names but invent endpoints, parameters, and payloads that
+   don't exist. A single version check would have saved ~150K tokens and ~25
+   minutes in a real engagement. Never skip this gate.
 
    This is a normal routing decision — include it in parallelization
    opportunities. The research agent can run alongside other independent
@@ -1286,7 +1323,7 @@ When reading the state summary (via `get_state_summary()`), the orchestrator sho
       does not guarantee relevance — the embedding model can confuse adjacent
       techniques (e.g., SSRF/CSRF, IDOR/ACL-abuse). If the description
       doesn't fit, skip it and check the next result or try a different query.
-   c. Look up the skill in the Skill-to-Agent Routing Table and spawn the
+   c. Look up the skill in the domain→agent map and spawn the
       appropriate domain agent. If the skill isn't in the table, determine
       the domain (web/ad/privesc/network) from its category and use the
       corresponding agent.
@@ -1371,7 +1408,9 @@ foothold established).
 2. `TaskStop` the other running agent(s) pursuing the same goal.
 3. Check the killed agent's partial output (via `TaskOutput` with
    `block: false`) for bonus findings — credentials, hosts, or vulns discovered
-   before termination. Record any useful partial findings.
+   before termination. Record any useful partial findings. Also record the
+   killed agent's attempted approaches as blocked via `add_blocked()` (see
+   Post-Skill Checkpoint step 7).
 4. Log to `engagement/activity.md`:
    ```
    ### [YYYY-MM-DD HH:MM:SS] orchestrator → PARALLEL RESOLVED
@@ -1386,10 +1425,12 @@ foothold established).
 The returning agent completed but did NOT achieve its goal (e.g.,
 Kerberoasting returned no crackable hashes).
 1. Record any findings from the completed agent.
-2. Let the other agent(s) continue — do not kill them.
-3. Block on the next agent's return.
-4. Log `PARALLEL PARTIAL` to activity.md with what was learned.
-5. When the last agent returns, resolve normally — if the goal is achieved,
+2. Record the failed agent's approaches as blocked via `add_blocked()` (see
+   Post-Skill Checkpoint step 7).
+3. Let the other agent(s) continue — do not kill them.
+4. Block on the next agent's return.
+5. Log `PARALLEL PARTIAL` to activity.md with what was learned.
+6. When the last agent returns, resolve normally — if the goal is achieved,
    log `PARALLEL RESOLVED`. If all paths failed, log `PARALLEL FAILED` and
    fall through to the decision logic to find an alternative approach.
 
@@ -2118,7 +2159,7 @@ exhausted or objectives are met.
 
 - **Do not spawn built-in Task sub-agents (Explore, Plan, general-purpose) per
   target.** They lack MCP access and cannot invoke skills. Use only the custom
-  domain subagents listed in the Skill-to-Agent Routing Table.
+  domain subagents listed in the domain→agent map.
 - **Do not go deep on one target while ignoring others.** If you're stuck on
   privesc for target A, move to target B. Fresh targets often yield quick wins
   that unlock progress elsewhere.
