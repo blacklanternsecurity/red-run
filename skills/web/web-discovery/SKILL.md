@@ -124,9 +124,26 @@ Your return summary must include:
 ## Prerequisites
 
 - Target URL or scope defined
-- Proxy configured (Burp Suite or similar)
+- Proxy decision recorded by orchestrator (Burp listener configured or
+  explicitly skipped)
 - Wordlists available (SecLists: `apt install seclists` or `/usr/share/seclists/`)
 - Tools: `ffuf`, `arjun` (`pip install arjun`), `paramspider` (`pip install paramspider`), `wpscan` (`gem install wpscan`)
+
+## Proxy Handling
+
+If the orchestrator provides a Burp listener (`Web proxy: http://IP:PORT`),
+treat it as mandatory for the full discovery run:
+
+- Browser automation: call `browser_open(..., proxy="http://IP:PORT")` or rely
+  on `engagement/web-proxy.json` if the orchestrator created it
+- Bash HTTP clients: source `engagement/web-proxy.sh`
+- Add tool-native proxy flags when available (`curl -x`, `ffuf -x`,
+  `wpscan --proxy`, `sqlmap --proxy`)
+
+Do not silently fall back to direct traffic when proxying was requested. If the
+operator explicitly skipped proxying, still source `engagement/web-proxy.sh` so
+the process environment is reset to direct mode, then rely on saved evidence
+files rather than Burp history.
 
 ## Step 1: Content Discovery
 

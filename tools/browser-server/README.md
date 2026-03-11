@@ -35,8 +35,9 @@ uv run --directory tools/browser-server python server.py
 
 ### Typical workflow
 
-1. Agent calls `browser_open(url="https://target.htb/login")` — creates a
-   session with its own cookie jar and returns page content as markdown
+1. Agent calls `browser_open(url="https://target.htb/login", proxy="http://127.0.0.1:8080")`
+   when Burp capture is required, or omits `proxy` for direct traffic. The call
+   creates a session with its own cookie jar and returns page content as markdown
 2. Agent calls `browser_fill(session_id=..., selector="input[name=username]", value="admin")`
 3. Agent calls `browser_fill(session_id=..., selector="input[name=password]", value="password")`
 4. Agent calls `browser_click(session_id=..., selector="button[type=submit]")` — submits form, returns new page
@@ -55,7 +56,7 @@ uv run --directory tools/browser-server python server.py
 
 | Tool | Parameters | Description |
 |------|-----------|-------------|
-| `browser_open` | `url` (required), `ignore_tls` (default true) | Create session + navigate to URL, returns page as markdown |
+| `browser_open` | `url` (required), `ignore_tls` (default true), `proxy` (optional) | Create session + navigate to URL, optionally through an upstream proxy |
 | `browser_navigate` | `session_id` (required), `url` (required) | Navigate within existing session, preserving cookies |
 | `browser_get_page` | `session_id` (required), `selector` (optional) | Re-read page content, optionally scoped to CSS selector |
 | `browser_click` | `session_id` (required), `selector` (required), `wait_until` (default `load`) | Click element and wait for navigation/loading |
@@ -86,6 +87,15 @@ Sessions are independent — logging into one site doesn't affect another sessio
 TLS certificate errors are ignored by default (`ignore_tls=true`), which is
 typical for pentesting targets with self-signed certs.
 
+If `proxy` is provided, the session is created from a Chromium instance tied to
+that proxy URL (for example `http://127.0.0.1:8080` for Burp). Different proxy
+values get separate browser instances so proxied and direct sessions stay
+isolated.
+
+If `proxy` is omitted, the server also checks `engagement/web-proxy.json`. When
+that file contains an enabled proxy set by the orchestrator, browser sessions
+default to that listener automatically.
+
 ## Screenshots
 
 `browser_screenshot` saves full-page PNGs. Default path:
@@ -94,7 +104,8 @@ exists). Provide `save_to` to override.
 
 ## Architecture
 
-The server uses Playwright's async API with headless Chromium. The browser
-instance is launched lazily on first `browser_open` call and shared across all
-sessions. Each session gets its own browser context (isolated cookie jar).
-The browser is cleaned up automatically on server exit via `atexit`.
+The server uses Playwright's async API with headless Chromium. Playwright is
+started lazily on first use, and Chromium instances are created per proxy
+configuration (`direct`, Burp loopback, dedicated listener, etc.). Each session
+gets its own browser context (isolated cookie jar). Browsers are cleaned up
+automatically on server exit via `atexit`.

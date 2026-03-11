@@ -161,7 +161,7 @@ Headless Chromium automation via Playwright. Handles CSRF tokens, session cookie
 
 | Tool | Description |
 |------|-------------|
-| `browser_open(url, ignore_tls=true)` | Create session + navigate, returns page as markdown |
+| `browser_open(url, ignore_tls=true, proxy="")` | Create session + navigate, optionally through an upstream proxy such as Burp |
 | `browser_navigate(session_id, url)` | Navigate within existing session |
 | `browser_get_page(session_id, selector?)` | Re-read page content, optionally scoped by CSS selector |
 | `browser_click(session_id, selector, wait_until="load")` | Click element and wait for navigation |
@@ -176,6 +176,8 @@ Headless Chromium automation via Playwright. Handles CSRF tokens, session cookie
 **Content handling:** HTML is converted to markdown via `markdownify`. Scripts and styles are stripped. Output capped at 50KB — use `browser_get_page` with a CSS selector to scope large pages.
 
 **Session isolation:** Each `browser_open` creates a new Chromium browser context with its own cookie jar, localStorage, and cache. TLS errors are ignored by default for self-signed pentesting targets.
+
+**Proxy support:** `browser_open(..., proxy="http://127.0.0.1:8080")` launches or reuses a Chromium instance bound to that upstream proxy, which makes it suitable for Burp capture. Different proxy values get separate browser instances; direct sessions stay isolated from proxied ones. If `proxy` is omitted, the server also checks `engagement/web-proxy.json` and uses the orchestrator-recorded Burp listener when enabled.
 
 **When to use browser vs curl:** Browser tools are the default for navigating sites and managing sessions. Use curl as fallback for precise payload control in injection testing.
 

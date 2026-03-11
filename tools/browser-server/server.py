@@ -1,7 +1,7 @@
 """MCP server providing headless browser automation for pentesting subagents.
 
 Provides eleven tools:
-- browser_open: Create session + navigate to URL
+- browser_open: Create session + navigate to URL (optionally via upstream proxy)
 - browser_navigate: Navigate within existing session
 - browser_get_page: Re-read page content (optionally scoped to CSS selector)
 - browser_click: Click element + wait for navigation
@@ -31,6 +31,7 @@ import re
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
 
 from markdownify import markdownify
 from mcp.server.fastmcp import FastMCP
@@ -39,9 +40,11 @@ from mcp.server.fastmcp import FastMCP
 # own directory.  uv run --directory changes cwd to tools/browser-server/, so
 # bare Path("engagement/...") would land artifacts inside the tools tree.
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+_PROXY_CONFIG_PATH = _PROJECT_ROOT / "engagement" / "web-proxy.json"
 
 # Content size cap — truncate HTML-to-markdown output at 50KB
 MAX_CONTENT_SIZE = 50 * 1024
+_DIRECT_BROWSER_KEY = "__direct__"
 
 
 def _html_to_markdown(html: str) -> str:
@@ -61,13 +64,82 @@ def _html_to_markdown(html: str) -> str:
     return md
 
 
+def _normalize_proxy_url(proxy: str) -> str | None:
+    """Normalize a proxy server string into a Playwright-ready URL."""
+    candidate = proxy.strip()
+    if not candidate:
+        return None
+
+    if "://" not in candidate:
+        candidate = f"http://{candidate}"
+
+    parsed = urlsplit(candidate)
+    if parsed.scheme not in {"http", "https", "socks5"}:
+        raise ValueError(
+            "proxy scheme must be http, https, or socks5 "
+            f"(got '{parsed.scheme or 'none'}')"
+        )
+    if not parsed.hostname:
+        raise ValueError("proxy host is required")
+    if parsed.port is None:
+        raise ValueError("proxy port is required")
+    if parsed.path not in ("", "/") or parsed.query or parsed.fragment:
+        raise ValueError("proxy must be a bare host:port listener")
+
+    auth = ""
+    if parsed.username:
+        auth = parsed.username
+        if parsed.password:
+            auth += f":{parsed.password}"
+        auth += "@"
+
+    host = parsed.hostname
+    if ":" in host and not host.startswith("["):
+        host = f"[{host}]"
+
+    return urlunsplit((parsed.scheme, f"{auth}{host}:{parsed.port}", "", "", ""))
+
+
+def _browser_key(proxy_url: str | None) -> str:
+    """Map direct/proxied sessions to a stable browser instance key."""
+    return proxy_url or _DIRECT_BROWSER_KEY
+
+
+def _load_configured_proxy_url() -> str | None:
+    """Load the engagement's default browser proxy, if one is configured."""
+    if not _PROXY_CONFIG_PATH.exists():
+        return None
+
+    try:
+        data = json.loads(_PROXY_CONFIG_PATH.read_text())
+    except json.JSONDecodeError as exc:
+        raise ValueError(
+            f"invalid JSON in {_PROXY_CONFIG_PATH}: {exc.msg}"
+        ) from exc
+
+    if not isinstance(data, dict):
+        raise ValueError(f"invalid proxy config in {_PROXY_CONFIG_PATH}: expected object")
+
+    if not data.get("enabled"):
+        return None
+
+    proxy_url = data.get("proxy_url", "")
+    if not isinstance(proxy_url, str) or not proxy_url.strip():
+        raise ValueError(
+            f"invalid proxy config in {_PROXY_CONFIG_PATH}: proxy_url is required when enabled"
+        )
+
+    return _normalize_proxy_url(proxy_url)
+
+
 def create_server() -> FastMCP:
     """Create and configure the browser MCP server."""
     mcp = FastMCP(
         "red-run-browser-server",
         instructions=(
             "Provides headless browser automation for red-run subagents. "
-            "Use browser_open to create sessions and navigate to URLs, "
+            "Use browser_open to create sessions and navigate to URLs "
+            "(optionally through a Burp-style upstream proxy), "
             "browser_fill/browser_click for form interaction, "
             "browser_cookies for session state, browser_evaluate for "
             "JavaScript execution, and browser_screenshot for evidence. "
@@ -76,33 +148,49 @@ def create_server() -> FastMCP:
         ),
     )
 
-    # Shared state — browser instance + sessions
-    browser_instance = {"browser": None, "playwright": None}
+    # Shared state — Playwright instance + one Chromium process per proxy URL
+    browser_instance = {"playwright": None, "browsers": {}}
     sessions: dict[str, dict] = {}
 
-    async def _ensure_browser():
-        """Launch Chromium lazily on first use."""
-        if browser_instance["browser"] is None:
+    async def _ensure_playwright():
+        """Start Playwright lazily on first use."""
+        if browser_instance["playwright"] is None:
             from playwright.async_api import async_playwright
 
-            pw = await async_playwright().start()
-            browser_instance["playwright"] = pw
-            browser_instance["browser"] = await pw.chromium.launch(
-                headless=True,
-            )
-        return browser_instance["browser"]
+            browser_instance["playwright"] = await async_playwright().start()
+        return browser_instance["playwright"]
+
+    async def _ensure_browser(proxy_url: str | None = None):
+        """Launch or reuse a Chromium instance for the given proxy setting."""
+        key = _browser_key(proxy_url)
+        browsers = browser_instance["browsers"]
+        if key not in browsers:
+            pw = await _ensure_playwright()
+            launch_kwargs = {"headless": True}
+            if proxy_url:
+                launch_kwargs["proxy"] = {"server": proxy_url}
+            browsers[key] = await pw.chromium.launch(**launch_kwargs)
+        return browsers[key], key
+
+    async def _close_browser_instance(browser_key: str) -> None:
+        """Close an idle Chromium instance once its last session ends."""
+        browser = browser_instance["browsers"].pop(browser_key, None)
+        if browser:
+            await browser.close()
 
     def _cleanup() -> None:
         """Close browser on exit."""
-        browser = browser_instance.get("browser")
         pw = browser_instance.get("playwright")
-        if browser:
+        browsers = list(browser_instance.get("browsers", {}).values())
+        if browsers:
             try:
                 loop = asyncio.get_event_loop()
                 if loop.is_running():
-                    loop.create_task(browser.close())
+                    for browser in browsers:
+                        loop.create_task(browser.close())
                 else:
-                    loop.run_until_complete(browser.close())
+                    for browser in browsers:
+                        loop.run_until_complete(browser.close())
             except Exception:
                 pass
         if pw:
@@ -121,6 +209,7 @@ def create_server() -> FastMCP:
     async def browser_open(
         url: str,
         ignore_tls: bool = True,
+        proxy: str = "",
     ) -> str:
         """Create session + navigate to URL.
 
@@ -130,11 +219,22 @@ def create_server() -> FastMCP:
         Args:
             url: URL to navigate to (e.g., "https://target.htb/login").
             ignore_tls: Ignore TLS certificate errors (default True).
+            proxy: Optional upstream proxy listener, e.g.
+                   "http://127.0.0.1:8080" for Burp Suite.
         """
-        browser = await _ensure_browser()
         session_id = str(uuid.uuid4())[:8]
+        context = None
 
         try:
+            normalized_proxy = _normalize_proxy_url(proxy)
+            configured_proxy = None if proxy.strip() else _load_configured_proxy_url()
+        except ValueError as e:
+            return f"ERROR: Invalid proxy '{proxy}' — {e}"
+
+        effective_proxy = normalized_proxy if proxy.strip() else configured_proxy
+
+        try:
+            browser, browser_key = await _ensure_browser(effective_proxy)
             context = await browser.new_context(
                 ignore_https_errors=ignore_tls,
             )
@@ -150,6 +250,8 @@ def create_server() -> FastMCP:
                 "page": page,
                 "created_at": datetime.now(tz=timezone.utc).isoformat(),
                 "ignore_tls": ignore_tls,
+                "proxy": effective_proxy or "",
+                "browser_key": browser_key,
             }
 
             return json.dumps({
@@ -157,15 +259,17 @@ def create_server() -> FastMCP:
                 "url": page.url,
                 "title": title,
                 "status": response.status if response else None,
+                "proxy": effective_proxy,
                 "content": md,
             }, indent=2)
 
         except Exception as e:
             # Clean up on failure
-            try:
-                await context.close()
-            except Exception:
-                pass
+            if context is not None:
+                try:
+                    await context.close()
+                except Exception:
+                    pass
             return f"ERROR: Failed to open {url} — {e}"
 
     @mcp.tool()
@@ -496,6 +600,15 @@ def create_server() -> FastMCP:
             await session["context"].close()
         except Exception:
             pass
+        finally:
+            browser_key = session.get("browser_key")
+            if browser_key and not any(
+                s.get("browser_key") == browser_key for s in sessions.values()
+            ):
+                try:
+                    await _close_browser_instance(browser_key)
+                except Exception:
+                    pass
 
         return json.dumps({
             "status": "closed",
@@ -528,6 +641,7 @@ def create_server() -> FastMCP:
                 "title": title,
                 "created_at": session["created_at"],
                 "ignore_tls": session["ignore_tls"],
+                "proxy": session.get("proxy") or None,
             })
 
         return json.dumps({"sessions": result}, indent=2)

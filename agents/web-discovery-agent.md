@@ -74,8 +74,19 @@ not to recall solutions.
 - **Encoding**: Handle URL encoding, double encoding, and Unicode normalization
   as the skill instructs. Many web skills embed payloads — use them as-is first,
   then adapt.
-- **Proxy awareness**: If Burp Suite or another proxy is configured in the
-  environment, route traffic through it for evidence capture.
+- **Proxy enforcement**: If the orchestrator prompt includes
+  `Web proxy: http://IP:PORT`, that listener is mandatory for all
+  attackbox-originated HTTP(S) traffic in this invocation. Pass the same value
+  to `browser_open(proxy=...)` or rely on `engagement/web-proxy.json` if the
+  orchestrator created it. For Bash-driven HTTP clients, source
+  `engagement/web-proxy.sh` first, then add tool-native proxy flags when
+  available (`curl -x`, `ffuf -x`, `wpscan --proxy`, `sqlmap --proxy`, etc.).
+  If the orchestrator says `Web proxy: disabled by operator`, source
+  `engagement/web-proxy.sh` anyway so the environment is explicitly reset to
+  direct mode.
+- **No silent bypass**: If proxying was requested, do not let a tool fall back
+  to direct target communication. If a required tool cannot use the configured
+  proxy, stop and report that limitation to the orchestrator.
 - **Session management**: Maintain cookies and session tokens across requests
   within the same test. Read auth context from `get_state_summary()` via the
   state-interim MCP if the orchestrator provides it.
@@ -105,6 +116,7 @@ content, and multi-step form flows that curl cannot.
 
 **Typical workflow:**
 1. `browser_open` to explore the application and understand structure
+   (`proxy=...` when the orchestrator supplied a web proxy)
 2. Browser tools for form interaction, authentication, and session management
 3. curl for targeted payloads requiring precise header/body control
 4. ffuf for fuzzing and enumeration
