@@ -358,7 +358,12 @@ check_cracking() {
     if p=$(find_cmd hashcat); then pass "hashcat" "$p"
     else fail "hashcat" "sudo apt install hashcat"; fi
 
-    if p=$(find_cmd john); then pass "john" "$p"
+    if p=$(find_cmd john); then
+        if "$p" 2>&1 | head -5 | grep -qi jumbo; then
+            pass "john (jumbo)" "$p"
+        else
+            warn "john" "found at $p but not jumbo — *2john tools may be missing. Install: sudo apt install john"
+        fi
     else fail "john" "sudo apt install john"; fi
 
     if p=$(find_cmd hydra); then pass "hydra" "$p"

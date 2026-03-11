@@ -1192,7 +1192,31 @@ Common chains that produce shell access on a host:
 When reading the state summary (via `get_state_summary()`), the orchestrator should:
 
 1. **Check for unexploited vulns** — spawn the appropriate agent with the
-   technique skill (look up in Skill-to-Agent Routing Table)
+   technique skill (look up in Skill-to-Agent Routing Table).
+
+   **CVE verification gate:** When a discovery agent returns a specific CVE
+   identifier as part of its routing recommendation, do NOT blindly trust the
+   vulnerability class label. Before routing to a technique skill, spawn a
+   general-purpose research agent (Opus model) to confirm the CVE's actual
+   vulnerability class:
+   ```
+   Agent(
+       prompt="Research CVE-XXXX-XXXXX. What is the exact vulnerability class
+       (SSRF, file write, path traversal, deserialization, injection, etc.)?
+       What component/parameter is affected? Is there a public PoC? Return:
+       vulnerability class, affected endpoint, and exploitation methodology.",
+       description="CVE research: CVE-XXXX-XXXXX",
+       model="opus"
+   )
+   ```
+   If the research confirms the class matches the discovery agent's label →
+   route normally. If the class is different → route to the correct technique
+   skill. This adds ~1-2 minutes but prevents misrouting entire agent
+   invocations to the wrong skill.
+
+   This is a normal routing decision — include it in parallelization
+   opportunities. The research agent can run alongside other independent
+   paths (e.g., password spray, other discovery phases)
 2. **Check for shell access without root/SYSTEM** — if the Access section shows
    a non-root shell on Linux or non-SYSTEM/non-admin shell on Windows, route to
    the appropriate discovery agent. Do not enumerate privilege escalation vectors
@@ -1224,10 +1248,14 @@ When reading the state summary (via `get_state_summary()`), the orchestrator sho
    services?
 5. **Check for uncracked hashes** — if the Credentials section contains hashes
    without plaintext (NTLM, Kerberos TGS, shadow, etc.) or the engagement has
-   encrypted files (ZIP, Office, KeePass, SSH key), trigger the **Hashes
-   Found** hard stop (see below). Cracked passwords unlock new testing against
-   all services. The cracking agent runs in parallel with other technique
-   skills when possible (e.g., cracking + ACL abuse toward the same account).
+   encrypted files (ZIP, Office, KeePass, SSH keys, password-protected
+   archives), trigger the **Hashes Found** hard stop (see below). This
+   includes encrypted SSH private keys discovered in file shares, buckets, or
+   backups — these are cracking problems and the operator may prefer an
+   external rig with GPU acceleration. Cracked passwords unlock new testing
+   against all services. The cracking agent runs in parallel with other
+   technique skills when possible (e.g., cracking + ACL abuse toward the same
+   account).
 6. **Check pivot map** — are there identified paths not yet followed?
    For pivots with `status: "identified"` and method containing "pivot candidate"
    or "Additional NIC":

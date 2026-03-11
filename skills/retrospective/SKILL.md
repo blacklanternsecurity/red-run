@@ -305,6 +305,15 @@ After the user selects which items to prioritize, make the edits. Skills are
 plain Markdown files at `skills/<category>/<skill-name>/SKILL.md` — edit them
 directly.
 
+**CTF sanitization rule:** When implementing changes from a CTF engagement,
+never add target-specific references to skills. This is a public repository
+and skills must not contain CTF answers. Specifically: no target-specific CMS
+names or niche technologies (common ones like WordPress, Apache, nginx are
+fine), no specific CVE IDs from the engagement, no example IPs from lab
+environments (10.129.x.x, 10.10.x.x), no passwords or flag values, and no
+attack chains that map directly to a specific CTF box. Generalize the
+methodology so it applies broadly.
+
 For each prioritized item:
 
 ### [skill-update] — Edit an existing skill

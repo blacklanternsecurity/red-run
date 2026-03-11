@@ -228,6 +228,33 @@ wpscan --url https://TARGET/ -U users.txt -P /usr/share/wordlists/rockyou.txt
 with CMS-specific templates and continue with standard parameter/injection
 testing.
 
+## Step 1c: Post-Authentication Settings Enumeration
+
+After gaining any CMS access — self-registration, discovered credentials,
+default credentials, even low-privilege roles — enumerate settings and
+configuration pages for stored secrets. CMS platforms frequently store
+third-party service credentials in admin or settings panels accessible to
+authenticated users.
+
+**What to look for:**
+- Object storage credentials (access keys, secret keys, bucket names)
+- SMTP/mail server credentials
+- API tokens and keys (payment gateways, analytics, integrations)
+- Database connection strings
+- OAuth client secrets
+- Backup configuration (paths, remote storage credentials)
+
+**Common CMS settings paths:**
+- `/admin/settings`, `/admin/config`, `/dashboard/settings`
+- WordPress: `/wp-admin/options-general.php`, `/wp-admin/options.php`
+- Drupal: `/admin/config`, `/admin/config/system`
+- Joomla: `/administrator/index.php?option=com_config`
+
+**Interim write:** If service credentials are found, write immediately:
+`add_credential(username=..., secret=..., credential_type="api_key",
+source="CMS settings page on <target>")`. These often unlock additional
+attack surface (hidden storage buckets, internal services, backup archives).
+
 ## Step 2: Parameter Discovery
 
 Find hidden or undocumented parameters on discovered endpoints.
