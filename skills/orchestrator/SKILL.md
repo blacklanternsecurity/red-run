@@ -976,23 +976,18 @@ When reading the state summary (via `get_state_summary()`), the orchestrator sho
    pivoting to internal subnets.
 3. **Check for unchained access** — can existing access reach new targets?
 4. **Check credentials** — have all found credentials been tested against all
-   services?
+   services? If not, trigger the **Usernames Found** hard stop (below).
 5. **Check for uncracked hashes** — if the Credentials section contains hashes
    without plaintext (NTLM, Kerberos TGS, shadow, etc.) or the engagement has
    encrypted files (ZIP, Office, KeePass, SSH keys, password-protected
-   archives), trigger the **Hashes Found** hard stop (see below). This
-   includes encrypted SSH private keys discovered in file shares, buckets, or
-   backups — these are cracking problems and the operator may prefer an
-   external rig with GPU acceleration. Cracked passwords unlock new testing
-   against all services. The cracking agent runs in parallel with other
-   technique skills when possible (e.g., cracking + ACL abuse toward the same
-   account).
+   archives), trigger the **Hashes Found** hard stop (below). The operator
+   chooses the cracking method — never auto-spawn the cracking agent.
 6. **Check pivot map** — are there identified paths not yet followed?
    For pivots with `status: "identified"` and method containing "pivot candidate"
    or "Additional NIC":
    a. Check `get_tunnels()` — does an active tunnel already cover this subnet?
-   b. If no tunnel covers the target subnet, spawn **pivoting-agent** with
-      `pivoting-tunneling`:
+   b. If no tunnel covers the target subnet, present to the operator and
+      spawn **pivoting-agent** with `pivoting-tunneling` after approval:
       ```
       Agent(
           subagent_type="pivoting-agent",
