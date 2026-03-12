@@ -214,9 +214,8 @@ JSONL transcript (do NOT cache the session directory — compactions change it):
 find ~/.claude/projects/-$(pwd | tr / - | sed 's/^-//')/*/subagents/ \
   -name "agent-<agentId>.jsonl" 2>/dev/null
 ```
-Append `label:path` to `operator/agent-dashboard/.dashboard`. Always append
-(`>>`); only truncate (`>`) when ALL prior agents are done. Print:
-`Watch live: bash operator/agent-dashboard/dashboard.sh`
+The agent dashboard auto-discovers spawned agents — no manual registration needed.
+Print: `Watch live: bash operator/agent-dashboard/dashboard.sh`
 
 **Context passing — do NOT override skill methodology.** When routing to a
 technique agent, pass discovery-phase findings as **informational context**,

@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
-"""Live-tail a red-run agent's output with clean formatting.
+"""Live-tail Claude Code agent output with clean formatting.
 
 Usage:
-    python3 tools/tail-agent.py <output_file>              # one-shot (print and exit)
-    python3 tools/tail-agent.py -f <output_file>           # live follow (like tail -f)
-    tail -f <output_file> | python3 tools/tail-agent.py    # pipe mode
-    python3 tools/tail-agent.py --dashboard label1:path1 label2:path2  # multi-agent dashboard
-    bash operator/agent-dashboard/dashboard.sh                                            # dashboard from /tmp/red-run.dashboard
+    python3 tail-agent.py <output_file>              # one-shot (print and exit)
+    python3 tail-agent.py -f <output_file>           # live follow (like tail -f)
+    tail -f <output_file> | python3 tail-agent.py    # pipe mode
+    python3 tail-agent.py --dashboard label1:path1   # multi-agent dashboard
+    python3 tail-agent.py --dashboard                # auto-discover agents
 
 Shows:
     Cyan    - agent reasoning text
-    Yellow  - shell commands sent to targets (▶ SHELL[session] command)
-    Yellow  - bash commands (▶ BASH description)
+    Yellow  - shell commands (▶ SHELL[session] command, ▶ BASH description)
     Green   - tool output (Bash results, shell-server responses)
-    Dim     - skill loads, state queries, file reads/writes, other MCP tool calls
+    Dim     - other MCP tool calls, file reads/writes
 """
 
 import curses
@@ -22,7 +21,6 @@ import json
 import os
 import queue
 import re
-import subprocess
 import sys
 import textwrap
 import threading
@@ -33,36 +31,6 @@ CYAN = "\033[36m"
 YELLOW = "\033[33m"
 DIM = "\033[2m"
 RESET = "\033[0m"
-
-
-# ---------------------------------------------------------------------------
-# Firewall probe — ping 1.1.1.1 to check if outbound is blocked
-# ---------------------------------------------------------------------------
-
-# Shared state: True = firewall active (ping blocked), False = firewall down (ping succeeded), None = unknown
-_firewall_ok: bool | None = None
-_firewall_lock = threading.Lock()
-
-
-def _firewall_probe_thread(stop_event: threading.Event) -> None:
-    """Ping 1.1.1.1 every 5s. If ping succeeds, firewall is DOWN (bad)."""
-    global _firewall_ok
-    while not stop_event.is_set():
-        try:
-            ret = subprocess.run(
-                ["ping", "-c", "1", "-W", "2", "1.1.1.1"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                timeout=4,
-            )
-            with _firewall_lock:
-                _firewall_ok = (
-                    ret.returncode != 0
-                )  # ping failed = firewall blocking = good
-        except (subprocess.TimeoutExpired, OSError):
-            with _firewall_lock:
-                _firewall_ok = True  # timeout = blocked = good
-        stop_event.wait(5.0)
 
 
 def format_tool(name: str, inp: dict) -> tuple[str, str]:
@@ -316,8 +284,6 @@ def _init_colors() -> dict[str, int]:
     pairs["idle_stale"] = len(cmap) + 4
     curses.init_pair(len(cmap) + 5, curses.COLOR_RED, -1)
     pairs["idle_dead"] = len(cmap) + 5
-    # Legacy alias used by firewall indicator
-    pairs["stopped"] = pairs["idle_dead"]
     # Pair for tool results (green)
     curses.init_pair(len(cmap) + 6, curses.COLOR_GREEN, -1)
     pairs["result"] = len(cmap) + 6
@@ -335,23 +301,6 @@ def _wrap_text(text: str, width: int) -> list[str]:
         else:
             result.extend(textwrap.wrap(paragraph, width=width) or [""])
     return result
-
-
-def _read_agents_file(path: str) -> list[tuple[str, str]]:
-    """Read label:path pairs from an agents file."""
-    agents = []
-    try:
-        with open(path) as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith("#"):
-                    continue
-                if ":" in line:
-                    label, fpath = line.split(":", 1)
-                    agents.append((label.strip(), fpath.strip()))
-    except FileNotFoundError:
-        pass
-    return agents
 
 
 def _format_age(seconds: float) -> str:
@@ -401,7 +350,7 @@ def _extract_label(filepath: str) -> str:
                             if isinstance(block, dict) and block.get("type") == "text":
                                 content += block.get("text", "") + " "
                 if content:
-                    # "Load skill '<name>'" — pentest skill agents
+                    # "Load skill '<name>'" — custom skill agents
                     m = re.search(r"Load skill ['\"]([^'\"]+)['\"]", content)
                     if m:
                         return m.group(1)
@@ -605,7 +554,6 @@ def _build_browser_list(
     tasks_dir: str,
     displayed_paths: set[str],
     panes: list["AgentPane"],
-    agents_file: str,
 ) -> list[tuple[str, str, float, bool]]:
     """Build the unified browser list: discovered agents + currently displayed panes.
 
@@ -625,19 +573,6 @@ def _build_browser_list(
                 continue
             seen.add(resolved)
             items.append((pane.label, pane.filepath, mtime, True))
-
-    # Add .dashboard entries that aren't displayed yet and weren't discovered
-    if agents_file:
-        for label, path in _read_agents_file(agents_file):
-            resolved = os.path.realpath(path)
-            if resolved not in seen and os.path.exists(path):
-                try:
-                    mtime = os.path.getmtime(path)
-                except OSError:
-                    continue
-                seen.add(resolved)
-                in_dash = path in displayed_paths or resolved in displayed_paths
-                items.append((label, path, mtime, in_dash))
 
     items.sort(key=lambda x: x[2], reverse=True)
     return items
@@ -680,15 +615,14 @@ def _find_subagent_dirs() -> list[str]:
 
 
 def dashboard(
-    agents: list[tuple[str, str]], agents_file: str = "", tasks_dir: str = ""
+    agents: list[tuple[str, str]], tasks_dir: str = ""
 ) -> None:
     """Curses main loop: layout panes, drain queues, redraw.
 
-    If agents_file is set, the file is re-read periodically and panes are
-    added/removed to match.  The dashboard stays open even when the file
-    is empty — it just shows "waiting for agents".
+    Starts with explicit agents (if any) and auto-discovers new agents
+    from the tasks directory.  The dashboard stays open even with no
+    agents — it shows "waiting for agents" until one spawns.
     """
-    # Load all agents from .dashboard on startup (active and completed)
     panes: list[AgentPane] = [
         AgentPane(label, path, i % len(PANE_COLORS))
         for i, (label, path) in enumerate(agents)
@@ -715,23 +649,8 @@ def dashboard(
         threads.append(t)
         pane_map[pane.filepath] = (pane, t)
 
-    # Start firewall probe (always-on — operator can enable/disable firewall anytime)
-    fw_thread = threading.Thread(
-        target=_firewall_probe_thread, args=(stop_event,), daemon=True
-    )
-    fw_thread.start()
-    threads.append(fw_thread)
-
-    # Track agents file mtime for hot-reload
-    last_mtime: float = 0.0
-    if agents_file:
-        try:
-            last_mtime = os.path.getmtime(agents_file)
-        except OSError:
-            pass
-
     def run_curses(stdscr: "curses.window") -> None:
-        nonlocal last_mtime, tasks_dir
+        nonlocal tasks_dir
         stdscr.nodelay(True)
         curses.curs_set(0)
         color_pairs = _init_colors()
@@ -756,29 +675,6 @@ def dashboard(
             if reload_counter >= 10:
                 reload_counter = 0
 
-                # Hot-reload agents file
-                if agents_file:
-                    try:
-                        mtime = os.path.getmtime(agents_file)
-                    except OSError:
-                        mtime = 0.0
-                    if mtime != last_mtime:
-                        last_mtime = mtime
-                        new_agents = _read_agents_file(agents_file)
-                        old_paths = set(pane_map.keys())
-
-                        # Add new panes from .dashboard (active or completed, not dismissed)
-                        for label, path in new_agents:
-                            if path not in old_paths and path not in dismissed_paths:
-                                p = AgentPane(
-                                    label, path, len(panes) % len(PANE_COLORS)
-                                )
-                                t = _start_pane(p)
-                                panes.append(p)
-                                threads.append(t)
-                                pane_map[path] = (p, t)
-                                completed_paths.discard(path)
-
                 # Auto-discover new agents from tasks directory and subagent dirs
                 if tasks_dir:
                     # Resolve symlinks so .output symlinks and direct JSONL paths dedup
@@ -793,18 +689,13 @@ def dashboard(
                             and path not in dismissed_paths
                             and path not in completed_paths
                         ):
-                            # Skip stale agents (>5 min old) unless in .dashboard file
-                            if time.time() - mtime > 300:
-                                completed_paths.add(path)
-                                continue
-                            if _is_agent_active(path):
-                                p = AgentPane(
-                                    label, path, len(panes) % len(PANE_COLORS)
-                                )
-                                t = _start_pane(p)
-                                panes.append(p)
-                                threads.append(t)
-                                pane_map[path] = (p, t)
+                            p = AgentPane(
+                                label, path, len(panes) % len(PANE_COLORS)
+                            )
+                            t = _start_pane(p)
+                            panes.append(p)
+                            threads.append(t)
+                            pane_map[path] = (p, t)
 
                 # Track completed agents (no longer auto-removed — they show *stopped* in header)
                 for path in list(pane_map.keys()):
@@ -953,7 +844,7 @@ def dashboard(
                                 tasks_dir = _infer_tasks_dir(panes)
                             displayed = set(p.filepath for p in panes)
                             browser_items = _build_browser_list(
-                                tasks_dir, displayed, panes, agents_file
+                                tasks_dir, displayed, panes
                             )
                             browser_cursor = 0
                             browser_scroll = 0
@@ -966,7 +857,7 @@ def dashboard(
                                 tasks_dir = _infer_tasks_dir(panes)
                             displayed = set(p.filepath for p in panes)
                             browser_items = _build_browser_list(
-                                tasks_dir, displayed, panes, agents_file
+                                tasks_dir, displayed, panes
                             )
                             browser_cursor = 0
                             browser_scroll = 0
@@ -1250,33 +1141,6 @@ def dashboard(
                             pass
 
             # --- Status bar ---
-            # Firewall indicator — drawn first, status text offset after it
-            fw_offset = 0
-            with _firewall_lock:
-                fw_state = _firewall_ok
-            if fw_state is None:
-                fw_text = " ?? FW "
-                fw_attr = curses.A_REVERSE | curses.A_DIM
-            elif fw_state:
-                fw_text = " \u25cf FW "
-                fw_attr = (
-                    curses.color_pair(color_pairs["result"])
-                    | curses.A_BOLD
-                    | curses.A_REVERSE
-                )
-            else:
-                fw_text = " \u25cf FW "
-                fw_attr = (
-                    curses.color_pair(color_pairs["stopped"])
-                    | curses.A_BOLD
-                    | curses.A_REVERSE
-                )
-            try:
-                stdscr.addnstr(max_y - 1, 0, fw_text, max_x - 1, fw_attr)
-                fw_offset = len(fw_text)
-            except curses.error:
-                pass
-
             if browser_open:
                 n = len(browser_items)
                 status = f" Agent Browser: {n} agent{'s' if n != 1 else ''}  |  ● = in dashboard  |  Space: toggle  j/k: navigate  b/Esc: close  q: quit "
@@ -1300,19 +1164,11 @@ def dashboard(
                 status = " No panes  |  b: browse agents  q: quit "
                 status_attr = curses.A_REVERSE
 
-            remaining = max_x - 1 - fw_offset - len(fw_text)
-            status = status[:remaining]
+            status = status[: max_x - 1]
             try:
                 stdscr.addnstr(
-                    max_y - 1,
-                    fw_offset,
-                    status.ljust(remaining),
-                    remaining,
-                    status_attr,
+                    max_y - 1, 0, status.ljust(max_x - 1), max_x - 1, status_attr
                 )
-                # Right-side firewall indicator (mirror)
-                right_x = fw_offset + remaining
-                stdscr.addnstr(max_y - 1, right_x, fw_text, len(fw_text), fw_attr)
             except curses.error:
                 pass
 
@@ -1345,17 +1201,6 @@ def main() -> None:
         args.remove("--dashboard")
         agents = []
 
-        # --from FILE: read label:path pairs from a file (hot-reloaded)
-        # File doesn't need to exist yet — dashboard starts empty and picks
-        # up agents as the file is created/updated.
-        agents_file = ""
-        if "--from" in args:
-            idx = args.index("--from")
-            args.pop(idx)
-            if idx < len(args):
-                agents_file = args.pop(idx)
-                agents = _read_agents_file(agents_file)
-
         # --tasks-dir DIR: directory to scan for agent output files
         tasks_dir = ""
         if "--tasks-dir" in args:
@@ -1372,14 +1217,8 @@ def main() -> None:
             else:
                 agents.append((os.path.basename(arg), arg))
 
-        # With --from, allow starting with no agents (file will be watched)
-        if not agents and not agents_file:
-            print(
-                "Usage: tail-agent.py --dashboard [--from agents_file] [--tasks-dir DIR] [label:path ...]",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-        dashboard(agents, agents_file=agents_file, tasks_dir=tasks_dir)
+        # Allow starting with no agents — auto-discovery will find them
+        dashboard(agents, tasks_dir=tasks_dir)
         return
 
     # Original modes
