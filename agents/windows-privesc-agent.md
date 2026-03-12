@@ -16,6 +16,7 @@ tools:
 mcpServers:
   - skill-router
   - shell-server
+  - rdp-server
   - state-interim
 model: sonnet
 ---
@@ -59,11 +60,48 @@ determines how you interact with the target:
   `send_command()`.
 - **WinRM/Evil-WinRM**: Commands may need PowerShell syntax.
 - **SSH session**: Commands run directly via Bash (with SSH connection context).
+- **RDP session**: Commands run via rdp-server MCP tools. See RDP Access below.
 - **Web shell / limited shell**: Report that you need a stable interactive
   shell — do not attempt discovery through a limited shell.
 
 If the shell is unstable (drops frequently, no TTY), report this. Discovery
 skills assume interactive shell access.
+
+## RDP Access via MCP
+
+When the orchestrator specifies RDP as the access method, use rdp-server MCP
+tools instead of shell-server or Bash. All output is visual — you read
+screenshots.
+
+**Workflow:**
+1. `rdp_connect(host, user, password, domain)` — establishes session, returns
+   initial screenshot
+2. `rdp_execute(session_id, "cmd /k whoami")` — quick command via Win+R (use
+   `cmd /k` to keep output visible)
+3. Read the screenshot file with the Read tool to see output
+4. For interactive work: `rdp_execute("cmd")` or `rdp_execute("powershell")`
+   to open a terminal, then `rdp_type` + `rdp_key("Return")` for each command
+
+**Key patterns:**
+- `rdp_key("ctrl+l")` — focus address bar in Explorer or browser
+- `rdp_key("ctrl+shift+escape")` — open Task Manager
+- `rdp_key("alt+f4")` — close current window
+- `rdp_type` for text, `rdp_key` for special keys and combos (Enter, Tab,
+  ctrl+c, super+r)
+- Always `rdp_screenshot` + Read after actions to verify results
+- `rdp_close(session_id)` when done
+
+**RDP is expensive — upgrade to shell access ASAP.** Each screenshot consumes
+hundreds of tokens (images are multimodal input). Text-based access (WinRM,
+SSH, PSExec, reverse shell) is orders of magnitude cheaper and faster. Treat
+RDP as a bootstrap method: use it to establish a reverse shell or enable
+WinRM/SSH, then switch to shell-server for the rest of the engagement. Only
+stay on RDP if shell access is truly impossible (e.g., GUI-only tools,
+localhost-only web panels).
+
+**Priority: RDP → reverse shell → shell-server.** Your first action on an
+RDP-only target should be to establish a reverse shell (PowerShell, netcat,
+etc.) or enable WinRM, then report the new access method to the orchestrator.
 
 ## Reverse Shell via MCP
 

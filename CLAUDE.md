@@ -41,7 +41,7 @@ The orchestrator spawns domain-specific subagents for each skill invocation:
 | `ad-exploit-agent` | AD exploitation | skill-router, shell-server, state-interim | All AD technique skills |
 | `password-spray-agent` | Credential spraying | skill-router, shell-server, state-interim | password-spraying (haiku) |
 | `linux-privesc-agent` | Linux privesc | skill-router, shell-server, state-interim | Linux discovery + privesc + container escapes |
-| `windows-privesc-agent` | Windows privesc | skill-router, shell-server, state-interim | Windows discovery + privesc |
+| `windows-privesc-agent` | Windows privesc | skill-router, shell-server, rdp-server, state-interim | Windows discovery + privesc |
 | `evasion-agent` | AV/EDR evasion | skill-router, shell-server, state-interim | av-edr-evasion |
 | `credential-cracking-agent` | Credential cracking | skill-router, state-interim | credential-cracking (haiku, local-only) |
 
@@ -62,6 +62,7 @@ Agent source files live in `agents/` (version controlled), installed to `~/.clau
 | state-interim | `tools/state-server/` | Read + 5 add-only writes (all agents) |
 | state-writer | `tools/state-server/` | Full engagement state management (orchestrator only) |
 | browser-server | `tools/browser-server/` | Headless browser automation (web agents) |
+| rdp-server | `tools/rdp-server/` | Headless RDP automation via aardwolf (windows-privesc-agent) |
 | state-dashboard | `operator/state-dashboard/` | Read-only web dashboard for state.db (operator use, not MCP) |
 
 The state-reader, state-interim, and state-writer are three instances of the same server running in different modes. All agents use state-interim to write critical discoveries (credentials, vulns, pivots, blocked) mid-run. The orchestrator uses state-writer for full read/write access. See each server's `README.md` for tool details.
