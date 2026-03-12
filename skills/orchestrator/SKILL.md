@@ -576,42 +576,33 @@ or anything that doesn't match a profile name), use the **full-pentest** profile
 
 **Only runs when the active profile has `assumed_breach: true`.**
 
-After the profile is recorded in scope.md, collect starting access from the
-operator instead of routing to network-recon:
+The assumed breach profile expects the operator to have pre-populated
+`engagement/state.db` with starting state (targets, ports, credentials,
+access) using the seed tool:
 
-1. Use `AskUserQuestion`:
+```bash
+python3 operator/seed-state/seed.py
+# or: python3 operator/seed-state/seed.py --from seed.yaml
+```
 
-   **Question — Starting access type** (single-select):
-   - Header: "Starting access"
-   - Question: "What access do you have?"
-   - Options:
-     1. Credentials (username + password/hash) — I have creds but no shell
-     2. Shell access — I have an active shell or can establish one
-     3. Both — I have credentials and an active shell
+If `engagement/state.db` already exists and has targets/credentials, the
+orchestrator skips Step 2 (Reconnaissance) entirely and jumps to the
+decision logic, which routes based on whatever is in state:
+- Shell access recorded → route to host discovery (linux/windows)
+- Untested credentials → route to credential testing or discovery
+- AD ports (88, 389, 445) on a target → queue ad-discovery
 
-2. Based on the answer, collect details:
+If the operator selects Assumed Breach but `engagement/state.db` does not
+exist or is empty, print:
 
-   **For credentials**: Ask for username, secret (password or hash),
-   secret_type (password/ntlm_hash/ssh_key/etc.), domain (if AD), and the
-   target host(s) to test against.
+```
+[orchestrator] Assumed Breach selected but no state.db found.
+Pre-populate state with the seed tool before starting:
+  python3 operator/seed-state/seed.py
+Then say 'resume engagement'.
+```
 
-   **For shell access**: Ask for the target host, current user, privilege level
-   (user/admin/root/system), access method (SSH/WinRM/RDP/web_shell/reverse_shell),
-   and the OS (Linux/Windows).
-
-3. Record in state:
-   - `add_target(host=<target>, os=<os>)` for each target
-   - `add_credential(...)` for provided credentials
-   - `add_access(...)` for existing shell access
-   - `test_credential(...)` to mark credentials as validated on the target
-
-4. Skip Step 2 (Reconnaissance) entirely. Jump to the decision logic:
-   - If shell access is provided → route to host discovery
-     (linux-discovery or windows-discovery based on OS)
-   - If only credentials → route to password-spray-agent to test creds
-     against discovered services, or if the target ports are known, route
-     directly to the appropriate discovery agent with the credentials
-   - If the target has AD ports (88, 389, 445) → also queue ad-discovery
+And stop. Do not proceed without seeded state.
 
 ### CTF Acknowledgement
 

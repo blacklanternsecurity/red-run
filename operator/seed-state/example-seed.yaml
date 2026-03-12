@@ -1,0 +1,39 @@
+# Example seed file for assumed breach scenario.
+# Copy and edit, then run:
+#   python3 operator/seed-state/seed.py --from operator/seed-state/example-seed.yaml
+
+targets:
+  - host: 10.10.10.5
+    os: windows
+    role: dc
+    ports:
+      - port: 88
+        service: kerberos
+      - port: 389
+        service: ldap
+      - port: 445
+        service: smb
+      - port: 5985
+        service: winrm
+      - port: 3268
+        service: global-catalog
+
+credentials:
+  - username: svc_backup
+    secret: Winter2024!
+    secret_type: password
+    domain: MEGACORP
+    source: client-provided
+
+# access:
+#   - host: 10.10.10.5
+#     type: winrm
+#     username: svc_backup
+#     privilege: user
+#     method: client-provided
+
+# vulns:
+#   - host: 10.10.10.5
+#     title: Weak service account password
+#     vuln_type: credential
+#     severity: high

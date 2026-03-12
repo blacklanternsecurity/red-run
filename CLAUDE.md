@@ -196,6 +196,10 @@ red-run/
       save-agent-log.sh   # SubagentStop hook — copies JSONL transcripts to engagement/evidence/logs/
       event-watcher.sh    # Background event poller — spawned by orchestrator to watch state_events
   operator/               # Operator-facing tools (run manually, not MCP)
+    seed-state/           # Pre-populate state.db with operator knowledge
+      README.md            # Tool documentation
+      seed.py             # Interactive + YAML seed tool
+      example-seed.yaml   # Example seed file
     agent-dashboard/      # Live multi-pane agent monitoring
       README.md            # Tool documentation
       tail-agent.py       # JSONL transcript parser + curses dashboard
