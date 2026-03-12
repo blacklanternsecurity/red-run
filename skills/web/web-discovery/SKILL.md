@@ -43,10 +43,6 @@ When an engagement directory exists:
 - **Evidence** → save significant output to `engagement/evidence/` with
   descriptive filenames (e.g., `sqli-users-dump.txt`, `ssrf-aws-creds.json`).
 
-Do NOT write to `engagement/activity.md`, `engagement/findings.md`, or
-engagement state. The orchestrator maintains these files. Report all findings
-in your return summary.
-
 ## Scope Boundary
 
 This skill covers web application vulnerability discovery — identifying attack
@@ -84,8 +80,8 @@ You MUST NOT:
   to **deserialization-java**, **deserialization-php**, or **deserialization-dotnet**
 - Perform any other technique-specific exploitation — route to the named skill
 
-When you identify an injection point: update state.md, log to activity.md,
-and return to the orchestrator. Do not continue past discovery.
+When you identify an injection point, return to the orchestrator with your
+findings. Do not continue past discovery.
 
 ## State Management
 
@@ -108,11 +104,6 @@ return summary. Use these tools as you discover findings:
 
 Write vhost discoveries as `add_vuln(vuln_type="info")` so the orchestrator
 triggers a hosts-file update check.
-
-**Do NOT write to `activity.md`, `findings.md`, or modify targets/ports/access.**
-The orchestrator manages those. Still report all findings in your return summary —
-interim writes supplement it, they don't replace it.
-
 **Do NOT send interim writes if you are near your scope boundary and will be returning to the orchestrator imminently.** 
 
 Your return summary must include:
@@ -825,7 +816,15 @@ execute exploitation commands inline — even if the technique seems simple.
 | Tomcat < 9.0.31 / 8.5.51 / 7.0.100 with AJP port open | **ajp-ghostcat** (Ghostcat file read) |
 | Tomcat Manager 403/401 + AJP port open | **ajp-ghostcat** (AJP proxy bypass) |
 
-Update `engagement/state.md` with any new targets, confirmed vulns, or blocked
+### Browser Exploitation
+
+| Response Pattern | Route To |
+|---|---|
+| Extension/add-on/plugin upload endpoint found | **browser-exploitation** (extension crafting) |
+| Exposed Chrome DevTools / remote debugging port (9222, 9229) | **browser-exploitation** (CDP abuse) |
+| Browser installed on compromised host with saved profiles | **browser-exploitation** (profile extraction) |
+
+Report in your return summary: any new targets, confirmed vulns, or blocked
 techniques before routing.
 
 When returning to the orchestrator, pass along: the confirmed injection point

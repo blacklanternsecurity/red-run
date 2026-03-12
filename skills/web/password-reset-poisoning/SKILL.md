@@ -40,10 +40,6 @@ When an engagement directory exists:
 - **Evidence** → save significant output to `engagement/evidence/` with
   descriptive filenames (e.g., `sqli-users-dump.txt`, `ssrf-aws-creds.json`).
 
-Do NOT write to `engagement/activity.md`, `engagement/findings.md`, or
-engagement state. The orchestrator maintains these files. Report all findings
-in your return summary.
-
 ## State Management
 
 Call `get_state_summary()` from the state-reader MCP server to read current
@@ -52,9 +48,7 @@ engagement state. Use it to:
 - Leverage existing credentials or access for this technique
 - Understand what's been tried and failed (check Blocked section)
 
-**Do NOT write engagement state.** When your work is complete, report all
-findings clearly in your return summary. The orchestrator parses your summary
-and records state changes. Your return summary must include:
+Your return summary must include:
 - New targets/hosts discovered (with ports and services)
 - New credentials or tokens found
 - Access gained or changed (user, privilege level, method)
@@ -460,7 +454,7 @@ After confirming password reset vulnerabilities:
 - **XSS on reset page**: Route to **xss-reflected** or **xss-dom** to
   steal tokens from the reset page.
 
-Update `engagement/state.md` with any new credentials, access, vulns, or pivot
+Report in your return summary: any new credentials, access, vulns, or pivot
 paths discovered.
 
 When routing, pass along: confirmed technique, token format, affected endpoint,

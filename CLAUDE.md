@@ -93,13 +93,12 @@ Skills support optional engagement logging. No engagement directory = no logging
 engagement/
 ├── scope.md          # Target scope, credentials, rules of engagement
 ├── state.db          # SQLite engagement state (managed via MCP state-server)
-├── activity.md       # Chronological action log (append-only, orchestrator writes)
-├── findings.md       # Confirmed vulnerabilities (orchestrator writes)
+├── dump-state.sh     # Export state.db as markdown (from operator/templates/)
 └── evidence/         # Saved output, responses, dumps (subagents write)
     └── logs/         # Subagent JSONL transcripts (captured by SubagentStop hook)
 ```
 
-**Orchestrator responsibility:** Creates engagement directory, initializes state.db, is the **sole writer** of state/activity.md/findings.md, parses subagent returns, chains vulns toward impact.
+**Orchestrator responsibility:** Creates engagement directory, initializes state.db, manages state via state-writer MCP, parses subagent returns, chains vulns toward impact.
 
 **Subagent responsibility:** Read state via `get_state_summary()`, save evidence to `engagement/evidence/`, report all findings in return summary. All agents write critical discoveries mid-run via state-interim (credentials, vulns, pivots, blocked). The orchestrator deduplicates interim writes against return summaries.
 

@@ -38,10 +38,6 @@ When an engagement directory exists:
 - **Evidence** → save significant output to `engagement/evidence/` with
   descriptive filenames (e.g., `sqli-users-dump.txt`, `ssrf-aws-creds.json`).
 
-Do NOT write to `engagement/activity.md`, `engagement/findings.md`, or
-engagement state. The orchestrator maintains these files. Report all findings
-in your return summary.
-
 ## Scope Boundary
 
 This skill covers network reconnaissance — host discovery, port scanning, OS
@@ -88,11 +84,6 @@ return summary. Use these tools as you discover findings:
 
 - `add_pivot()` — new subnets discovered from routing info or nmap traceroute
 - `add_blocked()` — scan failures (host unreachable, firewall blocking)
-
-**Do NOT write to `activity.md`, `findings.md`, or modify targets/ports/access.**
-The orchestrator manages those. Still report all findings in your return summary —
-interim writes supplement it, they don't replace it.
-
 Your return summary must include:
 - All discovered hosts (with IP, OS, role)
 - Open ports and services per host (formatted as per-host one-liner)
@@ -460,6 +451,7 @@ grep "Ports:" scan_HOSTNAME.gnmap | sed 's/Ports: //' | tr ',' '\n'
 **Report scan results in return summary (format per-host one-liner):**
 
 ```
+
 ## Targets
 - 10.10.10.1 | Windows Server 2019 | DC | 53,88,135,139,389,445,636,3268,3389,5985
 - 10.10.10.5 | Ubuntu 22.04 | Web | 22,80,443

@@ -159,7 +159,15 @@ check_network_scanning() {
     if p=$(find_cmd nmap); then pass "nmap" "$p"
     else fail "nmap" "sudo apt install nmap"; fi
 
-    if p=$(find_go nuclei); then pass "nuclei" "$p"
+    if p=$(find_go nuclei); then
+        pass "nuclei" "$p"
+        # Check that nuclei-templates are installed
+        local tpl_dir="${HOME}/nuclei-templates"
+        if [[ -d "$tpl_dir" ]] && [[ -n "$(ls -A "$tpl_dir" 2>/dev/null)" ]]; then
+            pass "nuclei-templates" "$tpl_dir"
+        else
+            fail "nuclei-templates" "nuclei -update-templates"
+        fi
     else fail "nuclei" "go install github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest"; fi
 
     if p=$(find_go httpx); then pass "httpx" "$p"
@@ -498,7 +506,7 @@ check_target_tools() {
         fi
     done
     if [[ $potato_missing -gt 0 ]]; then
-        $JSON_MODE || printf "  ${DIM}   hint: see docs/dependencies.md for download URLs${RESET}\n"
+        $JSON_MODE || printf "  %s   hint: see docs/dependencies.md for download URLs%s\n" "${DIM}" "${RESET}"
     fi
 }
 
@@ -562,7 +570,7 @@ fi
 
 if ! $JSON_MODE; then
     echo "${BOLD}red-run preflight check${RESET}"
-    echo "${DIM}$(uname -srm) — $(cat /etc/os-release 2>/dev/null | grep '^PRETTY_NAME=' | cut -d= -f2 | tr -d '"' || echo 'unknown distro')${RESET}"
+    echo "${DIM}$(uname -srm) — $(grep '^PRETTY_NAME=' /etc/os-release 2>/dev/null | cut -d= -f2 | tr -d '"' || echo 'unknown distro')${RESET}"
 fi
 
 if [[ -n "$run_category" ]]; then

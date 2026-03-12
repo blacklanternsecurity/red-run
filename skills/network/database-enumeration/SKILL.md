@@ -37,8 +37,7 @@ quick-win access. All testing is under explicit written authorization.
 
 Check for `./engagement/` directory. If present, print
 `[database-enumeration] Activated → <target>` on activation and save significant
-output to `engagement/evidence/` (e.g., `mssql-ntlm-info.txt`). Do NOT write to
-activity.md, findings.md, or engagement state — the orchestrator handles those.
+output to `engagement/evidence/` (e.g., `mssql-ntlm-info.txt`).
 
 ## Scope Boundary
 

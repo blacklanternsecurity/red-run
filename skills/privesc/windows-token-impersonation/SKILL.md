@@ -39,10 +39,6 @@ When an engagement directory exists:
 - **Evidence** → save significant output to `engagement/evidence/` with
   descriptive filenames (e.g., `sqli-users-dump.txt`, `ssrf-aws-creds.json`).
 
-Do NOT write to `engagement/activity.md`, `engagement/findings.md`, or
-engagement state. The orchestrator maintains these files. Report all findings
-in your return summary.
-
 ## State Management
 
 Call `get_state_summary()` from the state-reader MCP server to read current
@@ -51,9 +47,7 @@ engagement state. Use it to:
 - Leverage existing credentials or access for this technique
 - Understand what's been tried and failed (check Blocked section)
 
-**Do NOT write engagement state.** When your work is complete, report all
-findings clearly in your return summary. The orchestrator parses your summary
-and records state changes. Your return summary must include:
+Your return summary must include:
 - New targets/hosts discovered (with ports and services)
 - New credentials or tokens found
 - Access gained or changed (user, privilege level, method)
@@ -457,7 +451,7 @@ whoami /priv → SeImpersonate or SeAssignPrimaryToken?
 │
 └─ ALL METHODS FAILED? (wrong arch, no binary, service disabled, blocked)
    └─ STOP. Do NOT attempt kernel exploits inline.
-     Update state.md with: what was tried, why it failed, OS version, arch.
+     Report in your return summary: what was tried, why it failed, OS version, arch.
      Return to orchestrator for re-routing to **windows-kernel-exploits**.
 ```
 
@@ -643,7 +637,7 @@ After achieving SYSTEM:
 When routing, pass along: hostname, SYSTEM access confirmed, OS version, domain
 membership.
 
-Update `engagement/state.md` with SYSTEM access achieved.
+Report in your return summary: SYSTEM access achieved.
 
 ## Stall Detection
 
@@ -706,6 +700,7 @@ with a different binary name or trivial modification. That is not progress.**
 3. **Return to orchestrator** with structured AV-blocked context:
 
 ```
+
 ### AV/EDR Blocked
 - Payload: <what was attempted> (e.g., "GodPotato.exe for SeImpersonate abuse")
 - Detection: <what happened> (e.g., "binary deleted on transfer")
@@ -755,7 +750,7 @@ accounts, the privileges shown by `whoami /priv` are the actual privileges avail
 
 ### All Potato variants failed — no working binary for this OS/arch
 Do NOT fall back to kernel exploits inline. This skill's scope is token
-privilege abuse, not kernel exploitation. Update `engagement/state.md` with
+privilege abuse, not kernel exploitation. Report in your return summary:
 what was tried and why it failed, then return to the orchestrator. The
 orchestrator will re-route to **windows-kernel-exploits** which has systematic
 exploit suggestion (WES-NG/Watson), architecture-aware binary sourcing, and

@@ -36,9 +36,6 @@ When an engagement directory exists:
 - Print `[remote-access-enumeration] Activated → <target>` on activation.
 - **Evidence** → save output to `engagement/evidence/` (e.g., `ftp-anon-listing.txt`).
 
-Do NOT write to `engagement/activity.md`, `engagement/findings.md`, or state.
-Report all findings in your return summary.
-
 ## Scope Boundary
 
 This skill covers **enumeration only** — version detection, auth method checks,

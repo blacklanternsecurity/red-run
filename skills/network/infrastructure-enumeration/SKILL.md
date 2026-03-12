@@ -40,8 +40,6 @@ When present:
 - Print `[infrastructure-enumeration] Activated → <target>` on activation.
 - Save significant output to `engagement/evidence/` with descriptive filenames
   (e.g., `dns-zone-transfer-10.10.10.5.txt`, `snmp-walk-10.10.10.20.txt`).
-- Do NOT write to activity.md, findings.md, or state. Report all findings in
-  your return summary.
 
 ## Scope Boundary
 

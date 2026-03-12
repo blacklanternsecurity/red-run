@@ -38,10 +38,6 @@ When an engagement directory exists:
 - **Evidence** → save significant output to `engagement/evidence/` with
   descriptive filenames (e.g., `sqli-users-dump.txt`, `ssrf-aws-creds.json`).
 
-Do NOT write to `engagement/activity.md`, `engagement/findings.md`, or
-engagement state. The orchestrator maintains these files. Report all findings
-in your return summary.
-
 ## Scope Boundary
 
 This skill covers Linux host discovery — enumerating system configuration,
@@ -82,11 +78,6 @@ return summary. Use these tools as you discover findings:
 - `add_vuln()` — confirmed vulnerabilities a technique agent should exploit (SUID binaries, sudo misconfigs, kernel CVEs)
 - `add_pivot()` — additional NICs/subnets discovered via `ip addr`/`ip route`, new hosts from ARP table
 - `add_blocked()` — techniques attempted and failed (so orchestrator doesn't re-route)
-
-**Do NOT write to `activity.md`, `findings.md`, or modify targets/ports/access.**
-The orchestrator manages those. Still report all findings in your return summary —
-interim writes supplement it, they don't replace it.
-
 Your return summary must include:
 - New targets/hosts discovered (with ports and services)
 - New credentials or tokens found

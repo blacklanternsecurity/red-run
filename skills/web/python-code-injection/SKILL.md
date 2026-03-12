@@ -50,10 +50,6 @@ When an engagement directory exists:
 - **Evidence** → save significant output to `engagement/evidence/` with
   descriptive filenames (e.g., `sqli-users-dump.txt`, `ssrf-aws-creds.json`).
 
-Do NOT write to `engagement/activity.md`, `engagement/findings.md`, or
-engagement state. The orchestrator maintains these files. Report all findings
-in your return summary.
-
 ## Scope Boundary
 
 This skill covers Python code injection through eval(), exec(), and compile()
@@ -84,9 +80,7 @@ engagement state. Use it to:
 - Leverage existing credentials or access for this technique
 - Understand what's been tried and failed (check Blocked section)
 
-**Do NOT write engagement state.** When your work is complete, report all
-findings clearly in your return summary. The orchestrator parses your summary
-and records state changes. Your return summary must include:
+Your return summary must include:
 - New targets/hosts discovered (with ports and services)
 - New credentials or tokens found
 - Access gained or changed (user, privilege level, method)
@@ -560,7 +554,7 @@ variables, database connection strings), write a handoff for the operator:
 
 1. Save discovered credentials to `engagement/evidence/`
 2. Write connection commands the operator can run
-3. Update `engagement/state.md` with credentials and Pivot Map entry
+3. Report in your return summary: credentials and Pivot Map entry
 4. Tell the operator: "Credentials found. SSH handoff ready — connect from
    your terminal."
 
@@ -583,7 +577,7 @@ If credentials aren't found but command execution is confirmed:
   (injection-based RCE or reverse shell).
 - **Shell as non-admin on Windows** → STOP. Return to orchestrator recommending
   **windows-discovery**. Pass: hostname, current user, access method.
-- **Found credentials** → update state.md, test against SSH/RDP/WinRM/other
+- **Found credentials** → report credentials, test against SSH/RDP/WinRM/other
   services. Return to orchestrator recommending the appropriate discovery skill.
 - **Blind injection only, no shell** → extract credentials via DNS/HTTP
   exfiltration (file reads: config files, .env, .git/config, SSH keys), then

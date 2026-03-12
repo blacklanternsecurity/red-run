@@ -91,13 +91,12 @@ What happens inside a single agent invocation:
 engagement/
 ├── scope.md          # Target scope, credentials, rules of engagement
 ├── state.db          # SQLite engagement state (managed via state-server MCP)
-├── activity.md       # Chronological action log (append-only)
-├── findings.md       # Confirmed vulnerabilities
+├── dump-state.sh     # Export state.db as markdown (from operator/templates/)
 └── evidence/         # Saved output, responses, dumps
     └── logs/         # Subagent JSONL transcripts
 ```
 
-The orchestrator creates this directory and maintains `scope.md`, `activity.md`, `findings.md`, and all state writes. Agents only write to `evidence/` — raw tool output, screenshots, dumps. The `SubagentStop` hook automatically copies agent transcripts to `evidence/logs/`.
+The orchestrator creates this directory and maintains `scope.md` and all state writes. Agents only write to `evidence/` — raw tool output, screenshots, dumps. The `SubagentStop` hook automatically copies agent transcripts to `evidence/logs/`.
 
 See [Engagement State](engagement-state.md) for the database schema and [Running an Engagement](running-an-engagement.md) for the full workflow.
 

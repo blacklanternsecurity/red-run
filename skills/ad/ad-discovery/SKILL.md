@@ -47,10 +47,6 @@ When an engagement directory exists:
 - **Evidence** → save significant output to `engagement/evidence/` with
   descriptive filenames (e.g., `sqli-users-dump.txt`, `ssrf-aws-creds.json`).
 
-Do NOT write to `engagement/activity.md`, `engagement/findings.md`, or
-engagement state. The orchestrator maintains these files. Report all findings
-in your return summary.
-
 ## Scope Boundary
 
 This skill covers Active Directory discovery — enumerating domain objects,
@@ -83,8 +79,8 @@ You MUST NOT:
 - Exploit ADCS beyond enumeration — route to **adcs-template-abuse** or
   **adcs-access-and-relay**
 
-When you find exploitable attack paths: update state.md, log to activity.md,
-and present routing recommendations. Do not continue past enumeration.
+When you find exploitable attack paths, present routing recommendations in
+your return summary. Do not continue past enumeration.
 
 ## State Management
 
@@ -104,11 +100,6 @@ return summary. Use these tools as you discover findings:
 - `add_vuln()` — ADCS misconfigs (ESC1-ESC8), Kerberoastable accounts, coercion vectors, SMB signing disabled, LDAP signing not required
 - `add_pivot()` — delegation paths, ACL abuse chains, trust relationships, new subnets from AD Sites
 - `add_blocked()` — techniques attempted and failed (so orchestrator doesn't re-route)
-
-**Do NOT write to `activity.md`, `findings.md`, or modify targets/ports/access.**
-The orchestrator manages those. Still report all findings in your return summary —
-interim writes supplement it, they don't replace it.
-
 Your return summary must include:
 - New targets/hosts discovered (with ports and services)
 - New credentials or tokens found

@@ -102,8 +102,6 @@ Check these in order:
   `add_credential()` for each cracked hash. This lets the orchestrator route
   credential testing while you continue cracking remaining hashes. Still
   report ALL findings in your return summary.
-- **Activity and Findings**: Do NOT write to activity.md or findings.md.
-  The orchestrator maintains these files based on your return summary.
 - **Evidence**: Save cracked results to `engagement/evidence/` with descriptive
   filenames (e.g., `cracked-kerberoast.txt`, `cracked-ntlm.txt`). This is the
   only engagement directory you write to.

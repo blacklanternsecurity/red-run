@@ -131,8 +131,6 @@ exits, it goes through Bash — even if it runs for minutes.
   pivot paths → `add_pivot()`, blocked techniques → `add_blocked()`.
   Do NOT write internal analysis context. Still report ALL findings in
   your return summary.
-- **Activity and Findings**: Do NOT write to activity.md or findings.md.
-  The orchestrator maintains these files based on your return summary.
 - **Evidence**: Save raw output to `engagement/evidence/` with descriptive
   filenames. This is the only engagement directory you write to.
 

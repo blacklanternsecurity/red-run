@@ -124,8 +124,6 @@ objdump, and all other build tools. If it runs and exits, use Bash.
   → `add_vuln()`, failed techniques → `add_blocked()`.
   Do NOT write routine progress — only findings that the orchestrator could
   act on in parallel. Still report ALL findings in your return summary.
-- **Activity and Findings**: Do NOT write to activity.md or findings.md.
-  The orchestrator maintains these files based on your return summary.
 - **Evidence**: Save compiled payloads and artifacts to
   `engagement/evidence/evasion/` with descriptive filenames. This is the only
   engagement directory you write to.

