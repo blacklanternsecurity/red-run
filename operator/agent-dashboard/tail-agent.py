@@ -1221,8 +1221,44 @@ def dashboard(
             print(f"  {pane.label}: {len(pane.lines)} events from {pane.filepath}")
 
 
+def _purge_agents(project_dir: str = "") -> None:
+    """Delete all subagent JSONL transcripts for the current project."""
+    import shutil
+
+    dirs = _find_subagent_dirs(project_dir)
+    if not dirs:
+        print("No subagent directories found.")
+        return
+    # All subagent dirs share a common project base
+    project_base = os.path.dirname(os.path.dirname(dirs[0]))
+    total = sum(
+        len(_glob.glob(os.path.join(d, "agent-*.jsonl"))) for d in dirs
+    )
+    print(f"Found {total} agent transcript(s) across {len(dirs)} session(s)")
+    print(f"  in {project_base}/*/subagents/")
+    confirm = input("Delete all? [y/N] ").strip().lower()
+    if confirm != "y":
+        print("Aborted.")
+        return
+    for d in dirs:
+        shutil.rmtree(d, ignore_errors=True)
+    print(f"Purged {len(dirs)} subagent director{'y' if len(dirs) == 1 else 'ies'}.")
+
+
 def main() -> None:
     args = sys.argv[1:]
+
+    # Purge mode — delete all agent transcripts
+    if "--purge" in args:
+        args.remove("--purge")
+        project_dir = ""
+        if "--project-dir" in args:
+            idx = args.index("--project-dir")
+            args.pop(idx)
+            if idx < len(args):
+                project_dir = args.pop(idx)
+        _purge_agents(project_dir)
+        return
 
     # Dashboard mode
     if "--dashboard" in args:

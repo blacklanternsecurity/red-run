@@ -91,14 +91,17 @@ This lets you review completed agents that have already left the dashboard,
 or re-add dismissed panes. The `--tasks-dir` flag (auto-set by `dashboard.sh`)
 controls where the browser looks for output files.
 
-To clear the agent browser list, remove the subagent JSONL transcripts that
-the browser discovers. These live under `~/.claude/projects/` in per-session
-`subagents/` directories (the primary source), plus symlinks in the tasks
-directory. Stop the dashboard and run from the project root:
+### Purging agent history
+
+To wipe all agent transcripts for the current project so they no longer
+appear in the dashboard or browser:
 
 ```bash
-rm -rf ~/.claude/projects/-"$(pwd | tr / - | sed 's/^-//')/*/subagents
+bash dashboard.sh --purge
 ```
+
+This deletes all `subagents/` directories under `~/.claude/projects/` for
+the current project. Prompts for confirmation before deleting.
 
 ## Color coding
 
