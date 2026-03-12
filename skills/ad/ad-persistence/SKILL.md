@@ -506,7 +506,7 @@ access as the impersonated user.
 
 After establishing persistence:
 - **Multiple DCs**: Deploy persistence on at least 2 DCs for redundancy
-- **Cross-forest persistence**: Route to **trust-attacks** to persist
+- **Cross-forest persistence**: Escalate to persist
   across trust boundaries
 - **Credential harvesting active**: Check custom SSP logs periodically
   for new credentials -> route to **pass-the-hash**
@@ -518,41 +518,6 @@ Report in your return summary::
 - Persistence mechanisms deployed (type, target, cleanup steps)
 - Persistence credentials (cert PFX, SAML key, skeleton password)
 - Cleanup requirements for report
-
-## Stall Detection
-
-If you have spent **5 or more tool-calling rounds** on the same failure with
-no meaningful progress — same error, no new information, no change in output
-— **stop**.
-
-**What counts as progress:**
-- Trying a variant or alternative **documented in this skill**
-- Adjusting syntax, flags, or parameters per the Troubleshooting section
-- Gaining new diagnostic information (different error, partial success)
-
-**What does NOT count as progress:**
-- Writing custom exploit code not provided in this skill
-- Inventing workarounds using techniques from other domains
-- Retrying the same command with trivially different input
-- Compiling or transferring tools not mentioned in this skill
-
-If you find yourself writing code that isn't in this skill, you have left
-methodology. That is a stall.
-
-Do not loop. Work through failures systematically:
-1. Try each variant or alternative **once**
-2. Check the Troubleshooting section for known fixes
-3. If nothing works after 5 rounds, you are stalled
-
-**When stalled, return to the orchestrator immediately with:**
-- What was attempted (commands, variants, alternatives tried)
-- What failed and why (error messages, empty responses, timeouts)
-- Assessment: **blocked** (permanent — config, patched, missing prereq) or
-  **retry-later** (may work with different context, creds, or access)
-
-**When stalled:** Tell the user you're stalled, present what was tried, and
-recommend the next best path. Return findings to the orchestrator — it will
-decide whether to revisit with new context or route elsewhere.
 
 ## Troubleshooting
 

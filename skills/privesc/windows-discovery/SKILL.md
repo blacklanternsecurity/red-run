@@ -40,16 +40,14 @@ When an engagement directory exists:
 ## Scope Boundary
 
 This skill covers Windows host discovery — enumerating system configuration,
-identifying privilege escalation vectors, and routing to technique skills. When
-you reach the boundary of this scope — whether through a routing instruction
-("Route to **skill-name**") or by discovering findings outside your domain —
-**STOP**.
+identifying privilege escalation vectors, and reporting findings to the
+orchestrator. When you confirm an exploitable vector — **STOP**.
 
 Do not load or execute another skill. Do not continue past your scope boundary.
 Instead, return to the orchestrator with:
   - What was found (vulns, credentials, access gained)
-  - Recommended next skill (the bold **skill-name** from routing instructions)
-  - Context to pass (injection point, target, working payloads, etc.)
+  - Detection details (finding type, affected service/binary, evidence)
+  - Context for technique execution (hostname, OS version, current user, etc.)
 
 The orchestrator decides what runs next. Your job is to execute this skill
 thoroughly and return clean findings.
@@ -178,16 +176,16 @@ whoami /groups
 
 **Critical privileges to check:**
 
-| Privilege | Escalation Path | Route To |
-|-----------|----------------|----------|
-| SeImpersonatePrivilege | Potato family → SYSTEM | **windows-token-impersonation** |
-| SeAssignPrimaryTokenPrivilege | Potato family → SYSTEM | **windows-token-impersonation** |
-| SeDebugPrivilege | Token duplication from SYSTEM process | **windows-token-impersonation** |
-| SeBackupPrivilege | Read SAM/SYSTEM hives → hash extraction | **windows-token-impersonation** |
-| SeTakeOwnershipPrivilege | Take ownership of any object → modify DACL | **windows-token-impersonation** |
-| SeRestorePrivilege | Write any file → DLL hijack / binary replace | **windows-token-impersonation** |
-| SeLoadDriverPrivilege | Load vulnerable kernel driver → SYSTEM | **windows-token-impersonation** |
-| SeManageVolumePrivilege | Raw volume read → SAM/secrets extraction | **windows-token-impersonation** |
+| Privilege | Escalation Path |
+|-----------|----------------|
+| SeImpersonatePrivilege | Potato family → SYSTEM |
+| SeAssignPrimaryTokenPrivilege | Potato family → SYSTEM |
+| SeDebugPrivilege | Token duplication from SYSTEM process |
+| SeBackupPrivilege | Read SAM/SYSTEM hives → hash extraction |
+| SeTakeOwnershipPrivilege | Take ownership of any object → modify DACL |
+| SeRestorePrivilege | Write any file → DLL hijack / binary replace |
+| SeLoadDriverPrivilege | Load vulnerable kernel driver → SYSTEM |
+| SeManageVolumePrivilege | Raw volume read → SAM/secrets extraction |
 
 **User and group context:**
 
@@ -276,8 +274,7 @@ Get-Process | Select-Object Name, Id, Path | Where-Object {$_.Path -notlike "C:\
 - Unquoted service paths → `add_vuln(title="Unquoted service path: <service>", host="<host>", vuln_type="service-misconfig", severity="medium")`
 - Writable service binaries/config → `add_vuln(title="Modifiable service: <service>", host="<host>", vuln_type="service-misconfig", severity="high")`
 
-Any finding here → STOP. Return to orchestrator recommending
-**windows-service-dll-abuse**. Pass: hostname, current user, specific findings
+Any finding here → STOP. Report: hostname, current user, specific findings
 (unquoted paths, writable binaries, modifiable services, DLL hijack targets),
 OS version. Do not execute exploitation commands inline.
 
@@ -312,9 +309,9 @@ reg query HKCU\SOFTWARE\Policies\Microsoft\Windows\Installer /v AlwaysInstallEle
 reg query HKLM\SOFTWARE\Policies\Microsoft\Windows\Installer /v AlwaysInstallElevated
 ```
 
-Both must return `0x1` — if so, STOP. Return to orchestrator recommending
-**windows-uac-bypass**. Pass: hostname, current user, AlwaysInstallElevated
-confirmation, OS version. Do not execute MSI payload commands inline.
+Both must return `0x1` — if so, STOP. Report: hostname, current user,
+AlwaysInstallElevated confirmation, OS version. Do not execute MSI payload
+commands inline.
 
 ## Step 5: Network and Shares
 
@@ -423,8 +420,7 @@ If `BUILTIN\Users:(I)(RX)` appears → SAM readable by non-admin users.
 PowerShell history, config files, WiFi passwords, SNMP strings). One call per
 credential. The orchestrator reacts to these in real time via event watcher.
 
-Any credentials found → STOP. Return to orchestrator recommending
-**windows-credential-harvesting**. Pass: hostname, current user, credential
+Any credentials found → STOP. Report: hostname, current user, credential
 locations found, OS version. Do not execute credential extraction commands
 inline.
 
@@ -509,64 +505,19 @@ Invoke-PrivescCheck -Extended -Report PrivescCheck_Results -Format HTML
 . .\jaws-enum.ps1
 ```
 
-## Step 9: Routing Decision Tree
+## Step 9: Return to Orchestrator
 
-Based on enumeration findings, route to the appropriate technique skill:
+STOP and return to the orchestrator with all findings. Present findings ranked
+by reliability and OPSEC:
 
-### Token Privileges Found
-
-SeImpersonate, SeAssignPrimaryToken, SeDebug, SeBackup, SeTakeOwnership,
-SeRestore, SeLoadDriver, SeManageVolume
-→ STOP. Return to orchestrator recommending **windows-token-impersonation**.
-  Pass: hostname, current user, specific privileges found, OS version and build,
-  Do not execute token impersonation commands inline.
-
-### Service Misconfigurations Found
-
-Unquoted service paths, writable service binaries, modifiable service config,
-weak service registry ACLs, DLL search order hijacking, writable PATH directories,
-auto-updater abuse
-→ STOP. Return to orchestrator recommending **windows-service-dll-abuse**. Pass:
-  hostname, current user, specific findings (unquoted paths / writable binaries /
-  modifiable services / DLL hijack targets), OS version. Do not execute
-  exploitation commands inline.
-
-### UAC Bypass Needed
-
-High-integrity needed but running medium-integrity, UAC enabled,
-AlwaysInstallElevated
-→ STOP. Return to orchestrator recommending **windows-uac-bypass**. Pass:
-  hostname, current user, integrity level, UAC settings, AlwaysInstallElevated
-  status, OS version. Do not execute UAC bypass commands inline.
-
-### Stored Credentials Found
-
-Registry passwords, unattend files, PowerShell history, DPAPI blobs,
-HiveNightmare, credential vault entries
-→ STOP. Return to orchestrator recommending **windows-credential-harvesting**.
-  Pass: hostname, current user, credential locations found (registry / unattend /
-  history / vault), OS version. Do not execute credential extraction commands
-  inline.
-
-### Missing Patches / Kernel Vectors
-
-Watson/WES-NG hits, old OS without patches, vulnerable drivers loaded,
-BYOVD candidates
-→ STOP. Return to orchestrator recommending **windows-kernel-exploits**. Pass:
-  hostname, OS version and build, installed hotfixes, Watson/WES-NG output,
-  vulnerable drivers identified. Do not execute kernel exploits inline.
-
-### Multiple Vectors Found
-
-Present all findings ranked by reliability and OPSEC:
 1. Token impersonation (if SeImpersonate — near-certain, low OPSEC)
 2. Service/DLL abuse (if writable — reliable, medium OPSEC)
 3. Stored credentials (if found — immediate value)
 4. UAC bypass (if needed — reliable, low-medium OPSEC)
 5. Kernel exploits (last resort — may crash system)
 
-When routing, pass along: hostname, OS version, current user, integrity level,
-specific findings.
+For each finding, pass along: hostname, OS version, current user, integrity
+level, specific findings (privileges, services, credentials, patches).
 
 ## Troubleshooting
 

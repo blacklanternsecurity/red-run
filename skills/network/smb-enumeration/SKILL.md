@@ -53,10 +53,10 @@ Do not load or execute another skill. Return to the orchestrator with:
   - Context to pass (DC IP, domain name, credentials, share paths)
 
 **Routing boundaries:**
-- RCE exploitation (EternalBlue, SMBGhost, PrintNightmare) → **smb-exploitation**
-- Domain enumeration (LDAP, BloodHound, GPP) → **ad-discovery**
-- Password brute forcing or spraying → **password-spraying**
-- Writable share abuse (web shells, DLL hijack) → **smb-exploitation**
+- RCE exploitation (EternalBlue, SMBGhost, PrintNightmare)
+- Domain enumeration (LDAP, BloodHound, GPP)
+- Password brute forcing or spraying
+- Writable share abuse (web shells, DLL hijack)
 
 **Stay in methodology.** Only use techniques documented in this skill.
 
@@ -240,20 +240,6 @@ After completing enumeration:
 - **Credentials found in shares** → STOP. Recommend **ad-discovery** or authenticated re-enumeration.
 - **Writable shares found** → STOP. Recommend **smb-exploitation**. Pass: share name, write method.
 - **All shares denied, no vulns** → Report complete. No further SMB enumeration without creds.
-
-## Stall Detection
-
-If you have spent **5 or more tool-calling rounds** on the same failure with
-no meaningful progress — same error, no new information — **stop**.
-
-What counts as progress: trying a different tool from this skill, adjusting
-flags per Troubleshooting, gaining new diagnostic information.
-
-What does NOT count: retrying the same command, writing custom scripts,
-inventing workarounds not in this skill.
-
-When stalled, return to the orchestrator with what was attempted, what failed,
-and whether the block is permanent or retryable.
 
 ## Troubleshooting
 

@@ -50,15 +50,14 @@ When an engagement directory exists:
 ## Scope Boundary
 
 This skill covers Active Directory discovery — enumerating domain objects,
-identifying misconfigurations, and routing to technique skills. When you reach
-the boundary of this scope — whether through a routing instruction ("Route to
-**skill-name**") or by discovering findings outside your domain — **STOP**.
+identifying misconfigurations, and reporting findings to the orchestrator.
+When you confirm an exploitable finding — **STOP**.
 
 Do not load or execute another skill. Do not continue past your scope boundary.
 Instead, return to the orchestrator with:
   - What was found (vulns, credentials, access gained)
-  - Recommended next skill (the bold **skill-name** from routing instructions)
-  - Context to pass (injection point, target, working payloads, etc.)
+  - Detection details (finding type, affected objects, evidence)
+  - Context for technique execution (credentials, DC hostname, domain name, etc.)
 
 The orchestrator decides what runs next. Your job is to execute this skill
 thoroughly and return clean findings.
@@ -69,15 +68,13 @@ attacks, write custom exploit code, or apply techniques from other domains.
 The orchestrator will provide specific guidance or route to a different skill.
 
 You MUST NOT:
-- Perform Kerberoasting or AS-REP roasting beyond identifying targets — route
-  to **kerberos-roasting**
-- Exploit delegation misconfigurations — route to **kerberos-delegation**
-- Exploit ACL misconfigurations — route to **acl-abuse**
-- Perform credential dumping — route to **credential-dumping**
-- Forge tickets — route to **kerberos-ticket-forging**
-- Perform coercion or relay attacks — route to **auth-coercion-relay**
-- Exploit ADCS beyond enumeration — route to **adcs-template-abuse** or
-  **adcs-access-and-relay**
+- Perform Kerberoasting or AS-REP roasting beyond identifying targets
+- Exploit delegation misconfigurations
+- Exploit ACL misconfigurations
+- Perform credential dumping
+- Forge tickets
+- Perform coercion or relay attacks
+- Exploit ADCS beyond enumeration
 
 When you find exploitable attack paths, present routing recommendations in
 your return summary. Do not continue past enumeration.
@@ -168,8 +165,8 @@ nxc ldap DC01.DOMAIN.LOCAL --port 636
 ```
 
 **Findings:**
-- SMB signing disabled on non-DCs -> note for **auth-coercion-relay**
-- LDAP signing not required -> note for **auth-coercion-relay** (relay to LDAP)
+- SMB signing disabled on non-DCs -> note for coercion/relay
+- LDAP signing not required -> note for relay to LDAP
 - Domain name, DC hostnames, OS versions -> record in the engagement state
 
 **Interim writes:**
@@ -217,7 +214,7 @@ nxc smb DC01.DOMAIN.LOCAL -u '' -p '' --rid-brute \
 kerbrute userenum -d DOMAIN.LOCAL --dc DC01.DOMAIN.LOCAL usernames.txt
 ```
 
-Use output as username list for **password-spraying** and AS-REP roasting checks.
+Use output as username list for password spraying and AS-REP roasting checks.
 
 ### Unauthenticated ADCS CA Enumeration
 
@@ -231,9 +228,9 @@ If CAs found, note for authenticated ADCS enumeration in Step 3 (certipy).
 ### LLMNR/NBT-NS/mDNS Poisoning Check
 
 If network position allows, note LLMNR/NBT-NS traffic for Responder-based
-hash capture. → STOP. Return to orchestrator recommending **auth-coercion-relay**.
-Pass: DC IP, domain name, network position, LLMNR/NBT-NS traffic details.
-Do not execute poisoning or relay commands inline.
+hash capture. → STOP. Return to orchestrator with: DC IP, domain name, network
+position, LLMNR/NBT-NS traffic details. Do not execute poisoning or relay
+commands inline.
 
 ## Step 3: BloodHound Collection
 
@@ -332,8 +329,8 @@ enum4linux -u 'user' -p 'Password123' -P DC01.DOMAIN.LOCAL
 (Get-DomainPolicy)."SystemAccess"
 ```
 
-Record lockout threshold, observation window, complexity requirements. Pass
-to **password-spraying** skill.
+Record lockout threshold, observation window, complexity requirements. Report
+for password spraying decisions.
 
 ### Fine-Grained Password Policies (PSOs)
 
@@ -344,7 +341,7 @@ nxc ldap DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' -M pso
 
 PSOs override default domain policy for specific groups. A service account
 group may have no lockout while user accounts lock at 5 attempts. Report any
-PSOs found — they affect **password-spraying** decisions.
+PSOs found — they affect password spraying decisions.
 
 ### Pre-Windows 2000 Computer Accounts
 
@@ -376,8 +373,7 @@ nxc ldap DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' -M pre2k
 If pre2k finds valid machine credentials → write immediately:
 `add_credential(username="MACHINE$", secret="machine", source="pre2k module on <DC>")`.
 Also record in your return summary: account name, confirmed password, and any
-group memberships or privileges visible from LDAP. The orchestrator will route
-to appropriate technique skills (pass-the-hash, kerberos-delegation, etc.).
+group memberships or privileges visible from LDAP.
 
 ### NetExec Module Sweep
 
@@ -418,9 +414,8 @@ nxc smb DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' -M spooler
 nxc smb DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' -M coerce_plus
 ```
 
-Note all coercion-eligible hosts for **auth-coercion-relay**. WebDAV is
-especially valuable — it enables HTTP-based coercion that works even when SMB
-signing is enforced.
+Note all coercion-eligible hosts. WebDAV is especially valuable — it enables
+HTTP-based coercion that works even when SMB signing is enforced.
 
 **Interim writes:** Coercion-eligible hosts →
 `add_vuln(title="Coercion: <type> on <host>", host="<host>", vuln_type="coercion", severity="medium")`.
@@ -469,10 +464,10 @@ nxc ldap DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' -M entra-id
 nxc ldap DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' -M dns-nonsecure
 ```
 
-If SCCM found → note for **sccm-exploitation**. If Entra ID Connect server
+If SCCM found → note for SCCM exploitation. If Entra ID Connect server
 found → high-value target (stores cleartext AD sync credentials). If
-nonsecure DNS updates allowed → note for **auth-coercion-relay** (ADIDNS
-poisoning enables MITM/coercion without LLMNR).
+nonsecure DNS updates allowed → note for ADIDNS poisoning (enables
+MITM/coercion without LLMNR).
 
 #### ADIDNS Zone ACL Check
 
@@ -519,9 +514,8 @@ nxc ldap DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' --kerberoasting output.txt
 .\Rubeus.exe kerberoast /stats
 ```
 
-If SPNs found on user accounts → STOP. Return to orchestrator recommending
-**kerberos-roasting**. Pass: DC IP, domain name, SPN list, current credentials.
-Do not request or crack service tickets inline.
+If SPNs found on user accounts → STOP. Report: DC IP, domain name, SPN list,
+current credentials. Do not request or crack service tickets inline.
 
 ### AS-REP Roastable Accounts
 
@@ -535,9 +529,8 @@ bloodyAD -u user -p 'Password123' -d DOMAIN.LOCAL --host DC_IP \
   --attr sAMAccountName
 ```
 
-If found → STOP. Return to orchestrator recommending **kerberos-roasting**
-(AS-REP section). Pass: DC IP, domain name, AS-REP roastable user list, current
-mode. Do not request or crack AS-REP hashes inline.
+If found → STOP. Report: DC IP, domain name, AS-REP roastable user list,
+current credentials. Do not request or crack AS-REP hashes inline.
 
 ### Delegation Enumeration
 
@@ -566,9 +559,8 @@ Get-DomainComputer -TrustedToAuth
 **Interim writes:** Delegation paths found →
 `add_pivot(source="<account>", destination="<target_service>", method="<unconstrained|constrained|RBCD> delegation")`.
 
-If found → STOP. Return to orchestrator recommending **kerberos-delegation**.
-Pass: DC IP, domain name, delegation type and targets, current credentials.
-Do not exploit delegation inline.
+If found → STOP. Report: DC IP, domain name, delegation type and targets,
+current credentials. Do not exploit delegation inline.
 
 ### Privileged Group Membership
 
@@ -593,9 +585,8 @@ nxc ldap DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' -M laps
 nxc ldap DC01.DOMAIN.LOCAL -u 'user' -p 'Password123' --gmsa
 ```
 
-If readable → STOP. Return to orchestrator recommending **credential-dumping**.
-Pass: DC IP, domain name, LAPS/gMSA target details, current credentials.
-Do not extract managed passwords inline.
+If readable → STOP. Report: DC IP, domain name, LAPS/gMSA target details,
+current credentials. Do not extract managed passwords inline.
 
 ### Trust Enumeration
 
@@ -613,9 +604,9 @@ Get-DomainForeignUser
 Get-DomainForeignGroupMember
 ```
 
-If trusts found → STOP. Return to orchestrator recommending **trust-attacks**.
-Pass: DC IP, domain name, trust relationships enumerated, trust types and
-directions, current credentials. Do not exploit trust relationships inline.
+If trusts found → STOP. Report: DC IP, domain name, trust relationships
+enumerated, trust types and directions, current credentials. Do not exploit
+trust relationships inline.
 
 ### Share Enumeration
 
@@ -673,8 +664,7 @@ nxc smb 10.10.10.0/24 -u 'user' -p 'Password123'
 Find-LocalAdminAccess -Verbose
 ```
 
-If local admin found → STOP. Return to orchestrator recommending
-**credential-dumping** (SAM/LSASS). Pass: target hostname, local admin
+If local admin found → STOP. Report: target hostname, local admin
 credentials, DC IP, domain name. Do not dump credentials inline.
 
 ### SCCM / Deployment
@@ -684,59 +674,13 @@ credentials, DC IP, domain name. Do not dump credentials inline.
 python3 sccmhunter.py find -u 'user' -p 'Password123' -d DOMAIN.LOCAL -dc-ip DC_IP
 ```
 
-If SCCM found → STOP. Return to orchestrator recommending
-**sccm-exploitation**. Pass: DC IP, domain name, SCCM server details, current
-credentials. Do not exploit SCCM inline.
+If SCCM found → STOP. Report: DC IP, domain name, SCCM server details,
+current credentials. Do not exploit SCCM inline.
 
-## Step 5: Attack Surface Routing
+## Step 5: Prioritize and Return
 
-Map enumeration findings to technique skills. This is the core routing table.
-When a match below is found, STOP — return to the orchestrator recommending
-the matched skill. Do not execute attack techniques inline.
-
-| Finding | Indicator | Route To |
-|---------|-----------|----------|
-| Pre-2k computer account creds | nxc -M pre2k (TGT obtained) | **pass-the-hash** (machine account) |
-| User accounts with SPNs | GetUserSPNs output shows SPNs | **kerberos-roasting** |
-| Users without pre-auth | GetNPUsers / DONT_REQ_PREAUTH flag | **kerberos-roasting** (AS-REP section) |
-| Valid username list obtained | RID cycling / kerbrute / LDAP | **password-spraying** |
-| Cleartext password in description | nxc -M get-desc-users | **pass-the-hash** or deeper enum |
-| GPP cpassword found | nxc -M gpp_password / gpp_autologin | **pass-the-hash** or deeper enum |
-| NTLM hash obtained | SAM dump / LSASS / secretsdump | **pass-the-hash** |
-| AES keys obtained | DCSync / secretsdump / LSASS | **pass-the-hash** (Pass-the-Key) |
-| Kerberos ticket captured | Delegation / ticket dump | **pass-the-hash** (Pass-the-Ticket) |
-| Unconstrained delegation host | TRUSTED_FOR_DELEGATION flag | **kerberos-delegation** |
-| Constrained delegation | msDS-AllowedToDelegateTo set | **kerberos-delegation** |
-| RBCD writable | Write to msDS-AllowedToActOnBehalf | **kerberos-delegation** |
-| MAQ > 0 + write target | nxc -M maq + ACL check | **kerberos-delegation** (RBCD) |
-| krbtgt hash obtained | DCSync of krbtgt | **kerberos-ticket-forging** |
-| Service account hash obtained | Kerberoast / DCSync | **kerberos-ticket-forging** (Silver) |
-| GenericAll on user/group | BloodHound / ACL scan | **acl-abuse** |
-| WriteDACL / WriteOwner | BloodHound / ACL scan | **acl-abuse** |
-| ForceChangePassword | BloodHound | **acl-abuse** |
-| msDS-KeyCredentialLink writable | BloodHound | **acl-abuse** (Shadow Credentials) |
-| BadSuccessor (dMSA) vulnerable | nxc -M badsuccessor | **acl-abuse** (dMSA) |
-| Vulnerable ADCS templates (ESC1-3,6) | certipy find -vulnerable | **adcs-template-abuse** |
-| CA/template ACL abuse (ESC4-5,7) | certipy / BloodHound ADCS | **adcs-access-and-relay** |
-| HTTP/RPC enrollment (ESC8,11) | certipy / nmap web enrollment | **adcs-access-and-relay** |
-| Weak cert mapping (ESC9-15) | certipy find | **adcs-persistence** |
-| SMB signing disabled | nxc smb signing:False | **auth-coercion-relay** |
-| LDAP signing not required | nxc ldap signing:None | **auth-coercion-relay** |
-| WebDAV enabled on target | nxc -M webdav | **auth-coercion-relay** (HTTP coercion) |
-| Spooler service running | nxc -M spooler | **auth-coercion-relay** |
-| Coercion vulns confirmed | nxc -M coerce_plus | **auth-coercion-relay** |
-| LLMNR/NBT-NS traffic | Responder analysis mode | **auth-coercion-relay** |
-| DCSync rights (Replication perms) | BloodHound | **credential-dumping** |
-| Local admin on DC | BloodHound / Pwn3d! | **credential-dumping** |
-| LAPS readable | nxc -M laps output | **credential-dumping** |
-| gMSA/dMSA readable | nxc --gmsa output | **credential-dumping** |
-| GPO write access | BloodHound | **gpo-abuse** |
-| Domain/forest trusts | Trust enumeration | **trust-attacks** |
-| SCCM infrastructure | nxc -M sccm / sccmhunter | **sccm-exploitation** |
-| Entra ID Connect server | nxc -M entra-id | **credential-dumping** (sync creds) |
-| EOL operating systems | nxc -M obsolete | Note for CVE targeting |
-| AV/EDR products detected | nxc -M enum_av | Note for evasion planning |
-| Post-DA compromise | Full domain control | **ad-persistence** |
+After mapping the attack surface, STOP and return to the orchestrator with all
+findings categorized by type and priority.
 
 ### Priority Order
 
@@ -752,16 +696,15 @@ When multiple attack paths exist, prioritize by OPSEC and reliability:
 7. **Coercion/relay** — requires network position, noisy
 8. **Credential dumping** — requires existing admin access
 
-## Step 6: Escalate or Pivot
+### Return Summary
 
-After mapping the attack surface:
+Present all findings with:
 - **Multiple paths identified**: Present the top 3 paths ranked by OPSEC and reliability.
-- **No clear path**: Expand enumeration scope (additional subnets, different
-  protocols), try password spraying, or check for relay opportunities.
-- **Credentials found in shares/GPP**: Route to **pass-the-hash** or use for
-  deeper authenticated enumeration.
+- **No clear path**: Recommend expanding enumeration scope (additional subnets,
+  different protocols), password spraying, or relay opportunities.
+- **Credentials found in shares/GPP**: Report for deeper authenticated enumeration.
 
-When routing to a technique skill, pass along:
+When returning, pass along:
 - Target user/host/service
 - Current credentials and access level
 - Domain name and DC hostname

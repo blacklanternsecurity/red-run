@@ -164,21 +164,15 @@ evil-winrm -i TARGET_IP -u 'USER' -p 'PASS'
 
 Return to orchestrator with findings:
 
-- **FTP anon write + webroot** → **web-discovery** for stack ID, then file upload RCE
-- **FTP credentials found** → **password-spraying** against other services
-- **SSH password auth enabled** → **password-spraying** with known/default creds
+- **FTP anon write + webroot** for stack ID, then file upload RCE
+- **FTP credentials found** against other services
+- **SSH password auth enabled** with known/default creds
 - **BlueKeep confirmed** → return CVE details for orchestrator routing
 - **regreSSHion in range** → return version details for orchestrator routing
 - **NTLM info leak** → pass domain/hostname to **ad-discovery**
 - **VNC no-auth** → return access details for orchestrator routing
 - **WinRM + valid creds** → confirm access, recommend post-exploitation
 - **No findings** → report what was checked, mark services as enumerated
-
-## Stall Detection
-
-If **5+ tool-calling rounds** on the same failure with no progress — **stop**.
-Work through each service once. If nmap scripts fail or ports are filtered, note
-the failure and move on. Return with what was attempted and what failed.
 
 ## Troubleshooting
 

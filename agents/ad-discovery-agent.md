@@ -218,6 +218,21 @@ When you're done, provide a clear summary for the orchestrator:
 
 The orchestrator reads this summary and makes the next routing decision.
 
+## Stall Detection
+
+If you spend **5+ tool-calling rounds** on the same failure (same error, no
+new information), **stop immediately**.
+
+Progress = trying a variant from this skill, adjusting per Troubleshooting,
+or gaining new diagnostic info. NOT progress = writing code not in this skill,
+inventing techniques from other domains, retrying with trivial changes.
+
+If you find yourself writing code that isn't in this skill, you have left
+methodology. That is a stall.
+
+When stalled, return immediately with: what was attempted, what failed and
+why, and assessment (blocked permanently or retry-later with different context).
+
 ## Operational Notes
 
 - Run `date '+%Y-%m-%d %H:%M:%S'` for real timestamps — never write placeholder

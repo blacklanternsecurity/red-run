@@ -63,8 +63,9 @@ authorization.
 
 ## Skill Routing Is Mandatory
 
-When this skill says "Route to **skill-name**", you MUST execute that skill
-through a domain subagent (preferred) or inline via `get_skill()` (fallback).
+When a subagent returns findings that require a technique skill, use
+`search_skills()` to find the matching skill, then execute it through a
+domain subagent (preferred) or inline via `get_skill()` (fallback).
 
 ### Primary Path: Subagent Delegation
 
@@ -247,8 +248,9 @@ of routing to the skill in the first place.
 
 **Each invocation = one skill.** Discovery skills find things and return.
 The orchestrator decides which technique skill to invoke next. Subagents
-never load a second skill or route to other skills — when the skill text says
-"Route to X", that's the agent's cue to report findings and stop.
+never load a second skill — they stop at their scope boundary, report
+findings, and return. The orchestrator uses `search_skills()` and the
+domain→agent map to route based on finding descriptions.
 
 **Inline fallback:** If a custom subagent is not available (agent files not
 installed), **STOP** and have the operator fix the issue. Skills are only
@@ -413,7 +415,9 @@ When a skill completes and returns control to the orchestrator:
    (RPC/LDAP null session), web-discovery (user enumeration), ad-discovery
    (BloodHound/LDAP), SQLi (user table dump), credential-dumping (SAM/LSASS),
    or any other source.
-7. Call `get_state_summary()` and run Step 4 decision logic
+7. Call `get_state_summary()` and run Step 4 decision logic. Use
+   `search_skills()` to find the right technique skill based on the finding
+   description — skills no longer name specific next skills.
 8. Present the next action(s) to the operator via `AskUserQuestion` — always
    proactively recommend; never wait for the operator to ask "what's next."
    If 2+ independent paths exist, use Parallel Path Presentation format.

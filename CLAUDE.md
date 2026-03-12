@@ -71,16 +71,16 @@ The state-reader, state-interim, and state-writer are three instances of the sam
 - **Orchestrator** (`skills/orchestrator/`): Takes a target, runs recon, routes to discovery skills
 - **Recon** (`skills/network/network-recon/`): Host discovery, port scanning, OS fingerprinting — produces a port/service map
 - **Enumeration** (`skills/network/*-enumeration/`): Per-service deep enumeration (SMB, databases, remote access, infrastructure)
-- **Discovery** (`skills/<category>/*-discovery/`): Identifies vulnerabilities, recommends technique skills via decision tree (orchestrator does the actual routing)
+- **Discovery** (`skills/<category>/*-discovery/`): Identifies vulnerabilities, reports findings generically (orchestrator routes to technique skills via `search_skills()`)
 - **Technique** (`skills/<category>/<technique>/`): Exploits a specific vulnerability class
 
 ### Inter-Skill Routing
 
-The orchestrator makes every routing decision. When a skill says "Route to **skill-name**", the orchestrator derives the correct agent from the skill's category using the **domain→agent map** and spawns it with that skill. Context (injection point, target technology, working payloads) is passed in the Task prompt.
+The orchestrator makes every routing decision. Skills report findings generically — they do not name specific next skills. The orchestrator uses `search_skills()` to find the right technique skill based on finding descriptions, then derives the correct agent from the skill's category using the **domain→agent map**. Context (injection point, target technology, working payloads) is passed in the Task prompt.
 
-**Mandatory skill loading**: When a skill says "Route to **skill-name**", that skill MUST be loaded via `get_skill()` — either by a subagent or inline. Never execute a technique without loading the matching skill. Skills contain methodology, edge cases, payloads, and troubleshooting that general knowledge does not. Always load skills via `get_skill()` — never execute techniques without loading the matching skill.
+**Mandatory skill loading**: Never execute a technique without loading the matching skill via `get_skill()`. Skills contain methodology, edge cases, payloads, and troubleshooting that general knowledge does not.
 
-**Skill discovery**: If unsure which skill to use, call `search_skills(query)` with a description of the situation. Validate the result before loading — check that the skill's description matches what you need.
+**Skill discovery**: Call `search_skills(query)` with a description of the situation to find the right skill. Validate the result before loading — check that the skill's description matches what you need.
 
 **Custom subagents vs built-in sub-agents**: Custom domain subagents (`agents/*.md`) have MCP access and are the correct delegation model. Built-in Task sub-agents (Explore, Plan, general-purpose) do NOT have MCP access — use them only for local processing (hash cracking, output parsing, research), never for target-level work.
 
@@ -246,8 +246,7 @@ The MCP indexer builds embedding documents from these structured fields. `descri
 - One technique per skill — split broad topics into focused skills
 - Embed critical payloads directly (top 2-3 per DB/variant for 80% coverage)
 - OPSEC rating in description: `low` = passive/read-only, `medium` = creates artifacts, `high` = noisy/detected by EDR
-- Inter-skill routing: bold skill names in escalation sections
-- **Discovery skill maintenance**: When creating a new technique skill, update the corresponding discovery skill's routing table to include it. `web-discovery` must route to every web technique skill.
+- **New technique skill checklist**: When creating a new technique skill, ensure it has descriptive frontmatter (name, description, keywords) so `search_skills()` can discover it. No routing table updates needed — the orchestrator finds skills via semantic search.
 - **AD OPSEC: Kerberos-first authentication**: All AD skills default to Kerberos authentication via ccache to avoid NTLM-specific detections (Event 4776, CrowdStrike Identity Module PTH signatures). Each AD skill's Prerequisites section includes the `getTGT.py` → `KRB5CCNAME` → `-k -no-pass` workflow. All embedded tool commands use Kerberos auth flags: Impacket (`-k -no-pass`), NetExec (`--use-kcache`), Certipy (`-k`), bloodyAD (`-k`). Skills where Kerberos auth doesn't apply (relay, coercion, password spraying) explicitly state why and note the NTLM detection surface.
 - **Attackbox-first transfer**: Never download exploits, scripts, or tools directly to the target from the internet. Targets may lack outbound access, and operators must review files before execution on target. Workflow: (1) download/clone on attackbox, (2) review, (3) serve via `python3 -m http.server` or transfer with `scp`/`nc`/base64, (4) pull from target. Inline source code in heredocs is fine — the operator can read it in the skill.
 

