@@ -82,12 +82,11 @@ Profiles customize the orchestrator's routing — which phases to run, skip, or 
 | Profile | Description | Skips | Default Scan |
 |---------|-------------|-------|--------------|
 | Full Pentest | All phases enabled (default) | none | ask |
-| CTF Box | Aggressive, speed over stealth | none | full |
 | Web App Only | Skip network/AD, straight to web | network-recon, SMB, DB, AD | none |
 | Internal AD | Prioritize AD and Kerberos attacks | none | quick |
 | Assumed Breach | Start from creds/shell, skip recon | network-recon, enumerations | none |
 
-Profiles also support model hints (e.g., upgrade web-exploit-agent to Opus for complex targets) and priority phase ordering for parallel path recommendations. See `skills/orchestrator/templates/` for the full definitions.
+CTF mode (`init_engagement(mode="ctf")`) auto-selects full port scan regardless of profile. Profiles also support model hints (e.g., upgrade web-exploit-agent to Opus for complex targets) and priority phase ordering for parallel path recommendations. See `skills/orchestrator/templates/` for the full definitions.
 
 ## Running
 

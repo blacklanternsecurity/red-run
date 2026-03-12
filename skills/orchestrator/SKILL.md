@@ -523,11 +523,10 @@ Use `AskUserQuestion`:
 - Header: "Engagement profile"
 - Question: "Select a profile to customize routing. You can override any default during the engagement."
 - Options:
-  1. Full Pentest (Default) — all phases enabled, no skips
-  2. CTF Box — aggressive full scan, all phases, speed over stealth
-  3. Web App Only — skip network recon, go straight to web discovery
-  4. Internal AD — prioritize AD discovery and Kerberos attacks, defer web
-  5. Assumed Breach — start from provided credentials or shell, skip recon
+  1. Full Pentest (Default) — all phases, no skips
+  2. Web App Only — skip recon, straight to web
+  3. Internal AD — prioritize AD and Kerberos
+  4. Assumed Breach — start from creds or shell
 
 **After selection**, record the active profile in `engagement/scope.md` under a
 `## Profile` section:
@@ -547,10 +546,15 @@ Use `AskUserQuestion`:
 | Profile | Skip Phases | Priority Phases | Start With | Default Scan | Model Hints | Assumed Breach |
 |---------|-------------|-----------------|------------|--------------|-------------|----------------|
 | full-pentest | none | none | network-recon | null (ask) | none | no |
-| ctf-box | none | network-recon, web-discovery | network-recon | full | none | no |
 | web-app-only | network-recon, smb-enumeration, database-enumeration, remote-access-enumeration, infrastructure-enumeration, ad-discovery | web-discovery | web-discovery | none | web-exploit-agent: opus | no |
 | internal-ad | none | ad-discovery, kerberos-roasting, credential-dumping, acl-abuse | network-recon | quick | ad-exploit-agent: opus | no |
 | assumed-breach | network-recon, smb-enumeration, database-enumeration, remote-access-enumeration, infrastructure-enumeration | linux-discovery, windows-discovery, ad-discovery, credential-dumping | host-discovery | none | none | yes |
+
+**CTF mode auto-scan**: When the engagement is initialized with `mode: "ctf"`,
+the orchestrator auto-selects a full port scan (`-A -p- -T4`) without prompting
+the scan type hard stop. This applies regardless of which profile is selected.
+CTF mode is set during `init_engagement()` — the orchestrator should default to
+`mode: "ctf"` unless the operator specifies a pentest engagement.
 
 **Applying profiles throughout the engagement:**
 
@@ -702,6 +706,9 @@ options via `AskUserQuestion`. The operator always chooses the scan type.
 **Profile shortcut**: If the active profile has `default_scan` set to `full`
 or `quick`, skip this hard stop and use the profile's default scan type.
 Print `[orchestrator] Profile default: <scan type> scan` so the operator knows.
+
+**CTF mode shortcut**: If the engagement mode is `ctf` (the default), auto-select
+full scan regardless of profile. Print `[orchestrator] CTF mode: full scan`.
 
 **Question — Scan type** (single-select):
 - Header: "Scan type"
