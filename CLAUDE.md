@@ -33,16 +33,16 @@ The orchestrator spawns domain-specific subagents for each skill invocation:
 
 | Agent | Domain | MCP Servers | Skills |
 |-------|--------|-------------|--------|
-| `network-recon-agent` | Network | skill-router, nmap-server, shell-server, state-interim | network-recon, smb-enumeration, database-enumeration, remote-access-enumeration, infrastructure-enumeration, smb-exploitation (haiku) |
-| `pivoting-agent` | Pivoting | skill-router, shell-server, state-interim | pivoting-tunneling (sonnet) |
-| `web-discovery-agent` | Web discovery | skill-router, shell-server, browser-server, state-interim | web-discovery |
-| `web-exploit-agent` | Web exploitation | skill-router, shell-server, browser-server, state-interim | All web technique skills |
-| `ad-discovery-agent` | AD discovery | skill-router, shell-server, state-interim | ad-discovery |
-| `ad-exploit-agent` | AD exploitation | skill-router, shell-server, state-interim | All AD technique skills |
-| `password-spray-agent` | Credential spraying | skill-router, shell-server, state-interim | password-spraying (haiku) |
+| `network-recon-agent` | Network | skill-router, nmap-server, shell-server, rdp-server, state-interim | network-recon, smb-enumeration, database-enumeration, remote-access-enumeration, infrastructure-enumeration, smb-exploitation (haiku) |
+| `pivoting-agent` | Pivoting | skill-router, shell-server, rdp-server, state-interim | pivoting-tunneling (sonnet) |
+| `web-discovery-agent` | Web discovery | skill-router, shell-server, browser-server, rdp-server, state-interim | web-discovery |
+| `web-exploit-agent` | Web exploitation | skill-router, shell-server, browser-server, rdp-server, state-interim | All web technique skills |
+| `ad-discovery-agent` | AD discovery | skill-router, shell-server, rdp-server, state-interim | ad-discovery |
+| `ad-exploit-agent` | AD exploitation | skill-router, shell-server, rdp-server, state-interim | All AD technique skills |
+| `password-spray-agent` | Credential spraying | skill-router, shell-server, rdp-server, state-interim | password-spraying (haiku) |
 | `linux-privesc-agent` | Linux privesc | skill-router, shell-server, state-interim | Linux discovery + privesc + container escapes |
-| `windows-privesc-agent` | Windows privesc | skill-router, shell-server, state-interim | Windows discovery + privesc |
-| `evasion-agent` | AV/EDR evasion | skill-router, shell-server, state-interim | av-edr-evasion |
+| `windows-privesc-agent` | Windows privesc | skill-router, shell-server, rdp-server, state-interim | Windows discovery + privesc |
+| `evasion-agent` | AV/EDR evasion | skill-router, shell-server, rdp-server, state-interim | av-edr-evasion |
 | `credential-cracking-agent` | Credential cracking | skill-router, state-interim | credential-cracking (haiku, local-only) |
 
 Each invocation: agent loads one skill via `get_skill()`, executes methodology, saves evidence, and returns findings. The orchestrator parses the return summary, records state changes via the state-writer MCP, and makes the next routing decision. All agents use state-interim for mid-run writes of critical discoveries (credentials, vulns, pivots, blocked). The orchestrator deduplicates interim writes against return summaries.
@@ -62,6 +62,7 @@ Agent source files live in `agents/` (version controlled), installed to `~/.clau
 | state-interim | `tools/state-server/` | Read + 5 add-only writes (all agents) |
 | state-writer | `tools/state-server/` | Full engagement state management (orchestrator only) |
 | browser-server | `tools/browser-server/` | Headless browser automation (web agents) |
+| rdp-server | `tools/rdp-server/` | Headless RDP automation via aardwolf (windows-privesc-agent) |
 | state-dashboard | `operator/state-dashboard/` | Read-only web dashboard for state.db (operator use, not MCP) |
 
 The state-reader, state-interim, and state-writer are three instances of the same server running in different modes. All agents use state-interim to write critical discoveries (credentials, vulns, pivots, blocked) mid-run. The orchestrator uses state-writer for full read/write access. See each server's `README.md` for tool details.

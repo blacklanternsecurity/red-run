@@ -26,6 +26,7 @@ MCP_NMAP_SERVER="${REPO_DIR}/tools/nmap-server"
 MCP_SHELL_SERVER="${REPO_DIR}/tools/shell-server"
 MCP_STATE_SERVER="${REPO_DIR}/tools/state-server"
 MCP_BROWSER_SERVER="${REPO_DIR}/tools/browser-server"
+MCP_RDP_SERVER="${REPO_DIR}/tools/rdp-server"
 
 # Only the orchestrator is installed as a native Claude Code skill.
 # Everything else is served on-demand via the MCP skill-router.
@@ -188,6 +189,10 @@ uv sync --directory "${MCP_BROWSER_SERVER}" --quiet
 echo "  [browser-server] Installing Chromium..."
 uv run --directory "${MCP_BROWSER_SERVER}" playwright install chromium
 
+# rdp-server (headless RDP automation via aardwolf — pure Python, no system deps)
+echo "  [rdp-server] Installing Python dependencies..."
+uv sync --directory "${MCP_RDP_SERVER}" --quiet
+
 # --- Step 5: Verify project config ---
 config_warnings=0
 if [[ ! -f "${REPO_DIR}/.mcp.json" ]]; then
@@ -214,6 +219,7 @@ echo "nmap MCP server ready (Dockerized nmap)"
 echo "shell MCP server ready (TCP listener + reverse shell + privileged Docker)"
 echo "state MCP server ready (SQLite engagement state)"
 echo "browser MCP server ready (headless Chromium)"
+echo "rdp MCP server ready (headless RDP via aardwolf)"
 if [[ "$config_warnings" -eq 0 ]]; then
     echo ""
     echo "Done! Start Claude Code from this repo directory to activate."
