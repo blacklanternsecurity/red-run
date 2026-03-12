@@ -345,8 +345,13 @@ def main():
     while _yes("Add a credential?", default=False):
         add_credential(conn)
 
-    while _yes("Add an access entry?", default=False):
-        add_access(conn)
+    if _yes("Add an access entry? (only if you already have an active shell/session — most users skip this)", default=False):
+        print("    Access = you already logged in and have a working session (SSH, WinRM, web shell, etc.)")
+        print("    If you only have credentials but haven't connected yet, skip this — the orchestrator will handle login.\n")
+        while True:
+            add_access(conn)
+            if not _yes("Add another access entry?", default=False):
+                break
 
     while _yes("Add a vulnerability?", default=False):
         add_vuln(conn)
