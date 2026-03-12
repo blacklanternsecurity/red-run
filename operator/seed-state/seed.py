@@ -138,7 +138,7 @@ def add_credential(conn):
 
 def add_access(conn):
     """Interactively add an access entry."""
-    host = _input("Host (must match an existing target)")
+    host = _input("Target IP/hostname (must match a target you already added)")
     if not host:
         return
 
@@ -169,7 +169,7 @@ def add_access(conn):
 
 def add_vuln(conn):
     """Interactively add a vulnerability."""
-    host = _input("Host (must match an existing target)")
+    host = _input("Target IP/hostname (must match a target you already added)")
     if not host:
         return
 
