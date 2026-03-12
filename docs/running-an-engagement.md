@@ -29,12 +29,11 @@ The orchestrator's first action is gathering scope:
 
 | Profile | When to Use | What It Does |
 |---------|------------|--------------|
-| **Full Pentest** | Default — general purpose | All phases enabled, no skips |
+| **Full Pentest** | Default — general purpose (via freeform input) | All phases enabled, no skips |
+| **CTF Box** | Single CTF target | Auto-selects full port scan, all phases, speed over stealth |
 | **Web App Only** | Scope is a URL, not an IP range | Skips network recon, SMB, database, infrastructure, and AD enumeration. Jumps straight to web discovery |
 | **Internal AD** | Internal network, objective is domain compromise | Runs quick recon, prioritizes AD discovery, Kerberos attacks, and credential dumping. Defers web discovery |
 | **Assumed Breach** | You already have credentials or a shell | Skips all recon. Collects starting access (creds/shell), records it in state, routes directly to host discovery |
-
-CTF mode (the default engagement mode) auto-selects a full port scan regardless of profile — no scan type hard stop needed.
 
 Profiles also support **model hints** — upgrade specific agents to a higher-tier model for the engagement (e.g., `web-exploit-agent: opus` for complex web targets).
 

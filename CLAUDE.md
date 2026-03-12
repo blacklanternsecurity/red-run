@@ -156,6 +156,7 @@ red-run/
     orchestrator/SKILL.md # Master orchestrator (native skill)
     orchestrator/templates/ # Engagement profile templates (YAML)
       full-pentest.yaml
+      ctf-box.yaml
       web-app-only.yaml
       internal-ad.yaml
       assumed-breach.yaml
