@@ -717,9 +717,7 @@ def dashboard(
                         and path not in dismissed_paths
                         and path not in completed_paths
                     ):
-                        p = AgentPane(
-                            label, path, len(panes) % len(PANE_COLORS)
-                        )
+                        p = AgentPane(label, path, len(panes) % len(PANE_COLORS))
                         t = _start_pane(p)
                         panes.append(p)
                         threads.append(t)
@@ -1231,9 +1229,7 @@ def _purge_agents(project_dir: str = "") -> None:
         return
     # All subagent dirs share a common project base
     project_base = os.path.dirname(os.path.dirname(dirs[0]))
-    total = sum(
-        len(_glob.glob(os.path.join(d, "agent-*.jsonl"))) for d in dirs
-    )
+    total = sum(len(_glob.glob(os.path.join(d, "agent-*.jsonl"))) for d in dirs)
     print(f"Found {total} agent transcript(s) across {len(dirs)} session(s)")
     print(f"  in {project_base}/*/subagents/")
     confirm = input("Delete all? [y/N] ").strip().lower()
