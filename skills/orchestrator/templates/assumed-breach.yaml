@@ -1,0 +1,22 @@
+name: assumed-breach
+description: >
+  Start from provided credentials or existing shell access. Skips network recon
+  entirely. Records the provided access in state, then routes directly to host
+  discovery (linux/windows) and AD discovery if applicable. Use for assumed
+  breach scenarios, post-exploitation assessments, or when you already have a
+  foothold.
+skip_phases:
+  - network-recon
+  - smb-enumeration
+  - database-enumeration
+  - remote-access-enumeration
+  - infrastructure-enumeration
+priority_phases:
+  - linux-discovery
+  - windows-discovery
+  - ad-discovery
+  - credential-dumping
+start_with: host-discovery
+default_scan: none
+model_hints: {}
+assumed_breach: true

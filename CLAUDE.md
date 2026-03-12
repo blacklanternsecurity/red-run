@@ -154,6 +154,12 @@ red-run/
   skills/
     _template/SKILL.md    # Canonical template
     orchestrator/SKILL.md # Master orchestrator (native skill)
+    orchestrator/templates/ # Engagement profile templates (YAML)
+      full-pentest.yaml
+      ctf-box.yaml
+      web-app-only.yaml
+      internal-ad.yaml
+      assumed-breach.yaml
     web/                  # Web application attacks
     ad/                   # Active Directory
     credential/           # Credential attacks (password spraying)

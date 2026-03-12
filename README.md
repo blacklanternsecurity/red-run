@@ -75,6 +75,20 @@ bash operator/state-dashboard/generate-token.sh
 
 See `operator/state-dashboard/README.md` for details.
 
+## Engagement Profiles
+
+Profiles customize the orchestrator's routing — which phases to run, skip, or prioritize. Selected at engagement start and recorded in `engagement/scope.md`.
+
+| Profile | Description | Skips | Default Scan |
+|---------|-------------|-------|--------------|
+| Full Pentest | All phases enabled (default) | none | ask |
+| CTF Box | Aggressive, speed over stealth | none | full |
+| Web App Only | Skip network/AD, straight to web | network-recon, SMB, DB, AD | none |
+| Internal AD | Prioritize AD and Kerberos attacks | none | quick |
+| Assumed Breach | Start from creds/shell, skip recon | network-recon, enumerations | none |
+
+Profiles also support model hints (e.g., upgrade web-exploit-agent to Opus for complex targets) and priority phase ordering for parallel path recommendations. See `skills/orchestrator/templates/` for the full definitions.
+
 ## Running
 
 All skills delegate to autonomous agents with `bypassPermissions`. Run with:

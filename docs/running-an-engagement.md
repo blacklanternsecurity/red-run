@@ -23,6 +23,24 @@ The orchestrator's first action is gathering scope:
 3. **Rules of engagement** — what's in scope, what's off-limits
 4. **Objectives** — flags, domain admin, data exfiltration goals
 
+### Engagement Profile
+
+> **Hard Stop:** The orchestrator pauses and asks the operator to select an engagement profile. Profiles customize routing defaults — which phases to run, which to skip, and which to prioritize.
+
+| Profile | When to Use | What It Does |
+|---------|------------|--------------|
+| **Full Pentest** | Default — general purpose | All phases enabled, no skips |
+| **CTF Box** | Single CTF target | Auto-selects full port scan, all phases, speed over stealth |
+| **Web App Only** | Scope is a URL, not an IP range | Skips network recon, SMB, database, infrastructure, and AD enumeration. Jumps straight to web discovery |
+| **Internal AD** | Internal network, objective is domain compromise | Runs quick recon, prioritizes AD discovery, Kerberos attacks, and credential dumping. Defers web discovery |
+| **Assumed Breach** | You already have credentials or a shell | Skips all recon. Collects starting access (creds/shell), records it in state, routes directly to host discovery |
+
+Profiles also support **model hints** — upgrade specific agents to a higher-tier model for the engagement (e.g., `web-exploit-agent: opus` for complex web targets).
+
+The selected profile is recorded in `engagement/scope.md` under a `## Profile` section and restored on resume. Profile defaults are not hard restrictions — the operator can always request a skipped phase by name.
+
+Template definitions live in `skills/orchestrator/templates/` as YAML files.
+
 ### Engagement Directory
 
 The orchestrator creates the engagement directory structure:
@@ -139,7 +157,8 @@ The orchestrator has several points where it **must** pause for operator input:
 
 | Hard Stop | When | Why |
 |-----------|------|-----|
-| **Scan type** | Before reconnaissance | Operator controls scan intensity and stealth |
+| **Engagement profile** | After scope gathering | Operator selects routing profile (Full, CTF, Web, AD, Assumed Breach) |
+| **Scan type** | Before reconnaissance | Operator controls scan intensity and stealth (skipped if profile sets `default_scan`) |
 | **Web proxy** | Immediately after HTTP/HTTPS ports are found | Operator decides whether Burp captures web traffic, which IP it binds to, and which port to use |
 | **Hostname resolution** | New hostnames discovered | `/etc/hosts` changes require sudo |
 | **Password spray intensity** | New usernames discovered | Spray intensity affects account lockout risk |

@@ -210,6 +210,11 @@ up the correct agent for any skill.
 with `mode: "bypassPermissions"`, passing the skill name, target info, and
 relevant context from state.
 
+**Model hint passthrough**: If the active engagement profile has `model_hints`
+for the agent being spawned, pass the specified model to the Agent tool's
+`model` parameter. Example: if the profile specifies `web-exploit-agent: opus`,
+spawn with `model: "opus"`. This overrides the agent's default model tier.
+
 **Operator live-tail.** After spawning any agent, use `find` to locate its
 JSONL transcript (do NOT cache the session directory — compactions change it):
 ```bash
@@ -470,12 +475,19 @@ If `engagement/state.db` already exists (the user said "resume", "continue",
 
 1. Call `get_state_summary()` to load the full engagement state.
 2. Read `engagement/scope.md` if it exists. Recover operator-controlled
-   workflow choices that are not stored in state (especially the `## Web Proxy`
-   section). If a web proxy decision already exists, ensure the helper files
-   `engagement/web-proxy.json` and `engagement/web-proxy.sh` match that
-   decision before any web agent is spawned.
+   workflow choices that are not stored in state:
+   - **`## Profile`** section — restore the active engagement profile
+     (skip_phases, priority_phases, model_hints, etc.). Apply these overrides
+     for all subsequent routing decisions. If no `## Profile` section exists
+     (engagement started before templates were available), treat as
+     `full-pentest` profile (no skips, no overrides).
+   - **`## Web Proxy`** section — if a web proxy decision already exists,
+     ensure the helper files `engagement/web-proxy.json` and
+     `engagement/web-proxy.sh` match that decision before any web agent is
+     spawned.
 3. Print a concise status briefing for the operator: targets, current
-   access, key vulns, active tunnels, blocked paths.
+   access, key vulns, active tunnels, blocked paths, and the **active profile
+   name** (e.g., `Profile: internal-ad`).
 4. Run the **Step 4 decision logic** to determine the next action.
 5. Present the recommended next action to the operator and wait for approval
    before spawning any agents.
@@ -495,6 +507,109 @@ Gather from the user:
   requirements, OPSEC constraints
 - **Objectives**: What does success look like? Domain admin? Data exfil proof?
   Specific system access?
+
+### Engagement Profile
+
+**Hard stop** — the operator selects a profile before proceeding.
+
+Engagement profiles customize the orchestrator's routing behavior — which phases
+to run, which to skip, which to prioritize, default scan type, and model tier
+overrides. They do NOT change what skills are available, only the orchestrator's
+default routing decisions. The operator can always override a profile's defaults.
+
+Use `AskUserQuestion`:
+
+**Question — Engagement profile** (single-select):
+- Header: "Engagement profile"
+- Question: "Select a profile to customize routing. You can override any default during the engagement."
+- Options:
+  1. Full Pentest (Default) — all phases enabled, no skips
+  2. CTF Box — aggressive full scan, all phases, speed over stealth
+  3. Web App Only — skip network recon, go straight to web discovery
+  4. Internal AD — prioritize AD discovery and Kerberos attacks, defer web
+  5. Assumed Breach — start from provided credentials or shell, skip recon
+
+**After selection**, record the active profile in `engagement/scope.md` under a
+`## Profile` section:
+
+```markdown
+## Profile
+- Template: <profile-name>
+- Skip phases: <comma-separated list, or "none">
+- Priority phases: <comma-separated list, or "none">
+- Default scan: <full|quick|none|null>
+- Model hints: <agent: model pairs, or "none">
+- Assumed breach: <yes|no>
+```
+
+**Profile definitions:**
+
+| Profile | Skip Phases | Priority Phases | Start With | Default Scan | Model Hints | Assumed Breach |
+|---------|-------------|-----------------|------------|--------------|-------------|----------------|
+| full-pentest | none | none | network-recon | null (ask) | none | no |
+| ctf-box | none | network-recon, web-discovery | network-recon | full | none | no |
+| web-app-only | network-recon, smb-enumeration, database-enumeration, remote-access-enumeration, infrastructure-enumeration, ad-discovery | web-discovery | web-discovery | none | web-exploit-agent: opus | no |
+| internal-ad | none | ad-discovery, kerberos-roasting, credential-dumping, acl-abuse | network-recon | quick | ad-exploit-agent: opus | no |
+| assumed-breach | network-recon, smb-enumeration, database-enumeration, remote-access-enumeration, infrastructure-enumeration | linux-discovery, windows-discovery, ad-discovery, credential-dumping | host-discovery | none | none | yes |
+
+**Applying profiles throughout the engagement:**
+
+- **Skip phases**: When the decision logic or routing would normally invoke a
+  skipped phase, skip it silently. Do not ask the operator. Do not spawn an
+  agent for a skipped phase. The operator can always manually request a skipped
+  phase by name — profiles set defaults, not hard restrictions.
+- **Priority phases**: When multiple viable paths exist at a decision point,
+  rank priority phases higher. This affects the order of presentation in
+  Parallel Path Presentation and which path is "Recommended".
+- **Default scan**: If set to `full` or `quick`, auto-select that scan type
+  instead of prompting the operator (the scan type hard stop is skipped). If
+  `none`, skip network scanning entirely. If `null`, prompt as normal.
+- **Model hints**: When spawning an agent listed in model_hints, pass the
+  specified model to the Agent tool's `model` parameter. This overrides the
+  agent's default model tier for this engagement.
+- **Assumed breach**: Triggers the Assumed Breach Setup procedure (see below)
+  instead of normal Step 2 reconnaissance.
+
+### Assumed Breach Setup
+
+**Only runs when the active profile has `assumed_breach: true`.**
+
+After the profile is recorded in scope.md, collect starting access from the
+operator instead of routing to network-recon:
+
+1. Use `AskUserQuestion`:
+
+   **Question — Starting access type** (single-select):
+   - Header: "Starting access"
+   - Question: "What access do you have?"
+   - Options:
+     1. Credentials (username + password/hash) — I have creds but no shell
+     2. Shell access — I have an active shell or can establish one
+     3. Both — I have credentials and an active shell
+
+2. Based on the answer, collect details:
+
+   **For credentials**: Ask for username, secret (password or hash),
+   secret_type (password/ntlm_hash/ssh_key/etc.), domain (if AD), and the
+   target host(s) to test against.
+
+   **For shell access**: Ask for the target host, current user, privilege level
+   (user/admin/root/system), access method (SSH/WinRM/RDP/web_shell/reverse_shell),
+   and the OS (Linux/Windows).
+
+3. Record in state:
+   - `add_target(host=<target>, os=<os>)` for each target
+   - `add_credential(...)` for provided credentials
+   - `add_access(...)` for existing shell access
+   - `test_credential(...)` to mark credentials as validated on the target
+
+4. Skip Step 2 (Reconnaissance) entirely. Jump to the decision logic:
+   - If shell access is provided → route to host discovery
+     (linux-discovery or windows-discovery based on OS)
+   - If only credentials → route to password-spray-agent to test creds
+     against discovered services, or if the target ports are known, route
+     directly to the appropriate discovery agent with the credentials
+   - If the target has AD ports (88, 389, 445) → also queue ad-discovery
 
 ### CTF Acknowledgement
 
@@ -523,6 +638,14 @@ mkdir -p engagement/evidence/logs
 
 ```markdown
 # Engagement Scope
+
+## Profile
+- Template: <profile-name>
+- Skip phases: <comma-separated list, or "none">
+- Priority phases: <comma-separated list, or "none">
+- Default scan: <full|quick|none|null>
+- Model hints: <agent: model pairs, or "none">
+- Assumed breach: <yes|no>
 
 ## Targets
 - <targets from user>
@@ -559,12 +682,26 @@ cp operator/templates/dump-state.sh engagement/dump-state.sh
 Map the attack surface by routing to discovery skills via subagent delegation.
 Do not run scanning or enumeration tools directly from the orchestrator.
 
+**Profile-aware**: If the active profile has `assumed_breach: true`, skip this
+entire step — the Assumed Breach Setup procedure (Step 1) already collected
+starting access and the decision logic (Step 4) handles routing from there.
+If `network-recon` is in `skip_phases`, skip the network recon subsection but
+continue with web discovery and AD discovery if those are not skipped.
+If `start_with` is `web-discovery`, skip network recon and jump directly to
+the Web Discovery subsection (still trigger the Web Proxy Setup hard stop).
+
 ### Network Recon (if IP/subnet in scope)
+
+**Skip if**: `network-recon` is in the active profile's `skip_phases`.
 
 **Hard stop — scan selection.**
 
 Before spawning the network-recon agent, present the operator with scan
 options via `AskUserQuestion`. The operator always chooses the scan type.
+
+**Profile shortcut**: If the active profile has `default_scan` set to `full`
+or `quick`, skip this hard stop and use the profile's default scan type.
+Print `[orchestrator] Profile default: <scan type> scan` so the operator knows.
 
 **Question — Scan type** (single-select):
 - Header: "Scan type"
@@ -622,19 +759,29 @@ based on discovered ports (see **Service Enumeration Routing** below).
 Based on the port/service map from network-recon, spawn enumeration agents for
 each service category found. These can run in parallel when independent.
 
-| Ports Found | Skill | Agent |
-|-------------|-------|-------|
-| 139, 445 (SMB) | `smb-enumeration` | network-recon-agent |
-| 1433, 3306, 5432, 1521, 27017, 6379 (databases) | `database-enumeration` | network-recon-agent |
-| 21, 22, 3389, 5900-5910, 5985/5986 (remote access) | `remote-access-enumeration` | network-recon-agent |
-| 53, 25/465/587, 161, 623, 2049, 69, 111/135, 80/443 (infra) | `infrastructure-enumeration` | network-recon-agent |
-| 80, 443, 8080, 8443 (HTTP/HTTPS) | `web-discovery` | web-discovery-agent |
-| 88 + 389 + 445 (AD) | `ad-discovery` | ad-discovery-agent |
+**Profile-aware**: Skip any enumeration skill that appears in the active
+profile's `skip_phases`. For example, web-app-only skips smb-enumeration,
+database-enumeration, remote-access-enumeration, infrastructure-enumeration,
+and ad-discovery — only web-discovery runs. Internal-ad deprioritizes
+web-discovery (runs it last, or only on operator request).
+
+| Ports Found | Skill | Agent | Skip if in skip_phases |
+|-------------|-------|-------|------------------------|
+| 139, 445 (SMB) | `smb-enumeration` | network-recon-agent | smb-enumeration |
+| 1433, 3306, 5432, 1521, 27017, 6379 (databases) | `database-enumeration` | network-recon-agent | database-enumeration |
+| 21, 22, 3389, 5900-5910, 5985/5986 (remote access) | `remote-access-enumeration` | network-recon-agent | remote-access-enumeration |
+| 53, 25/465/587, 161, 623, 2049, 69, 111/135, 80/443 (infra) | `infrastructure-enumeration` | network-recon-agent | infrastructure-enumeration |
+| 80, 443, 8080, 8443 (HTTP/HTTPS) | `web-discovery` | web-discovery-agent | web-discovery |
+| 88 + 389 + 445 (AD) | `ad-discovery` | ad-discovery-agent | ad-discovery |
 
 **Parallel enumeration**: When multiple service categories are found (typical),
 present them as parallel paths. SMB + database + remote-access + infrastructure
 enumeration are independent and can run simultaneously via network-recon-agent.
 Web discovery and AD discovery are also independent of network enumeration.
+
+**Priority ordering**: When presenting parallel paths, rank phases in the
+active profile's `priority_phases` list higher. Mark them as "Recommended" in
+the Parallel Path Presentation table.
 
 Pass the relevant port list to each enumeration agent so it only runs sections
 for open ports on the target.
@@ -909,6 +1056,13 @@ Higher privileges unlock flag paths that were unreadable before (e.g.,
 - Containerized shell → linux-privesc-agent(`container-escapes`) → host access → linux-privesc-agent(`linux-discovery`)/windows-privesc-agent(`windows-discovery`)
 
 ### Decision Logic
+
+**Profile-aware**: Before evaluating each item below, check the active
+profile's `skip_phases`. If a phase/skill appears in `skip_phases`, skip it
+unless the operator explicitly requests it. When ranking viable paths for
+Parallel Path Presentation, boost items that appear in `priority_phases` —
+they should appear first and be marked "Recommended". Model hints are applied
+at agent spawn time, not here.
 
 When reading the state summary (via `get_state_summary()`), the orchestrator
 walks ALL items below, collects every actionable finding, then presents them

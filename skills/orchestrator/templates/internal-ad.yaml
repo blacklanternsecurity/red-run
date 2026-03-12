@@ -1,0 +1,19 @@
+name: internal-ad
+description: >
+  Internal Active Directory assessment. Runs quick network recon to find DCs and
+  services, then prioritizes AD discovery and Kerberos-based attacks. Web
+  discovery is deferred unless explicitly requested. Use when the objective is
+  domain compromise from an internal network position.
+skip_phases: []
+deprioritize_phases:
+  - web-discovery
+priority_phases:
+  - ad-discovery
+  - kerberos-roasting
+  - credential-dumping
+  - acl-abuse
+start_with: network-recon
+default_scan: quick
+model_hints:
+  ad-exploit-agent: opus
+assumed_breach: false

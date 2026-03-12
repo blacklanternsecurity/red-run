@@ -1,0 +1,20 @@
+name: web-app-only
+description: >
+  Single web application assessment. Skips network recon, SMB, database, remote
+  access, infrastructure enumeration, and AD discovery. Jumps straight to
+  web-discovery on the provided URL(s). Use when the scope is a web application
+  URL, not an IP range.
+skip_phases:
+  - network-recon
+  - smb-enumeration
+  - database-enumeration
+  - remote-access-enumeration
+  - infrastructure-enumeration
+  - ad-discovery
+priority_phases:
+  - web-discovery
+start_with: web-discovery
+default_scan: none
+model_hints:
+  web-exploit-agent: opus
+assumed_breach: false
