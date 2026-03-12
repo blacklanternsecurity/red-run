@@ -816,6 +816,14 @@ execute exploitation commands inline — even if the technique seems simple.
 | Tomcat < 9.0.31 / 8.5.51 / 7.0.100 with AJP port open | **ajp-ghostcat** (Ghostcat file read) |
 | Tomcat Manager 403/401 + AJP port open | **ajp-ghostcat** (AJP proxy bypass) |
 
+### Browser Exploitation
+
+| Response Pattern | Route To |
+|---|---|
+| Extension/add-on/plugin upload endpoint found | **browser-exploitation** (extension crafting) |
+| Exposed Chrome DevTools / remote debugging port (9222, 9229) | **browser-exploitation** (CDP abuse) |
+| Browser installed on compromised host with saved profiles | **browser-exploitation** (profile extraction) |
+
 Update `engagement/state.md` with any new targets, confirmed vulns, or blocked
 techniques before routing.
 
