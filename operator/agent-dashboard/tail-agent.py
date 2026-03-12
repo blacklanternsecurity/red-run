@@ -497,7 +497,7 @@ def _jsonl_has_final_message(filepath: str) -> bool:
 
 
 def _discover_agents(
-    tasks_dir: str, displayed_paths: set[str]
+    tasks_dir: str, displayed_paths: set[str], project_dir: str = ""
 ) -> list[tuple[str, str, float, bool]]:
     """Discover agent output files, returning (label, path, mtime, in_dashboard) sorted newest-first.
 
@@ -530,7 +530,7 @@ def _discover_agents(
             results.append((label, filepath, mtime, in_dashboard))
 
     # Source 2: subagent JSONL directories (reliable, always created)
-    for subdir in _find_subagent_dirs():
+    for subdir in _find_subagent_dirs(project_dir):
         for filepath in _glob.glob(os.path.join(subdir, "agent-*.jsonl")):
             resolved = os.path.realpath(filepath)
             if resolved in seen:
@@ -554,13 +554,14 @@ def _build_browser_list(
     tasks_dir: str,
     displayed_paths: set[str],
     panes: list["AgentPane"],
+    project_dir: str = "",
 ) -> list[tuple[str, str, float, bool]]:
     """Build the unified browser list: discovered agents + currently displayed panes.
 
     Ensures every pane visible on the dashboard also appears in the browser
     (with in_dash=True), even if its file is older than the 24h discovery cutoff.
     """
-    items = _discover_agents(tasks_dir, displayed_paths)
+    items = _discover_agents(tasks_dir, displayed_paths, project_dir)
     seen = {os.path.realpath(path) for _, path, _, _ in items}
 
     # Add currently-displayed panes that _discover_agents missed (>24h old)
@@ -591,16 +592,42 @@ def _infer_tasks_dir(panes: list[AgentPane]) -> str:
     return ""
 
 
-def _find_subagent_dirs() -> list[str]:
+def _find_subagent_dirs(project_dir: str = "") -> list[str]:
     """Find Claude Code subagent JSONL directories for the current project.
 
     Searches ~/.claude/projects/<project>/<session>/subagents/ for all
     sessions. Returns directories sorted newest-first.
+
+    If project_dir is given, use it to derive the project path. Otherwise
+    fall back to cwd. If neither matches, search all recent project dirs.
     """
-    # Find the project dir from cwd
-    cwd = os.getcwd().replace("/", "-").lstrip("-")
-    project_base = os.path.expanduser(f"~/.claude/projects/-{cwd}")
-    if not os.path.isdir(project_base):
+    projects_root = os.path.expanduser("~/.claude/projects")
+    project_base = ""
+
+    # Try explicit project_dir first, then cwd
+    for candidate in [project_dir, os.getcwd()]:
+        if not candidate:
+            continue
+        encoded = candidate.replace("/", "-").lstrip("-")
+        path = os.path.join(projects_root, f"-{encoded}")
+        if os.path.isdir(path):
+            project_base = path
+            break
+
+    # Fallback: find most recently modified project dir
+    if not project_base and os.path.isdir(projects_root):
+        candidates = []
+        for entry in os.scandir(projects_root):
+            if entry.is_dir() and entry.name.startswith("-"):
+                try:
+                    candidates.append((entry.stat().st_mtime, entry.path))
+                except OSError:
+                    continue
+        if candidates:
+            candidates.sort(reverse=True)
+            project_base = candidates[0][1]
+
+    if not project_base:
         return []
     results = []
     for session_dir in _glob.glob(os.path.join(project_base, "*/subagents")):
@@ -615,7 +642,7 @@ def _find_subagent_dirs() -> list[str]:
 
 
 def dashboard(
-    agents: list[tuple[str, str]], tasks_dir: str = ""
+    agents: list[tuple[str, str]], tasks_dir: str = "", project_dir: str = ""
 ) -> None:
     """Curses main loop: layout panes, drain queues, redraw.
 
@@ -683,7 +710,7 @@ def dashboard(
                     os.path.realpath(p) for p in pane_map
                 }
                 for label, path, mtime, in_dash in _discover_agents(
-                    tasks_dir, displayed
+                    tasks_dir, displayed, project_dir
                 ):
                     if (
                         not in_dash
@@ -845,7 +872,7 @@ def dashboard(
                                 tasks_dir = _infer_tasks_dir(panes)
                             displayed = set(p.filepath for p in panes)
                             browser_items = _build_browser_list(
-                                tasks_dir, displayed, panes
+                                tasks_dir, displayed, panes, project_dir
                             )
                             browser_cursor = 0
                             browser_scroll = 0
@@ -858,7 +885,7 @@ def dashboard(
                                 tasks_dir = _infer_tasks_dir(panes)
                             displayed = set(p.filepath for p in panes)
                             browser_items = _build_browser_list(
-                                tasks_dir, displayed, panes
+                                tasks_dir, displayed, panes, project_dir
                             )
                             browser_cursor = 0
                             browser_scroll = 0
@@ -1210,6 +1237,14 @@ def main() -> None:
             if idx < len(args):
                 tasks_dir = args.pop(idx)
 
+        # --project-dir DIR: project root for subagent JSONL discovery
+        project_dir = ""
+        if "--project-dir" in args:
+            idx = args.index("--project-dir")
+            args.pop(idx)
+            if idx < len(args):
+                project_dir = args.pop(idx)
+
         # Remaining positional args: label:path pairs
         for arg in args:
             if ":" in arg:
@@ -1219,7 +1254,7 @@ def main() -> None:
                 agents.append((os.path.basename(arg), arg))
 
         # Allow starting with no agents — auto-discovery will find them
-        dashboard(agents, tasks_dir=tasks_dir)
+        dashboard(agents, tasks_dir=tasks_dir, project_dir=project_dir)
         return
 
     # Original modes

@@ -11,4 +11,4 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ENCODED="${PWD//\//-}"
 TASKS_DIR="/tmp/claude-$(id -u)/${ENCODED}/tasks"
 
-exec python3 "$SCRIPT_DIR/tail-agent.py" --dashboard --tasks-dir "$TASKS_DIR" "$@"
+exec python3 "$SCRIPT_DIR/tail-agent.py" --dashboard --tasks-dir "$TASKS_DIR" --project-dir "$PWD" "$@"
