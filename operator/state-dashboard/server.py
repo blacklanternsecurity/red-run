@@ -258,7 +258,7 @@ DASHBOARD_HTML = r"""<!DOCTYPE html>
 :root {
   --bg: #0d1117; --bg2: #161b22; --bg3: #21262d; --border: #30363d;
   --text: #c9d1d9; --dim: #8b949e; --accent: #58a6ff;
-  --red: #f85149; --orange: #d29922; --yellow: #e3b341;
+  --red: #f85149; --orange: #f0883e; --yellow: #e3b341;
   --green: #3fb950; --purple: #bc8cff; --blue: #58a6ff; --gray: #8b949e;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -594,7 +594,7 @@ function renderGraph() {
   }
 
   // Vulns — use via_access_id for provenance, fall back to host link
-  const sevColors = { critical:'#f85149', high:'#d29922', medium:'#e3b341', low:'#58a6ff', info:'#8b949e' };
+  const sevColors = { critical:'#f85149', high:'#f0883e', medium:'#e3b341', low:'#58a6ff', info:'#8b949e' };
   for (const v of state.vulns) {
     const host = v.host || 'unknown';
     addNode(`vuln:${v.id}`, 'vuln', v.title, '', `${v.severity} | ${v.status}\n${v.endpoint}\n${v.details||''}`.trim());
@@ -735,24 +735,64 @@ function renderGraph() {
     }
   }
 
-  // Prune dead-end vulns: remove vuln nodes that have no outbound edges
-  // (they didn't lead to creds, access, or anything else — keep them in tables only)
-  const vulnOutbound = new Set();
-  for (const e of edges) {
-    if (e.from.startsWith('vuln:')) vulnOutbound.add(e.from);
-  }
-  const deadVulns = new Set();
-  for (const n of nodes) {
-    if (n.type === 'vuln' && !vulnOutbound.has(n.id)) deadVulns.add(n.id);
-  }
-  if (deadVulns.size) {
-    // Remove dead vuln nodes and their inbound edges
+  // --- Kill-chain pruning: only show nodes on actual attack paths ---
+
+  // Helper: remove nodes by ID set and their edges
+  function pruneNodes(deadSet) {
     for (let i = nodes.length - 1; i >= 0; i--) {
-      if (deadVulns.has(nodes[i].id)) { delete nodeMap[nodes[i].id]; nodes.splice(i, 1); }
+      if (deadSet.has(nodes[i].id)) { delete nodeMap[nodes[i].id]; nodes.splice(i, 1); }
     }
     for (let i = edges.length - 1; i >= 0; i--) {
-      if (deadVulns.has(edges[i].to)) edges.splice(i, 1);
+      if (deadSet.has(edges[i].to) || deadSet.has(edges[i].from)) edges.splice(i, 1);
     }
+  }
+
+  // Phase 1: Prune dead-end vulns and creds (no outbound edges)
+  for (const prefix of ['vuln:', 'cred:']) {
+    const hasOutbound = new Set();
+    for (const e of edges) { if (e.from.startsWith(prefix)) hasOutbound.add(e.from); }
+    const dead = new Set();
+    for (const n of nodes) { if (n.id.startsWith(prefix) && !hasOutbound.has(n.id)) dead.add(n.id); }
+    pruneNodes(dead);
+  }
+
+  // Phase 2: Chain pruning — when access exists, keep only nodes on attacker→access paths
+  const accessNodeIds = nodes.filter(n => n.type === 'access').map(n => n.id);
+  if (accessNodeIds.length) {
+    // Forward reachability from attacker
+    const fwd = {};
+    for (const n of nodes) fwd[n.id] = [];
+    for (const e of edges) { if (fwd[e.from]) fwd[e.from].push(e.to); }
+    const fwdReach = new Set(['attacker']);
+    let q = ['attacker'];
+    while (q.length) {
+      const nxt = [];
+      for (const id of q) for (const c of (fwd[id]||[])) {
+        if (!fwdReach.has(c)) { fwdReach.add(c); nxt.push(c); }
+      }
+      q = nxt;
+    }
+    // Backward reachability from access nodes
+    const rev = {};
+    for (const n of nodes) rev[n.id] = [];
+    for (const e of edges) { if (rev[e.to]) rev[e.to].push(e.from); }
+    const bwdReach = new Set();
+    q = accessNodeIds.filter(id => fwdReach.has(id));
+    for (const id of q) bwdReach.add(id);
+    while (q.length) {
+      const nxt = [];
+      for (const id of q) for (const p of (rev[id]||[])) {
+        if (!bwdReach.has(p)) { bwdReach.add(p); nxt.push(p); }
+      }
+      q = nxt;
+    }
+    // Keep: nodes on attacker→access paths + all host/attacker nodes (scope context)
+    const keep = new Set();
+    for (const id of fwdReach) { if (bwdReach.has(id)) keep.add(id); }
+    for (const n of nodes) { if (n.type === 'host' || n.type === 'attacker') keep.add(n.id); }
+    const chainDead = new Set();
+    for (const n of nodes) { if (!keep.has(n.id)) chainDead.add(n.id); }
+    pruneNodes(chainDead);
   }
 
   // --- Layered layout ---
