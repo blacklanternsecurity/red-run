@@ -26,7 +26,6 @@ import asyncio
 import json
 import uuid
 from datetime import datetime, timezone
-from io import BytesIO
 from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
@@ -82,11 +81,15 @@ def create_server() -> FastMCP:
         """Send a mouse click (or double-click) at coordinates."""
         from aardwolf.commons.queuedata.constants import MOUSEBUTTON
 
-        btn = {
-            1: MOUSEBUTTON.MOUSEBUTTON_LEFT,
-            2: MOUSEBUTTON.MOUSEBUTTON_MIDDLE,
-            3: MOUSEBUTTON.MOUSEBUTTON_RIGHT,
-        }.get(button, MOUSEBUTTON.MOUSEBUTTON_LEFT) if isinstance(button, int) else button
+        btn = (
+            {
+                1: MOUSEBUTTON.MOUSEBUTTON_LEFT,
+                2: MOUSEBUTTON.MOUSEBUTTON_MIDDLE,
+                3: MOUSEBUTTON.MOUSEBUTTON_RIGHT,
+            }.get(button, MOUSEBUTTON.MOUSEBUTTON_LEFT)
+            if isinstance(button, int)
+            else button
+        )
 
         clicks = 2 if double else 1
         for _ in range(clicks):
@@ -134,19 +137,42 @@ def create_server() -> FastMCP:
         "f11": (0x57, False),
         "f12": (0x58, False),
         # Letter keys (US QWERTY scancodes)
-        "a": (0x1E, False), "b": (0x30, False), "c": (0x2E, False),
-        "d": (0x20, False), "e": (0x12, False), "f": (0x21, False),
-        "g": (0x22, False), "h": (0x23, False), "i": (0x17, False),
-        "j": (0x24, False), "k": (0x25, False), "l": (0x26, False),
-        "m": (0x32, False), "n": (0x31, False), "o": (0x18, False),
-        "p": (0x19, False), "q": (0x10, False), "r": (0x13, False),
-        "s": (0x1F, False), "t": (0x14, False), "u": (0x16, False),
-        "v": (0x2F, False), "w": (0x11, False), "x": (0x2D, False),
-        "y": (0x15, False), "z": (0x2C, False),
+        "a": (0x1E, False),
+        "b": (0x30, False),
+        "c": (0x2E, False),
+        "d": (0x20, False),
+        "e": (0x12, False),
+        "f": (0x21, False),
+        "g": (0x22, False),
+        "h": (0x23, False),
+        "i": (0x17, False),
+        "j": (0x24, False),
+        "k": (0x25, False),
+        "l": (0x26, False),
+        "m": (0x32, False),
+        "n": (0x31, False),
+        "o": (0x18, False),
+        "p": (0x19, False),
+        "q": (0x10, False),
+        "r": (0x13, False),
+        "s": (0x1F, False),
+        "t": (0x14, False),
+        "u": (0x16, False),
+        "v": (0x2F, False),
+        "w": (0x11, False),
+        "x": (0x2D, False),
+        "y": (0x15, False),
+        "z": (0x2C, False),
         # Number keys
-        "0": (0x0B, False), "1": (0x02, False), "2": (0x03, False),
-        "3": (0x04, False), "4": (0x05, False), "5": (0x06, False),
-        "6": (0x07, False), "7": (0x08, False), "8": (0x09, False),
+        "0": (0x0B, False),
+        "1": (0x02, False),
+        "2": (0x03, False),
+        "3": (0x04, False),
+        "4": (0x05, False),
+        "5": (0x06, False),
+        "6": (0x07, False),
+        "7": (0x08, False),
+        "8": (0x09, False),
         "9": (0x0A, False),
     }
 
