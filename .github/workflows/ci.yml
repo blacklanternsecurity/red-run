@@ -41,13 +41,13 @@ jobs:
       - name: Install lint dependencies
         run: cd tools/skill-router && uv sync --only-group lint
       - name: Run skill and agent lint
-        run: cd tools/skill-router && uv run --only-group lint pytest tests/test_skills.py tests/test_agents.py -v
+        run: cd tools/skill-router && uv run --only-group lint pytest tests/test_skills.py tests/test_agents.py tests/test_index.py -v
 
   test-tools:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        tool: [nmap-server, shell-server, browser-server, state-server]
+        tool: [nmap-server, shell-server, browser-server, state-server, rdp-server]
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v4
