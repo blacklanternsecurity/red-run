@@ -159,7 +159,15 @@ check_network_scanning() {
     if p=$(find_cmd nmap); then pass "nmap" "$p"
     else fail "nmap" "sudo apt install nmap"; fi
 
-    if p=$(find_go nuclei); then pass "nuclei" "$p"
+    if p=$(find_go nuclei); then
+        pass "nuclei" "$p"
+        # Check that nuclei-templates are installed
+        local tpl_dir="${HOME}/nuclei-templates"
+        if [[ -d "$tpl_dir" ]] && [[ -n "$(ls -A "$tpl_dir" 2>/dev/null)" ]]; then
+            pass "nuclei-templates" "$tpl_dir"
+        else
+            fail "nuclei-templates" "nuclei -update-templates"
+        fi
     else fail "nuclei" "go install github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest"; fi
 
     if p=$(find_go httpx); then pass "httpx" "$p"
