@@ -1157,6 +1157,8 @@ Multiple agents achieve the goal (rare but possible).
   writers safely. No write conflicts are possible because interim agents
   only INSERT (never UPDATE) and the orchestrator serializes its writes.
 
+**When writing `.sh` scripts** (temp scripts, proxy snippets, etc.), always `chmod +x` the file after creating it.
+
 ### Clock Skew Recovery
 
 When an AD skill returns with `KRB_AP_ERR_SKEW` or clock skew as the failure:
