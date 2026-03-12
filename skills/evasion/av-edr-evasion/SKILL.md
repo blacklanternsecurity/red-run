@@ -46,10 +46,6 @@ Create the evasion evidence directory if it doesn't exist:
 mkdir -p engagement/evidence/evasion
 ```
 
-Do NOT write to `engagement/activity.md`, `engagement/findings.md`, or
-engagement state. The orchestrator maintains these files. Report all findings
-in your return summary.
-
 ## Scope Boundary
 
 This skill covers **payload generation and runtime evasion only**. It does NOT
@@ -76,10 +72,6 @@ engagement state. Use it to:
 - Understand what was blocked and on which target
 - Check existing access methods for payload delivery
 - Identify the target OS version and architecture
-
-**Do NOT write engagement state.** When your work is complete, report all
-findings clearly in your return summary. The orchestrator parses your summary
-and records state changes.
 
 ## Exploit and Tool Transfer
 
@@ -570,6 +562,7 @@ the orchestrator with:
 
 **Return format:**
 ```
+
 ## Evasion Results: <target> (<original-technique>)
 
 ### Detection Assessment

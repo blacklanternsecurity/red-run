@@ -10,13 +10,23 @@ The orchestrator is the sole owner of engagement state. It creates the database,
 engagement/
 ├── scope.md          # Target scope, credentials, rules of engagement
 ├── state.db          # SQLite engagement state
-├── activity.md       # Chronological action log (orchestrator writes)
-├── findings.md       # Confirmed vulnerabilities (orchestrator writes)
+├── dump-state.sh     # Export state.db as markdown (from operator/templates/)
 └── evidence/         # Saved output, responses, dumps
     └── logs/         # Subagent JSONL transcripts
 ```
 
 The orchestrator creates this directory at the start of an engagement. Skills degrade gracefully when it doesn't exist — they just skip logging.
+
+### dump-state.sh
+
+The orchestrator copies `operator/templates/dump-state.sh` into the engagement directory at init time. Run it to view or back up state as markdown:
+
+```bash
+cd engagement && bash dump-state.sh
+bash dump-state.sh --db /path/to/state.db > snapshot.md
+```
+
+Produces the same sections as `get_state_summary()` but without truncation limits, plus a Timeline section showing all `state_events` rows.
 
 ## Schema
 

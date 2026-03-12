@@ -31,8 +31,7 @@ The orchestrator creates the engagement directory structure:
 engagement/
 ├── scope.md          # Target scope and rules of engagement
 ├── state.db          # SQLite engagement state database
-├── activity.md       # Chronological action log
-├── findings.md       # Confirmed vulnerabilities
+├── dump-state.sh     # Export state.db as markdown (operator convenience)
 └── evidence/         # Saved output and dumps
     └── logs/         # Agent JSONL transcripts
 ```

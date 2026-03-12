@@ -46,10 +46,6 @@ When an engagement directory exists:
 - **Evidence** → save significant output to `engagement/evidence/` with
   descriptive filenames (e.g., `smb-webshell-rce.txt`).
 
-Do NOT write to `engagement/activity.md`, `engagement/findings.md`, or
-engagement state. The orchestrator maintains these files. Report all findings
-in your return summary.
-
 ## Scope Boundary
 
 This skill covers writing webshells via SMB and achieving initial code
@@ -79,9 +75,7 @@ engagement state. Use it to:
 - Leverage existing credentials or access for this technique
 - Understand what's been tried and failed (check Blocked section)
 
-**Do NOT write engagement state.** When your work is complete, report all
-findings clearly in your return summary. The orchestrator parses your summary
-and records state changes. Your return summary must include:
+Your return summary must include:
 - New targets/hosts discovered (with ports and services)
 - New credentials or tokens found
 - Access gained or changed (user, privilege level, method)
@@ -403,6 +397,7 @@ If the webshell is caught by antivirus — file vanishes after upload, 403 on
 access despite correct path, or "blocked by administrator" errors:
 
 ```
+
 ### AV/EDR Blocked
 - Payload: <webshell type> (e.g., "PHP system() webshell")
 - Detection: <what happened> (e.g., "file quarantined after SMB write")

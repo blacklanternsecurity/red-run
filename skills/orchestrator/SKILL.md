@@ -125,11 +125,7 @@ The orchestrator routes to skills — it does not run attack tools itself.
 The only commands the orchestrator may execute directly are:
 
 - `mkdir -p engagement/evidence/logs` — engagement directory creation
-- File writes to `engagement/scope.md`, `engagement/activity.md`, `engagement/findings.md`.
-  For `activity.md` and `findings.md` (append-only logs), use Bash `echo >>` or
-  `cat >> ... <<'EOF'` instead of Read+Edit — avoids loading the full log into
-  context just to append. Use Write/Edit only for `scope.md` (structured, may
-  need mid-file edits).
+- File writes to `engagement/scope.md`. Use Write/Edit for scope.md (structured, may need mid-file edits).
 - State-writer MCP tools (`init_engagement`, `add_target`, `add_credential`, `add_access`, `add_vuln`, `add_pivot`, `add_blocked`, `add_tunnel`, `update_tunnel`, and their update variants) — engagement state
 - State-reader MCP tools (`get_state_summary`, `get_targets`, `get_credentials`, `get_access`, `get_vulns`, `get_pivot_map`, `get_blocked`, `get_tunnels`, `poll_events`) — state queries
 - Skill-router MCP tools (`get_skill`, `search_skills`, `list_skills`) — skill routing
@@ -244,10 +240,8 @@ of routing to the skill in the first place.
 **After every subagent return:**
 1. Parse the agent's return summary for new targets, creds, access, vulns, pivots, blocked items
 2. Call structured write tools to record findings (`add_target`, `add_credential`, `add_vuln`, etc.)
-3. Append to `engagement/activity.md` with routing decision and skill outcome
-4. Append to `engagement/findings.md` if vulnerabilities were confirmed
-5. Call `get_state_summary()` and run the Step 4 decision logic
-6. Spawn the next agent with the appropriate skill
+3. Call `get_state_summary()` and run the Step 4 decision logic
+4. Spawn the next agent with the appropriate skill
 
 **Each invocation = one skill.** Discovery skills find things and return.
 The orchestrator decides which technique skill to invoke next. Subagents
@@ -276,7 +270,6 @@ while objectives_not_met:
     summary = get_state_summary()
     analyze: unexploited vulns, unchained access, untested creds, pivot map
     pick highest-value next action → select skill + domain agent
-    append to activity.md (routing decision)
     spawn agent in background with: skill name, target info, context
     if watcher_task_id: TaskStop(watcher_task_id)   # kill stale watcher
     watcher_task_id = spawn event watcher in background (cursor, db path)
@@ -308,16 +301,6 @@ access and cannot invoke skills. Never use them for target-level work:
 
 For hash cracking and encrypted file cracking, use the **credential-cracking**
 skill (inline) instead of ad-hoc cracking in a built-in sub-agent.
-
-### Pre-Routing Checkpoint
-
-Before every skill invocation, append to
-`engagement/activity.md` with current findings. Format:
-```
-### [YYYY-MM-DD HH:MM:SS] orchestrator → routing to <skill-name>
-- State: <brief summary of what's known>
-- Reason: <why this skill was chosen>
-```
 
 ### Event Monitoring
 
@@ -407,9 +390,7 @@ When a skill completes and returns control to the orchestrator:
    This propagates automatically — all subsequent agents see target notes
    in `get_state_summary()`. Keep it to one line (e.g., "MSF: set
    ReverseAllowProxy true + encoder cmd/echo for cmd payloads").
-5. Append to `engagement/activity.md` with skill outcome
-6. Append to `engagement/findings.md` if vulnerabilities were confirmed
-7. **Record failed approaches as blocked:** If the agent was killed
+5. **Record failed approaches as blocked:** If the agent was killed
    (`TaskStop`) or returned without achieving its stated goal, call
    `add_blocked()` for each distinct approach the agent attempted. Extract
    approaches from:
@@ -424,21 +405,20 @@ When a skill completes and returns control to the orchestrator:
      different access level)
    This ensures subsequent agents see prior failures in `get_state_summary()`
    and don't repeat dead-end approaches.
-8. **Check for new usernames** — if the skill returned usernames not
+6. **Check for new usernames** — if the skill returned usernames not
    previously in state, trigger the **Usernames Found** hard stop before
    continuing. This applies to ANY skill that discovers users: network-recon
    (RPC/LDAP null session), web-discovery (user enumeration), ad-discovery
    (BloodHound/LDAP), SQLi (user table dump), credential-dumping (SAM/LSASS),
    or any other source.
-9. Call `get_state_summary()` for routing decision
-10. Run the Step 4 decision logic
-11. Route to the next skill based on updated state
+7. Call `get_state_summary()` for routing decision
+8. Run the Step 4 decision logic
+9. Route to the next skill based on updated state
 
 #### Parallel Path Returns
 
 When a returning agent was part of a parallel run (see **Parallel Execution**),
-steps 1–6 above still apply — parse findings, record state, record workarounds,
-log activity, log findings. Steps 7–11 are replaced by the **Race Resolution** procedure. Do not
+steps 1–4 above still apply — parse findings, record state, record workarounds. Steps 5–9 are replaced by the **Race Resolution** procedure. Do not
 run decision logic or route to the next skill until all parallel agents have
 completed or been killed.
 
@@ -479,20 +459,6 @@ to the screen:
 
 1. **On-screen**: Print `[orchestrator] Activated → <target>` so the operator
    sees the engagement is starting.
-2. **activity.md**: After creating the engagement directory in Step 1, append:
-   ```
-   ### [YYYY-MM-DD HH:MM:SS] orchestrator → <target>
-   - Invoked (engagement starting)
-   ```
-
-**Timestamps:** Replace `[YYYY-MM-DD HH:MM:SS]` with the actual current date
-and time. Run `date '+%Y-%m-%d %H:%M:%S'` to get it. Never write the literal
-placeholder `[YYYY-MM-DD HH:MM:SS]` — activity.md entries need real timestamps
-with date and second precision for timeline reconstruction.
-
-This entry must be written as soon as the engagement directory exists.
-Subsequent milestone entries append bullet points under this same header or
-create new headers as phases progress.
 
 ## Resuming an Existing Engagement
 
@@ -507,13 +473,8 @@ If `engagement/state.db` already exists (the user said "resume", "continue",
    decision before any web agent is spawned.
 3. Print a concise status briefing for the operator: targets, current
    access, key vulns, active tunnels, blocked paths.
-4. Append to `activity.md`:
-   ```
-   ### [YYYY-MM-DD HH:MM:SS] orchestrator → resumed
-   - Engagement resumed. State loaded from state.db.
-   ```
-5. Run the **Step 4 decision logic** to determine the next action.
-6. Present the recommended next action to the operator and wait for approval
+4. Run the **Step 4 decision logic** to determine the next action.
+5. Present the recommended next action to the operator and wait for approval
    before spawning any agents.
 
 Do NOT re-initialize scope, re-create the engagement directory, or re-run
@@ -584,16 +545,10 @@ mkdir -p engagement/evidence/logs
 Call `init_engagement(name="<engagement name>")` to create the SQLite state
 database.
 
-**engagement/activity.md** — start the activity log:
+Copy the state dump script for operator use:
 
-```markdown
-# Activity Log
-```
-
-**engagement/findings.md** — start the findings tracker:
-
-```markdown
-# Findings
+```bash
+cp operator/templates/dump-state.sh engagement/dump-state.sh
 ```
 
 ## Step 2: Reconnaissance
@@ -633,14 +588,7 @@ options via `AskUserQuestion`. The operator always chooses the scan type.
 - **Import existing results**: Ask for the file path (the "Other" text input
   captures this). Read the XML file, parse it for hosts/ports/services, and
   record findings directly via state-writer MCP tools (`add_target`,
-  `add_port`). Skip spawning network-recon-agent entirely. Log to
-  `engagement/activity.md`:
-  ```
-  ### [YYYY-MM-DD HH:MM:SS] orchestrator → imported scan results
-  - Source: <path to XML>
-  - Hosts found: N
-  - Open ports: <summary>
-  ```
+  `add_port`). Skip spawning network-recon-agent entirely.
 
 - **Custom scan**: The operator's text input describes the scan. Pass it
   to network-recon-agent in the prompt so the agent can construct the
@@ -730,15 +678,6 @@ After each agent returns, parse the return summary and record findings using
 state-writer MCP tools (`add_target`, `add_port`, `add_credential`, `add_vuln`,
 etc.). Then call `get_state_summary()` to check for new findings before routing
 to the next skill.
-
-Log to `engagement/activity.md`:
-```markdown
-### [YYYY-MM-DD HH:MM:SS] orchestrator → recon
-- Routed to network-recon → N open ports found
-- Web services found: <list>
-- Technologies: <list>
-- Domain environment: yes/no
-```
 
 ### Hostname Resolution Check
 
@@ -944,14 +883,6 @@ callout:
   Agent: <which agent found it>
 ```
 
-Log to `engagement/activity.md`:
-```
-### [YYYY-MM-DD HH:MM:SS] FLAG CAPTURED on <host>
-- File: <filename>, User: <privilege level>
-- Flag: <contents>
-- Found by: <agent name> during <skill name>
-```
-
 Do not interrupt the running agent — it continues enumeration normally. The
 flag is already in state via the agent's interim write.
 
@@ -989,7 +920,7 @@ When reading the state summary (via `get_state_summary()`), the orchestrator sho
    **Step 1 — Version check (instant, do this first):** Compare the target's
    software version (from recon/state) against the CVE's affected range. If
    the target version is patched, STOP — do not spawn an exploit agent. Log
-   the CVE as inapplicable in activity.md and move on. This catches the
+   the CVE as inapplicable via `add_blocked()` and move on. This catches the
    majority of false positives with zero cost.
 
    **Step 2 — Class verification (if version is vulnerable or unknown):**
@@ -1116,7 +1047,7 @@ When reading the state summary (via `get_state_summary()`), the orchestrator sho
       the domain (web/ad/privesc/network) from its category and use the
       corresponding agent.
    d. If no search result is relevant, proceed with general methodology and
-      note the coverage gap in `engagement/activity.md`.
+      note the coverage gap in conversation context.
 
 ### Parallel Path Selection (Default)
 
@@ -1158,24 +1089,14 @@ format above.
 
 When running multiple paths in parallel, use background agents.
 
-#### 1. Log the Decision
-
-Append to `engagement/activity.md`:
-```
-### [YYYY-MM-DD HH:MM:SS] orchestrator → PARALLEL
-- Path A: <skill-name> (confidence: <high/medium/low>, OPSEC: <low/medium/high>)
-- Path B: <skill-name> (confidence: <high/medium/low>, OPSEC: <low/medium/high>)
-- Reason: <brief rationale>
-```
-
-#### 2. Spawn All Agents
+#### 1. Spawn All Agents
 
 Use the Agent tool with `run_in_background: true` for each path. **Spawn
 all agents in a single message** — this ensures true parallel execution.
 
 - Pass normal context: skill name, target info, mode, relevant state summary.
 
-#### 3. Wait for First Return
+#### 2. Wait for First Return
 
 Background agents auto-notify on completion. The event watcher runs alongside
 parallel agents — if the watcher fires with actionable findings before any
@@ -1184,10 +1105,10 @@ the operator). However, **watcher notifications do NOT resolve the parallel
 run** — resolution still requires an agent to complete and return. Spawn a new
 watcher after processing each notification.
 
-#### 4. Race Resolution
+#### 3. Race Resolution
 
 When an agent returns, apply the standard Post-Skill Checkpoint steps 0–6
-(poll events, parse, dedup, record state, record workarounds, log activity, log findings). Then resolve:
+(poll events, parse, dedup, record state, record workarounds). Then resolve:
 
 **Case 1 — Succeeded:**
 The returning agent achieved its goal (credential obtained, access gained,
@@ -1199,14 +1120,7 @@ foothold established).
    before termination. Record any useful partial findings. Also record the
    killed agent's attempted approaches as blocked via `add_blocked()` (see
    Post-Skill Checkpoint step 7).
-4. Log to `engagement/activity.md`:
-   ```
-   ### [YYYY-MM-DD HH:MM:SS] orchestrator → PARALLEL RESOLVED
-   - Winner: Path <X> (<skill-name>)
-   - Result: <what was obtained>
-   - Killed: Path <Y> (<skill-name>) — partial findings: <none | brief summary>
-   ```
-5. Resume the normal orchestrator loop (call `get_state_summary()`, run
+4. Resume the normal orchestrator loop (call `get_state_summary()`, run
    decision logic, route to next skill).
 
 **Case 2 — No winner yet:**
@@ -1217,21 +1131,19 @@ Kerberoasting returned no crackable hashes).
    Post-Skill Checkpoint step 7).
 3. Let the other agent(s) continue — do not kill them.
 4. Block on the next agent's return.
-5. Log `PARALLEL PARTIAL` to activity.md with what was learned.
+5. Note what was learned for the next routing decision.
 6. When the last agent returns, resolve normally — if the goal is achieved,
-   log `PARALLEL RESOLVED`. If all paths failed, log `PARALLEL FAILED` and
-   fall through to the decision logic to find an alternative approach.
+   resolve normally. If all paths failed, fall through to the decision logic
+   to find an alternative approach.
 
 **Case 3 — Multiple succeed:**
 Multiple agents achieve the goal (rare but possible).
 1. Record findings from both agents.
 2. Use the more advantageous result: prefer reusable credentials over one-time
    access, prefer higher privilege over lower, prefer quieter over noisier.
-3. Log `PARALLEL RESOLVED (multiple succeeded)` with which result was preferred
-   and why.
-4. Resume the normal orchestrator loop.
+3. Resume the normal orchestrator loop.
 
-#### 5. State Consistency Rules
+#### 4. State Consistency Rules
 
 - **All agents** use state-interim MCP and can write 5 add-only tables
   mid-run: credentials, vulns, pivots, blocked, tunnels. This ensures
@@ -1257,7 +1169,7 @@ When an AD skill returns with `KRB_AP_ERR_SKEW` or clock skew as the failure:
    sync in the background, then confirm."
 3. Wait for confirmation (sudo — always a hard stop)
 4. Retry the **same skill invocation** with identical parameters
-5. Clean up script after success, log to activity.md
+5. Clean up script after success
 
 ### AV Evasion Recovery
 
@@ -1282,7 +1194,6 @@ When a technique agent returns with an "AV/EDR Blocked" section in its summary:
    ```
 
 3. When evasion-agent returns with bypass artifact:
-   - Record the bypass method in `engagement/activity.md`
    - Re-invoke the **original agent** with the **same skill** plus evasion context:
      ```
      Agent(
@@ -1299,13 +1210,6 @@ When a technique agent returns with an "AV/EDR Blocked" section in its summary:
 4. If the evasion agent itself fails (no bypass found), record as permanently
    blocked via `add_blocked()` with retry: "no" and move to the next attack
    vector.
-
-5. Log to `engagement/activity.md`:
-   ```
-   ### [YYYY-MM-DD HH:MM:SS] orchestrator → av-evasion recovery
-   - AV blocked <skill-name> on <target>: <detection details>
-   - Routed to evasion-agent → <outcome>
-   ```
 
 ### Web Proxy Setup
 
@@ -1390,12 +1294,6 @@ places:
        - Listener: none
        - Decision: operator skipped Burp capture
        ```
-     - Append to `engagement/activity.md`:
-       ```
-       ### [YYYY-MM-DD HH:MM:SS] orchestrator → web-proxy
-       - HTTP/HTTPS services found on <targets>
-       - Operator chose direct web traffic (no Burp proxy)
-       ```
      - Write `engagement/web-proxy.json`:
        ```json
        {"enabled": false, "proxy_url": ""}
@@ -1428,12 +1326,6 @@ places:
        - Enabled: yes
        - Listener: http://<ip>:<port>
        - Binding: <loopback|dedicated>
-       ```
-     - Append to `engagement/activity.md`:
-       ```
-       ### [YYYY-MM-DD HH:MM:SS] orchestrator → web-proxy
-       - HTTP/HTTPS services found on <targets>
-       - Burp listener configured: http://<ip>:<port> (<loopback|dedicated>)
        ```
      - Write `engagement/web-proxy.json`:
        ```json
@@ -1491,7 +1383,7 @@ If exit code is non-zero, the hostname does not resolve.
    Run: sudo bash ./temp_hosts-update.sh
    ```
 4. Wait for operator confirmation. Do NOT spawn any agent while waiting.
-5. Verify with `getent hosts <hostname>`, clean up script, log to activity.md
+5. Verify with `getent hosts <hostname>`, clean up script
 6. Resume the engagement loop
 
 ### Usernames Found
@@ -1562,8 +1454,7 @@ always chooses the cracking method.
      line. Wait for the operator to provide the cracked plaintext. When
      provided, record via `add_credential()` (or `update_credential()` with
      `cracked=true` and the plaintext secret) and continue the engagement loop.
-   - **Skip**: Log to `activity.md` and continue the engagement loop via
-     other attack paths.
+   - **Skip**: Continue the engagement loop via other attack paths.
 
 ## Step 5: Post-Exploitation
 
@@ -1647,9 +1538,9 @@ not just the target that was just worked on.
 When the engagement is complete (objectives met or testing window closed):
 
 1. Call `get_state_summary()` for the full picture
-2. Read `engagement/findings.md` for confirmed vulnerabilities
+2. Call `get_vulns()` for confirmed vulnerabilities with full details
 3. Summarize the attack narrative — how each chain progressed
-4. Write up each finding in `engagement/findings.md` with severity, impact, evidence path, and reproduction steps.
+4. Present each finding with severity, impact, evidence path, and reproduction steps.
 
 ### Engagement Summary Template
 

@@ -67,11 +67,9 @@ Check for `./engagement/` directory. If absent, proceed without logging.
 When an engagement directory exists:
 - Print `[sql-injection-union] Activated → <target>` on activation.
 - Save evidence to `engagement/evidence/` with descriptive filenames.
-
-Do NOT write to activity.md, findings.md, or engagement state.
 ```
 
-Skills save evidence files but never write engagement logs or state — that's the orchestrator's job.
+Skills save evidence files. State writes go through state-interim MCP for critical discoveries — the orchestrator handles full state management.
 
 #### 3. Scope Boundary
 

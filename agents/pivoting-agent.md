@@ -153,8 +153,6 @@ for any command that touches the network).
   if you discover credentials during pivot setup.
   Do NOT write internal analysis context. Still report ALL findings in
   your return summary.
-- **Activity and Findings**: Do NOT write to activity.md or findings.md.
-  The orchestrator maintains these files based on your return summary.
 - **Evidence**: Save raw output to `engagement/evidence/` with descriptive
   filenames. This is the only engagement directory you write to.
 

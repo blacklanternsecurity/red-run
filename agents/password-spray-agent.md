@@ -109,8 +109,6 @@ is to spray and return, not establish shells.
   `add_credential()` for each confirmed valid login. This lets the
   orchestrator act on creds while spraying continues. Also use `add_blocked()`
   for failed spray attempts. Still report ALL findings in your return summary.
-- **Activity and Findings**: Do NOT write to activity.md or findings.md.
-  The orchestrator maintains these files based on your return summary.
 - **Evidence**: Save raw output to `engagement/evidence/` with descriptive
   filenames. This is the only engagement directory you write to.
 

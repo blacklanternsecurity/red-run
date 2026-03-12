@@ -41,10 +41,6 @@ When an engagement directory exists:
   descriptive filenames (e.g., `smb-shares-10.10.10.5.txt`,
   `smb-manspider-results.txt`).
 
-Do NOT write to `engagement/activity.md`, `engagement/findings.md`, or
-engagement state. The orchestrator maintains these files. Report all findings
-in your return summary.
-
 ## Scope Boundary
 
 This skill covers SMB enumeration only — share listing, access testing,

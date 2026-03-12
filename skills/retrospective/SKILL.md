@@ -25,16 +25,15 @@ items. All analysis is local — you never touch the target.
 
 ## Prerequisites
 
-- `engagement/` directory must exist with at least `activity.md` and `state.md`
+- `engagement/` directory must exist with `state.db`
 - The engagement should be complete or paused — this is a post-mortem, not a
   mid-engagement review
 - MCP skill-router available (`search_skills`, `list_skills`)
 
-If `engagement/activity.md` or `engagement/state.md` are missing, tell the user:
+If `engagement/state.db` is missing, tell the user:
 
-> Cannot run retrospective — engagement/activity.md and engagement/state.md are
-> required. These files are created by the orchestrator or discovery skills
-> during an engagement.
+> Cannot run retrospective — engagement/state.db is required. This database is
+> created by the orchestrator during an engagement.
 
 ## Engagement Logging
 
@@ -45,18 +44,14 @@ When an engagement directory exists:
 - **Evidence** → save significant output to `engagement/evidence/` with
   descriptive filenames (e.g., `sqli-users-dump.txt`, `ssrf-aws-creds.json`).
 
-Do NOT write to `engagement/activity.md`, `engagement/findings.md`, or
-engagement state. The orchestrator maintains these files. Report all findings
-in your return summary.
-
 ## Step 1: Gather Context
 
 Read all engagement files:
 
 1. `engagement/scope.md` — targets, objectives, rules of engagement
 2. `engagement/state.db` — final engagement state (call `get_state_summary()`)
-3. `engagement/activity.md` — chronological activity log
-4. `engagement/findings.md` — confirmed vulnerabilities
+3. `poll_events(since_id=0)` — full timeline of state changes
+4. `get_vulns()` — confirmed vulnerabilities with details
 
 If any file is missing (other than the required two), note it but continue with
 what's available.
@@ -66,7 +61,7 @@ what's available.
 Check for `engagement/evidence/logs/*.jsonl`. These are raw JSONL transcripts
 captured from subagent executions by the SubagentStop hook. They contain every
 tool call, tool result, assistant reasoning step, MCP call, and error — ground
-truth that `activity.md` summaries cannot provide.
+truth that state_events summaries cannot provide.
 
 If JSONL logs are found, spawn a **general-purpose Task subagent** to parse them:
 
@@ -128,7 +123,7 @@ First, load the full skill inventory: call `list_skills()` to get every
 available skill with its category and description. This is your reference for
 what the library covers.
 
-Read `engagement/activity.md` and compare each activity against the inventory.
+Read the state_events timeline and JSONL logs, then compare each activity against the inventory.
 
 For each activity entry, determine:
 1. **Was a skill loaded?** Check for skill name references in activity entries.
@@ -264,9 +259,7 @@ engagement state. Use it to:
 - Leverage existing credentials or access for this technique
 - Understand what's been tried and failed (check Blocked section)
 
-**Do NOT write engagement state.** When your work is complete, report all
-findings clearly in your return summary. The orchestrator parses your summary
-and records state changes. Your return summary must include:
+Your return summary must include:
 - New targets/hosts discovered (with ports and services)
 - New credentials or tokens found
 - Access gained or changed (user, privilege level, method)
@@ -307,8 +300,10 @@ Produce `engagement/retrospective.md` with all findings:
 ## Skill Routing Review
 ### Skills Invoked
 - <skill-name> — <what it did, whether it performed well>
+
 ### Skills Skipped (Should Have Been Invoked)
 - <skill-name> — <why it should have been invoked, what was done instead>
+
 ### Inline Execution (Should Have Been Routed)
 - <description of what was done inline instead of via a skill>
 
@@ -322,10 +317,13 @@ Produce `engagement/retrospective.md` with all findings:
 ## Operational Review
 ### Manual Interventions
 - <what was done manually that should be automated>
+
 ### OPSEC
 - <assessment of noise level, detection surface>
+
 ### Routing Efficiency
 - <unnecessary detours, missed shortcuts>
+
 ### Token Efficiency
 Top token consumers:
 1. <agent/skill — what consumed tokens, relative impact, proposed fix>
@@ -341,14 +339,6 @@ Priority-ordered list:
 3. [routing-fix] <skill-name>: <routing table update needed>
 4. [template-fix] <change to _template or conventions>
 5. [token-efficiency] <agent/skill/template>: <change to reduce token usage>
-```
-
-After writing the report, append a summary to `engagement/activity.md`:
-
-```
-### [YYYY-MM-DD HH:MM:SS] retrospective → complete
-- Report written to engagement/retrospective.md
-- Actionable items: N skill-update, N new-skill, N routing-fix, N template-fix, N token-efficiency
 ```
 
 Present the actionable items to the user and ask which ones to prioritize.
@@ -422,7 +412,7 @@ analyze the current session transcript.
 ### Activity log has no skill references
 Techniques may have been executed inline (without loading the corresponding
 skill) or the engagement predates the current skill library. Flag this
-as a routing gap and reconstruct the timeline from the engagement state and findings.md
+as a routing gap and reconstruct the timeline from state_events and JSONL logs
 instead.
 
 ### Multiple engagement directories
