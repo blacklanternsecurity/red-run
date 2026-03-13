@@ -586,41 +586,6 @@ the orchestrator with:
 The orchestrator will re-invoke the original technique skill with your payload
 and instructions.
 
-## Stall Detection
-
-If you have spent **5 or more tool-calling rounds** on the same failure with
-no meaningful progress — same error, no new information, no change in output
-— **stop**.
-
-**What counts as progress:**
-- Trying a variant or alternative **documented in this skill**
-- Adjusting compilation flags or payload command per the Troubleshooting section
-- Gaining new diagnostic information (different error, partial success)
-
-**What does NOT count as progress:**
-- Writing novel evasion frameworks not documented here
-- Attempting to reverse-engineer the AV engine's detection logic
-- Retrying the same compilation with trivially different source code
-- Downloading and running third-party evasion tools not mentioned here
-
-If you find yourself writing code that isn't in this skill, you have left
-methodology. That is a stall.
-
-Do not loop. Work through failures systematically:
-1. Try each variant or alternative **once**
-2. Check the Troubleshooting section for known fixes
-3. If nothing works after 5 rounds, you are stalled
-
-**When stalled, return to the orchestrator immediately with:**
-- What was attempted (variants, compilation methods, bypass techniques tried)
-- What failed and why (still caught, wrong arch, missing tool)
-- Assessment: **blocked** (AV too aggressive, EDR behavioral monitoring) or
-  **retry-later** (may work with different payload type or execution method)
-
-**When stalled:** Tell the user you're stalled, present what was tried, and
-recommend the next best path. Return findings to the orchestrator — it will
-decide whether to revisit with new context or route elsewhere.
-
 ## Troubleshooting
 
 ### mingw-w64 not installed

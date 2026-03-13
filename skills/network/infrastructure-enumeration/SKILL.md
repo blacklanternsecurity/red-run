@@ -48,9 +48,9 @@ default credentials, and info disclosure on non-web, non-AD services, plus
 surface-level HTTP/HTTPS tech detection.
 
 **Out of scope — route instead:**
-- Deep web application testing → **web-discovery**
-- Kerberos/LDAP/domain enumeration → **ad-discovery**
-- Credential brute force → **password-spraying**
+- Deep web application testing
+- Kerberos/LDAP/domain enumeration
+- Credential brute force
 - Exploitation of discovered vulns → return to orchestrator
 
 Do not load or execute another skill. Stay in methodology.
@@ -151,14 +151,14 @@ nmap -sV -p389,636,3268 --script ldap-rootdse,ldap-search TARGET_IP
 **Quick wins:** Anonymous bind, password in description, rootDSE domain
 disclosure, LDAP signing not required.
 
-→ STOP. Return to orchestrator recommending **ad-discovery**. Pass: DC IP,
+→ STOP and return with: what was achieved, new findings, context for next steps.
 domain name from rootDSE, anonymous bind results.
 
 ## Kerberos — Port 88
 
 DO NOT enumerate. Kerberos enumeration and ticket requests belong to AD skills.
 
-→ STOP. Return to orchestrator recommending **ad-discovery**. Pass: DC IP,
+→ STOP and return with: what was achieved, new findings, context for next steps.
 domain name, any credentials found.
 
 ## HTTP/HTTPS — Ports 80/443/8080/8443
@@ -178,7 +178,7 @@ httpx -u TARGET_IP -ports 80,443,8080,8443 \
 phpMyAdmin), exposed admin panels, directory listing, `.git`/`.svn` exposed,
 phpinfo(), server-status/server-info.
 
-→ STOP. Return to orchestrator recommending **web-discovery**. Pass: target
+→ STOP and return with: what was achieved, new findings, context for next steps.
 URL, tech stack, interesting headers or findings. Do not execute web fuzzing
 or directory brute force inline.
 
@@ -248,20 +248,13 @@ credential files, firmware images.
 ## Escalate or Pivot
 
 After enumeration, return to the orchestrator with routing recommendations:
-- **Web services** → **web-discovery** (pass URLs, tech stack)
-- **AD services** (LDAP/Kerberos) → **ad-discovery** (pass DC IP, domain, anon bind results)
+- **Web services** (pass URLs, tech stack)
+- **AD services** (LDAP/Kerberos) (pass DC IP, domain, anon bind results)
 - **SNMP RCE** (Net-SNMP Extend) → note in return for orchestrator
 - **NFS no_root_squash** → note for privesc chaining if shell access exists
-- **IPMI hashes** → **credential-cracking** (pass hash type and values)
+- **IPMI hashes** (pass hash type and values)
 - **Credentials found** → list all for orchestrator to record and test
 - **New subnets/hosts** → list for orchestrator to add as targets
-
-## Stall Detection
-
-If **5+ tool-calling rounds** produce the same failure with no new information,
-**stop**. Try each variant once, check Troubleshooting, then return to the
-orchestrator with what was attempted, what failed, and whether it's **blocked**
-or **retry-later**.
 
 ## Troubleshooting
 

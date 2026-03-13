@@ -160,7 +160,7 @@ What access do you have?
 ├── ManageCertificates on CA → ESC7 Attack 3 (Step 4)
 ├── Can coerce NTLM auth + HTTP enrollment available → ESC8 (Step 5)
 ├── Can coerce NTLM auth + ICPR unencrypted → ESC11 (Step 6)
-└── No direct access → Route to **auth-coercion-relay** or **acl-abuse**
+└── No direct access → Escalate or **acl-abuse**
 ```
 
 ## Step 2: ESC4 — Template ACL Abuse
@@ -253,7 +253,7 @@ certipy forge -ca-pfx DOMAIN-CA.pfx -upn administrator@domain.local \
 certipy auth -pfx administrator_forged.pfx -dc-ip DC_IP
 ```
 
-Route to **adcs-persistence** for full golden certificate technique.
+Escalate for full golden certificate technique.
 
 ## Step 4: ESC7 — CA Permission Abuse
 
@@ -444,52 +444,10 @@ certipy auth -pfx dc.pfx -dc-ip DC_IP
 
 ## Step 7: Escalate or Pivot
 
-After obtaining a certificate:
-
-- **DC machine certificate obtained**: DCSync via `secretsdump.py -k -no-pass`,
-  route to **credential-dumping**
-- **Domain Admin certificate**: Full domain access, route to **adcs-persistence**
-  for golden certificate persistence
-- **Want to persist**: Route to **adcs-persistence** for certificate mapping,
-  golden certificate, or enrollment agent persistence
-- **Template already exploitable**: Route to **adcs-template-abuse** (ESC1/2/3/6)
-- **Found ACL on user/group objects**: Route to **acl-abuse**
-- **Need coercion vectors**: Route to **auth-coercion-relay**
-
-## Stall Detection
-
-If you have spent **5 or more tool-calling rounds** on the same failure with
-no meaningful progress — same error, no new information, no change in output
-— **stop**.
-
-**What counts as progress:**
-- Trying a variant or alternative **documented in this skill**
-- Adjusting syntax, flags, or parameters per the Troubleshooting section
-- Gaining new diagnostic information (different error, partial success)
-
-**What does NOT count as progress:**
-- Writing custom exploit code not provided in this skill
-- Inventing workarounds using techniques from other domains
-- Retrying the same command with trivially different input
-- Compiling or transferring tools not mentioned in this skill
-
-If you find yourself writing code that isn't in this skill, you have left
-methodology. That is a stall.
-
-Do not loop. Work through failures systematically:
-1. Try each variant or alternative **once**
-2. Check the Troubleshooting section for known fixes
-3. If nothing works after 5 rounds, you are stalled
-
-**When stalled, return to the orchestrator immediately with:**
-- What was attempted (commands, variants, alternatives tried)
-- What failed and why (error messages, empty responses, timeouts)
-- Assessment: **blocked** (permanent — config, patched, missing prereq) or
-  **retry-later** (may work with different context, creds, or access)
-
-**When stalled:** Tell the user you're stalled, present what was tried, and
-recommend the next best path. Return findings to the orchestrator — it will
-decide whether to revisit with new context or route elsewhere.
+STOP and return to the orchestrator with:
+- What was achieved (RCE, creds, file read, etc.)
+- New credentials, access, or pivot paths discovered
+- Context for next steps (platform, access method, working payloads)
 
 ## Troubleshooting
 

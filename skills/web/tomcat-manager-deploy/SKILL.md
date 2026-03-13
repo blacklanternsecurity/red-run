@@ -48,13 +48,11 @@ When an engagement directory exists:
 This skill covers Tomcat Manager WAR deployment — authenticating to the Manager
 interface, generating a malicious WAR payload, deploying it, triggering code
 execution, and catching a reverse shell. When you reach the boundary of this
-scope — whether through a routing instruction ("Route to **skill-name**") or by
-discovering findings outside your domain — **STOP**.
+scope — whether through completing your methodology or discovering findings outside your domain — **STOP**.
 
 Do not load or execute another skill. Do not continue past your scope boundary.
 Instead, return to the orchestrator with:
   - What was found (vulns, credentials, access gained)
-  - Recommended next skill (the bold **skill-name** from routing instructions)
   - Context to pass (injection point, target, working payloads, etc.)
 
 The orchestrator decides what runs next. Your job is to execute this skill
@@ -453,41 +451,6 @@ All versions use the same text API. WAR files are compatible across versions
 **Tomcat 7 legacy note**: Older Tomcat 7 installs may use `/manager/deploy`
 instead of `/manager/text/deploy`.
 
-## Stall Detection
-
-If you have spent **5 or more tool-calling rounds** on the same failure with
-no meaningful progress — same error, no new information, no change in output
-— **stop**.
-
-**What counts as progress:**
-- Trying a variant or alternative **documented in this skill**
-- Adjusting syntax, flags, or parameters per the Troubleshooting section
-- Gaining new diagnostic information (different error, partial success)
-
-**What does NOT count as progress:**
-- Writing custom exploit code not provided in this skill
-- Inventing workarounds using techniques from other domains
-- Retrying the same command with trivially different input
-- Compiling or transferring tools not mentioned in this skill
-
-If you find yourself writing code that isn't in this skill, you have left
-methodology. That is a stall.
-
-Do not loop. Work through failures systematically:
-1. Try each variant or alternative **once**
-2. Check the Troubleshooting section for known fixes
-3. If nothing works after 5 rounds, you are stalled
-
-**When stalled, return to the orchestrator immediately with:**
-- What was attempted (commands, variants, alternatives tried)
-- What failed and why (error messages, empty responses, timeouts)
-- Assessment: **blocked** (permanent — config, patched, missing prereq) or
-  **retry-later** (may work with different context, creds, or access)
-
-**When stalled:** Tell the user you're stalled, present what was tried, and
-recommend the next best path. Return findings to the orchestrator — it will
-decide whether to revisit with new context or route elsewhere.
-
 ## OPSEC Notes
 
 - WAR deployment creates files on disk in `webapps/` — visible to defenders
@@ -496,47 +459,6 @@ decide whether to revisit with new context or route elsewhere.
 - Undeploy the WAR after testing to reduce footprint
 - `manager-script` API calls appear in access logs with basic auth
 - Consider using an innocuous context path (`/docs`, `/examples`) to blend in
-
-## AV/EDR Detection
-
-If a WAR/JSP payload is caught by antivirus or endpoint protection — **do not
-retry with a different msfvenom encoder or trivially modified webshell. That
-is not progress.**
-
-### Recognition Signals (Tomcat WAR Deployment)
-
-- **WAR deploys but JSP returns 404**: WAR uploaded successfully and context
-  path exists, but the JSP shell file is missing — AV caught the webshell
-  component inside the WAR
-- **JSP returns 403 or 500 after successful deploy**: The JSP file exists but
-  the server blocks execution — endpoint protection intercepting web shell
-  patterns
-- **Reverse shell payload in JSP blocked**: WAR deploys, JSP is accessible,
-  but the reverse shell command doesn't execute — AMSI or behavioral detection
-  blocking the shell invocation
-- **WAR auto-removed**: WAR file disappears from the webapps directory shortly
-  after deployment — file-level AV quarantine
-
-### What to Do
-
-1. **Stop immediately** — do not retry with a different msfvenom WAR
-2. **Note what was caught**: WAR type (msfvenom, manual JSP), exact behavior
-3. **Return to orchestrator** with structured AV-blocked context:
-
-```
-
-### AV/EDR Blocked
-- Payload: <what was attempted> (e.g., "msfvenom JSP reverse shell WAR")
-- Detection: <what happened> (e.g., "JSP returns 404 after deploy — webshell removed")
-- AV product: <if known> (e.g., "Windows Defender on Tomcat host")
-- Technique: Tomcat Manager WAR deployment
-- Payload requirements: WAR with JSP that executes OS commands
-- Target OS: <version>
-- Current access: <Tomcat manager credentials, manager-script role>
-```
-
-The orchestrator will route to **av-edr-evasion** to build a bypass payload,
-then re-invoke this skill with the AV-safe artifact.
 
 ## Troubleshooting
 

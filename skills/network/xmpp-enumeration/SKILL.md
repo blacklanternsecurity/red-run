@@ -779,50 +779,6 @@ Openfire exposes admin consoles on separate ports:
 If these ports were found in the nmap scan, note them for **web-discovery**.
 Do not test the web admin interface from this skill.
 
-## Stall Detection
-
-If you have spent **5 or more tool-calling rounds** on the same failure with
-no meaningful progress — same error, no new information, no change in output
-— **stop**.
-
-**What counts as progress:**
-- Trying a different authentication mechanism or enumeration technique
-- Getting different error responses that reveal new information
-- Successfully connecting after a connection issue
-- Moving to the next enumeration step after completing the previous one
-
-**What does NOT count as progress:**
-- Retrying the same connection with identical parameters
-- Writing more elaborate Python scripts for the same task
-- Attempting to install slixmpp or other libraries from the internet
-- Debugging socket code beyond basic connection issues
-
-If stalled, return to the orchestrator with:
-- What was attempted (techniques, authentication methods)
-- What failed and why (error messages, connection refused, auth denied)
-- Assessment: **blocked** (service not XMPP, auth required with no creds) or
-  **retry-later** (may work with credentials from another skill)
-
-## AV/EDR Detection
-
-N/A — XMPP enumeration uses standard protocol interactions that are not
-detected by endpoint security products. Network IDS may flag rapid connection
-attempts; if so, add 1-second delays between enumeration requests.
-
-## DNS Resolution Failure
-
-If a tool fails because a hostname cannot be resolved — **do not retry,
-do not fall back to IP-only, do not attempt to modify /etc/hosts.**
-
-Report to the orchestrator:
-```
-### DNS Resolution Failure
-- Hostname: <what couldn't be resolved>
-- Tool: <what failed>
-- Error: <exact error message>
-- Target IP: <IP that hostname should resolve to, if known>
-```
-
 ## Troubleshooting
 
 ### Connection refused on 5222

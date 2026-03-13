@@ -234,7 +234,7 @@ With recovered service account credentials:
 1. Check what the account has access to (BloodHound, nxc)
 2. Test for local admin: `nxc smb TARGETS -u svc_user -p 'CrackedPass' -d DOMAIN`
 3. Look for (Pwn3d!) — local admin on servers
-4. Route to **pass-the-hash** for lateral movement or **credential-dumping** if admin
+4. Escalate for lateral movement or **credential-dumping** if admin
 
 ## Step 5: AS-REP Roasting
 
@@ -379,56 +379,10 @@ which may have weaker passwords.
 
 ## Step 9: Escalate or Pivot
 
-After cracking credentials:
-- **Service account is DA or has DCSync rights**: Route to **credential-dumping**
-  (DCSync) for full domain compromise
-- **Service account has local admin on servers**: Route to **pass-the-hash** for
-  lateral movement, then **credential-dumping** for LSASS/SAM
-- **Service account has delegation**: Route to **kerberos-delegation** for
-  impersonation attacks
-- **Service account has ADCS enrollment**: Route to **adcs-template-abuse**
-- **Service account has dangerous ACLs**: Route to **acl-abuse**
-- **No credentials cracked**: Route to **credential-cracking** with larger
-  wordlists/rules, or route to **password-spraying** for a different approach
-- **Need persistence on cracked account**: Route to **ad-persistence** or set
-  SPN for re-roasting later
-
-When routing, pass: cracked username/password, domain, DC hostname, and mode.
-
-## Stall Detection
-
-If you have spent **5 or more tool-calling rounds** on the same failure with
-no meaningful progress — same error, no new information, no change in output
-— **stop**.
-
-**What counts as progress:**
-- Trying a variant or alternative **documented in this skill**
-- Adjusting syntax, flags, or parameters per the Troubleshooting section
-- Gaining new diagnostic information (different error, partial success)
-
-**What does NOT count as progress:**
-- Writing custom exploit code not provided in this skill
-- Inventing workarounds using techniques from other domains
-- Retrying the same command with trivially different input
-- Compiling or transferring tools not mentioned in this skill
-
-If you find yourself writing code that isn't in this skill, you have left
-methodology. That is a stall.
-
-Do not loop. Work through failures systematically:
-1. Try each variant or alternative **once**
-2. Check the Troubleshooting section for known fixes
-3. If nothing works after 5 rounds, you are stalled
-
-**When stalled, return to the orchestrator immediately with:**
-- What was attempted (commands, variants, alternatives tried)
-- What failed and why (error messages, empty responses, timeouts)
-- Assessment: **blocked** (permanent — config, patched, missing prereq) or
-  **retry-later** (may work with different context, creds, or access)
-
-**When stalled:** Tell the user you're stalled, present what was tried, and
-recommend the next best path. Return findings to the orchestrator — it will
-decide whether to revisit with new context or route elsewhere.
+STOP and return to the orchestrator with:
+- What was achieved (RCE, creds, file read, etc.)
+- New credentials, access, or pivot paths discovered
+- Context for next steps (platform, access method, working payloads)
 
 ## Troubleshooting
 

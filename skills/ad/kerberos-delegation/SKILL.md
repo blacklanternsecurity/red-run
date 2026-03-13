@@ -432,56 +432,10 @@ rbcd.py -delegate-to 'TARGET$' -action read DOMAIN/user -k -no-pass
 
 ## Step 5: Escalate or Pivot
 
-After successful delegation exploitation:
-- **DC machine TGT (unconstrained)**: Route to **credential-dumping** for DCSync
-- **Admin ticket via S4U**: Use for lateral movement, route to **pass-the-hash**
-  for further pivoting
-- **LDAP service ticket on DC**: Perform DCSync via `secretsdump.py -k -no-pass`
-- **Found more delegation targets**: Continue enumeration in Step 1
-- **Need persistence**: Route to **kerberos-ticket-forging** (Golden Ticket)
-  or **ad-persistence**
-- **ADCS available**: Route to **adcs-template-abuse** for cert-based persistence
-
-When routing, pass: obtained tickets/credentials, target host, delegation type
-exploited.
-
-Report in your return summary: delegation findings, obtained access, and
-new pivot paths.
-
-## Stall Detection
-
-If you have spent **5 or more tool-calling rounds** on the same failure with
-no meaningful progress — same error, no new information, no change in output
-— **stop**.
-
-**What counts as progress:**
-- Trying a variant or alternative **documented in this skill**
-- Adjusting syntax, flags, or parameters per the Troubleshooting section
-- Gaining new diagnostic information (different error, partial success)
-
-**What does NOT count as progress:**
-- Writing custom exploit code not provided in this skill
-- Inventing workarounds using techniques from other domains
-- Retrying the same command with trivially different input
-- Compiling or transferring tools not mentioned in this skill
-
-If you find yourself writing code that isn't in this skill, you have left
-methodology. That is a stall.
-
-Do not loop. Work through failures systematically:
-1. Try each variant or alternative **once**
-2. Check the Troubleshooting section for known fixes
-3. If nothing works after 5 rounds, you are stalled
-
-**When stalled, return to the orchestrator immediately with:**
-- What was attempted (commands, variants, alternatives tried)
-- What failed and why (error messages, empty responses, timeouts)
-- Assessment: **blocked** (permanent — config, patched, missing prereq) or
-  **retry-later** (may work with different context, creds, or access)
-
-**When stalled:** Tell the user you're stalled, present what was tried, and
-recommend the next best path. Return findings to the orchestrator — it will
-decide whether to revisit with new context or route elsewhere.
+STOP and return to the orchestrator with:
+- What was achieved (RCE, creds, file read, etc.)
+- New credentials, access, or pivot paths discovered
+- Context for next steps (platform, access method, working payloads)
 
 ## Troubleshooting
 

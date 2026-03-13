@@ -399,7 +399,7 @@ echo "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c2VyMTIzIn0.sig" | \
 # - Signature validation
 ```
 
-Route to **jwt-attacks** for algorithm confusion, alg:none, and key injection
+Escalate for algorithm confusion, alg:none, and key injection
 attacks on ID tokens.
 
 ### Email Claim Abuse
@@ -539,9 +539,9 @@ After confirming OAuth vulnerabilities:
   **idor** if the API has broken object-level authorization.
 - **Account takeover achieved**: Document full chain. Check for admin
   escalation via role manipulation.
-- **ID token forged or manipulated**: Route to **jwt-attacks** for deeper
+- **ID token forged or manipulated**: Escalate for deeper
   JWT exploitation (alg:none, key confusion, claim tampering).
-- **SSRF via dynamic registration**: Route to **ssrf** for cloud metadata
+- **SSRF via dynamic registration**: Escalate for cloud metadata
   and internal network exploitation.
 - **Client secret found**: Test against other OAuth-enabled services that
   use the same IdP.
@@ -553,41 +553,6 @@ or pivot paths discovered.
 
 When routing, pass along: OAuth flow type, IdP identified, working bypass
 technique, tokens obtained.
-
-## Stall Detection
-
-If you have spent **5 or more tool-calling rounds** on the same failure with
-no meaningful progress — same error, no new information, no change in output
-— **stop**.
-
-**What counts as progress:**
-- Trying a variant or alternative **documented in this skill**
-- Adjusting syntax, flags, or parameters per the Troubleshooting section
-- Gaining new diagnostic information (different error, partial success)
-
-**What does NOT count as progress:**
-- Writing custom exploit code not provided in this skill
-- Inventing workarounds using techniques from other domains
-- Retrying the same command with trivially different input
-- Compiling or transferring tools not mentioned in this skill
-
-If you find yourself writing code that isn't in this skill, you have left
-methodology. That is a stall.
-
-Do not loop. Work through failures systematically:
-1. Try each variant or alternative **once**
-2. Check the Troubleshooting section for known fixes
-3. If nothing works after 5 rounds, you are stalled
-
-**When stalled, return to the orchestrator immediately with:**
-- What was attempted (commands, variants, alternatives tried)
-- What failed and why (error messages, empty responses, timeouts)
-- Assessment: **blocked** (permanent — config, patched, missing prereq) or
-  **retry-later** (may work with different context, creds, or access)
-
-**When stalled:** Tell the user you're stalled, present what was tried, and
-recommend the next best path. Return findings to the orchestrator — it will
-decide whether to revisit with new context or route elsewhere.
 
 ## OPSEC Notes
 

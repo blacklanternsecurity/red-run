@@ -142,7 +142,7 @@ MATCH p=(n:User {name:'USER@DOMAIN.LOCAL'})-[r:GenericAll|GenericWrite|WriteDacl
 |-----------|-------------|-------|
 | GenericAll | User | Step 2 (choose: shadow creds, SPN abuse, password reset) |
 | GenericAll | Group | Step 3 (add yourself to group) |
-| GenericAll | Computer | Step 7 (RBCD setup → **kerberos-delegation**) |
+| GenericAll | Computer | Step 7 (RBCD setup) |
 | GenericWrite | User | Step 2 (shadow creds, SPN abuse, logon script) |
 | GenericWrite | Computer | Step 7 (RBCD) |
 | WriteDACL | Domain object | Step 4 (grant DCSync rights) |
@@ -462,7 +462,7 @@ secretsdump.py -k -no-pass DOMAIN/Administrator@TARGET.DOMAIN.LOCAL
 bloodyAD -d DOMAIN.LOCAL -k --host DC.DOMAIN.LOCAL --dc-ip DC_IP remove rbcd 'TARGET$' 'FAKECOMP$'
 ```
 
-Route to **kerberos-delegation** (Step 4) for the full RBCD exploitation chain.
+Escalate (Step 4) for the full RBCD exploitation chain.
 
 ## Step 8: AdminSDHolder Persistence
 
@@ -498,55 +498,10 @@ suspicious if found during forensics. SDProp propagation is normal AD behavior.
 
 ## Step 9: Escalate or Pivot
 
-After successful ACL abuse:
-- **Obtained user credentials**: Route to **pass-the-hash** for lateral movement
-- **DCSync achieved**: Route to **kerberos-ticket-forging** for Golden/Diamond
-  Ticket persistence
-- **Group membership gained**: Exploit new privileges (file shares, GPO, etc.)
-- **RBCD configured**: Route to **kerberos-delegation** Step 4
-- **Shadow credentials on computer**: Route to **kerberos-delegation** for S4U
-- **Need ADCS abuse**: Route to **adcs-template-abuse** or **adcs-access-and-relay**
-- **Found more ACL paths in BloodHound**: Continue enumeration in Step 1
-
-When routing, pass: credentials/tickets obtained, escalation path used, cleanup
-status.
-
-Report in your return summary: ACL findings, obtained access, and cleanup notes.
-
-## Stall Detection
-
-If you have spent **5 or more tool-calling rounds** on the same failure with
-no meaningful progress — same error, no new information, no change in output
-— **stop**.
-
-**What counts as progress:**
-- Trying a variant or alternative **documented in this skill**
-- Adjusting syntax, flags, or parameters per the Troubleshooting section
-- Gaining new diagnostic information (different error, partial success)
-
-**What does NOT count as progress:**
-- Writing custom exploit code not provided in this skill
-- Inventing workarounds using techniques from other domains
-- Retrying the same command with trivially different input
-- Compiling or transferring tools not mentioned in this skill
-
-If you find yourself writing code that isn't in this skill, you have left
-methodology. That is a stall.
-
-Do not loop. Work through failures systematically:
-1. Try each variant or alternative **once**
-2. Check the Troubleshooting section for known fixes
-3. If nothing works after 5 rounds, you are stalled
-
-**When stalled, return to the orchestrator immediately with:**
-- What was attempted (commands, variants, alternatives tried)
-- What failed and why (error messages, empty responses, timeouts)
-- Assessment: **blocked** (permanent — config, patched, missing prereq) or
-  **retry-later** (may work with different context, creds, or access)
-
-**When stalled:** Tell the user you're stalled, present what was tried, and
-recommend the next best path. Return findings to the orchestrator — it will
-decide whether to revisit with new context or route elsewhere.
+STOP and return to the orchestrator with:
+- What was achieved (RCE, creds, file read, etc.)
+- New credentials, access, or pivot paths discovered
+- Context for next steps (platform, access method, working payloads)
 
 ## Troubleshooting
 

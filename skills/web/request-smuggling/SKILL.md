@@ -136,7 +136,7 @@ Q
 ```
 
 - If CL.TE: front-end reads 4 bytes, back-end reads TE and waits for final
-  `0\r\n\r\n` → **timeout** (back-end hangs waiting for end of chunked body)
+  `0\r\n\r\n` (back-end hangs waiting for end of chunked body)
 
 ## Step 3: Detect — TE.CL
 
@@ -177,7 +177,7 @@ X
 ```
 
 - If TE.CL: front-end reads TE (ends at `0`), back-end reads CL=6 and waits
-  for more data → **timeout**
+  for more data
 
 ## Step 4: Detect — TE.TE (Obfuscation)
 
@@ -472,51 +472,16 @@ After confirming smuggling:
 - **Bypassed access controls**: Access admin panels, internal APIs. Route to
   **command-injection** or application-specific exploitation.
 - **Poisoned cache**: Deliver XSS to all users via cached malicious response.
-  Route to **xss-stored** for payload development.
+  Escalate for payload development.
 - **Internal host access**: Via h2c or connection state attack. Route to
   **ssrf** techniques for further internal network exploration.
-- **Found CRLF injection**: Route to **xss-reflected** for header injection
+- **Found CRLF injection**: Escalate for header injection
   to XSS escalation.
 
 Report in your return summary: any new credentials, access, vulns, or pivot paths discovered.
 
 When routing, pass along: confirmed desync type (CL.TE/TE.CL/H2), working
 payload, and front-end/back-end stack identified.
-
-## Stall Detection
-
-If you have spent **5 or more tool-calling rounds** on the same failure with
-no meaningful progress — same error, no new information, no change in output
-— **stop**.
-
-**What counts as progress:**
-- Trying a variant or alternative **documented in this skill**
-- Adjusting syntax, flags, or parameters per the Troubleshooting section
-- Gaining new diagnostic information (different error, partial success)
-
-**What does NOT count as progress:**
-- Writing custom exploit code not provided in this skill
-- Inventing workarounds using techniques from other domains
-- Retrying the same command with trivially different input
-- Compiling or transferring tools not mentioned in this skill
-
-If you find yourself writing code that isn't in this skill, you have left
-methodology. That is a stall.
-
-Do not loop. Work through failures systematically:
-1. Try each variant or alternative **once**
-2. Check the Troubleshooting section for known fixes
-3. If nothing works after 5 rounds, you are stalled
-
-**When stalled, return to the orchestrator immediately with:**
-- What was attempted (commands, variants, alternatives tried)
-- What failed and why (error messages, empty responses, timeouts)
-- Assessment: **blocked** (permanent — config, patched, missing prereq) or
-  **retry-later** (may work with different context, creds, or access)
-
-**When stalled:** Tell the user you're stalled, present what was tried, and
-recommend the next best path. Return findings to the orchestrator — it will
-decide whether to revisit with new context or route elsewhere.
 
 ## OPSEC Notes
 

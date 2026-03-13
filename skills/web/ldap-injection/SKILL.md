@@ -463,64 +463,10 @@ If the app displays results, this dumps the directory.
 
 ## Step 6: Escalate or Pivot
 
-After confirming LDAP injection:
-
-- **Authentication bypass confirmed**: Access the application as the target
-  user. Test for admin functionality, sensitive data access.
-- **Credentials extracted**: Try credential reuse against other services
-  (SSH, RDP, SMB, VPN, web apps). Route to **pass-the-hash** if NTLM
-  hashes are found.
-- **User enumeration**: Feed discovered usernames to **password-spraying**
-  or **kerberos-roasting** (if AD environment).
-- **Group membership revealed**: Identify privileged accounts (Domain Admins,
-  IT staff). Target these for credential attacks.
-- **AD environment confirmed**: Route to **ad-discovery** with extracted
-  usernames, group info, and any credentials.
-- **Email addresses extracted**: Use for phishing, password reset attacks.
-  Route to **password-reset-poisoning** if reset flows exist.
-- **Directory dump achieved**: Search for service accounts, shared passwords
-  in description fields, SSH keys.
-
-Report in your return summary: any new credentials, access, vulns, or
-pivot paths discovered.
-
-When routing, pass along: confirmed injection point, filter context (AND/OR),
-backend directory type, working payloads, extracted data.
-
-## Stall Detection
-
-If you have spent **5 or more tool-calling rounds** on the same failure with
-no meaningful progress — same error, no new information, no change in output
-— **stop**.
-
-**What counts as progress:**
-- Trying a variant or alternative **documented in this skill**
-- Adjusting syntax, flags, or parameters per the Troubleshooting section
-- Gaining new diagnostic information (different error, partial success)
-
-**What does NOT count as progress:**
-- Writing custom exploit code not provided in this skill
-- Inventing workarounds using techniques from other domains
-- Retrying the same command with trivially different input
-- Compiling or transferring tools not mentioned in this skill
-
-If you find yourself writing code that isn't in this skill, you have left
-methodology. That is a stall.
-
-Do not loop. Work through failures systematically:
-1. Try each variant or alternative **once**
-2. Check the Troubleshooting section for known fixes
-3. If nothing works after 5 rounds, you are stalled
-
-**When stalled, return to the orchestrator immediately with:**
-- What was attempted (commands, variants, alternatives tried)
-- What failed and why (error messages, empty responses, timeouts)
-- Assessment: **blocked** (permanent — config, patched, missing prereq) or
-  **retry-later** (may work with different context, creds, or access)
-
-**When stalled:** Tell the user you're stalled, present what was tried, and
-recommend the next best path. Return findings to the orchestrator — it will
-decide whether to revisit with new context or route elsewhere.
+STOP and return to the orchestrator with:
+- What was achieved (RCE, creds, file read, etc.)
+- New credentials, access, or pivot paths discovered
+- Context for next steps (platform, access method, working payloads)
 
 ## OPSEC Notes
 

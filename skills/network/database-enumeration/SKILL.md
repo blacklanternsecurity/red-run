@@ -189,12 +189,6 @@ redis-cli -h TARGET_IP info replication
 - **Unauthenticated DB access** (MongoDB, Redis): STOP. Return with access details.
 - **No access gained**: Return versions, SIDs, and configs for orchestrator.
 
-## Stall Detection
-
-If you have spent **5 or more tool-calling rounds** on the same database service
-with no progress — same error, no new information — **stop** and move to the next
-service. If all services are exhausted, return with what was attempted and failed.
-
 ## Troubleshooting
 
 ### Connection refused / filtered

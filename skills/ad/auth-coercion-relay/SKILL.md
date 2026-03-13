@@ -695,61 +695,10 @@ ntlmrelayx.py -t smb://TARGET.DOMAIN.LOCAL -smb2support
 
 ## Step 9: Escalate or Pivot
 
-After successful coercion and relay:
-- **Machine account created via LDAP relay**: Use for RBCD attack chain.
-  Route to **kerberos-delegation** (RBCD section).
-- **RBCD set via relay**: Execute S4U chain to impersonate admin on
-  target. Route to **kerberos-delegation**.
-- **Certificate obtained via AD CS relay**: Authenticate via PKINIT.
-  Route to **adcs-access-and-relay** for full ESC8/ESC11 exploitation.
-- **NetNTLM hash captured**: Save hash to evidence and return to
-  orchestrator. Route to **credential-cracking** for offline cracking,
-  then **pass-the-hash** for authentication with cracked plaintext.
-- **Code execution on target**: Route to **credential-dumping** for
-  SAM/LSASS extraction.
-- **Domain admin hash captured via relay**: Route to **credential-dumping**
-  (DCSync) for full domain compromise.
-
-When routing, pass: captured credentials/certificates, relay method used,
-target host, access level, and mode.
-
-Report in your return summary: all captured credentials, new access,
-and relay paths tested.
-
-## Stall Detection
-
-If you have spent **5 or more tool-calling rounds** on the same failure with
-no meaningful progress — same error, no new information, no change in output
-— **stop**.
-
-**What counts as progress:**
-- Trying a variant or alternative **documented in this skill**
-- Adjusting syntax, flags, or parameters per the Troubleshooting section
-- Gaining new diagnostic information (different error, partial success)
-
-**What does NOT count as progress:**
-- Writing custom exploit code not provided in this skill
-- Inventing workarounds using techniques from other domains
-- Retrying the same command with trivially different input
-- Compiling or transferring tools not mentioned in this skill
-
-If you find yourself writing code that isn't in this skill, you have left
-methodology. That is a stall.
-
-Do not loop. Work through failures systematically:
-1. Try each variant or alternative **once**
-2. Check the Troubleshooting section for known fixes
-3. If nothing works after 5 rounds, you are stalled
-
-**When stalled, return to the orchestrator immediately with:**
-- What was attempted (commands, variants, alternatives tried)
-- What failed and why (error messages, empty responses, timeouts)
-- Assessment: **blocked** (permanent — config, patched, missing prereq) or
-  **retry-later** (may work with different context, creds, or access)
-
-**When stalled:** Tell the user you're stalled, present what was tried, and
-recommend the next best path. Return findings to the orchestrator — it will
-decide whether to revisit with new context or route elsewhere.
+STOP and return to the orchestrator with:
+- What was achieved (RCE, creds, file read, etc.)
+- New credentials, access, or pivot paths discovered
+- Context for next steps (platform, access method, working payloads)
 
 ## Troubleshooting
 

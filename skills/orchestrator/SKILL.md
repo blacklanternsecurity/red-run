@@ -63,8 +63,9 @@ authorization.
 
 ## Skill Routing Is Mandatory
 
-When this skill says "Route to **skill-name**", you MUST execute that skill
-through a domain subagent (preferred) or inline via `get_skill()` (fallback).
+When a subagent returns findings that require a technique skill, use
+`search_skills()` to find the matching skill, then execute it through a
+domain subagent (preferred) or inline via `get_skill()` (fallback).
 
 ### Primary Path: Subagent Delegation
 
@@ -247,8 +248,9 @@ of routing to the skill in the first place.
 
 **Each invocation = one skill.** Discovery skills find things and return.
 The orchestrator decides which technique skill to invoke next. Subagents
-never load a second skill or route to other skills — when the skill text says
-"Route to X", that's the agent's cue to report findings and stop.
+never load a second skill — they stop at their scope boundary, report
+findings, and return. The orchestrator uses `search_skills()` and the
+domain→agent map to route based on finding descriptions.
 
 **Inline fallback:** If a custom subagent is not available (agent files not
 installed), **STOP** and have the operator fix the issue. Skills are only
@@ -339,6 +341,7 @@ Cleanup when all agents complete. One watcher suffices for concurrent agents.
 | vuln w/ "FLAG:" | Always — immediate | Prominent callout (see Flag Capture) |
 | credential | Always | Authenticated enum or spray |
 | vuln (high/critical) | When technique skill exists | Spawn technique agent |
+| vuln w/ "Vhost discovered:" | Always — immediate | Hosts-file update → spawn new web-discovery agent |
 | vuln (medium/low/info) | Display only | Note for later |
 | pivot | When destination actionable | Spawn appropriate agent |
 | blocked | Display only | Note for later |
@@ -413,7 +416,9 @@ When a skill completes and returns control to the orchestrator:
    (RPC/LDAP null session), web-discovery (user enumeration), ad-discovery
    (BloodHound/LDAP), SQLi (user table dump), credential-dumping (SAM/LSASS),
    or any other source.
-7. Call `get_state_summary()` and run Step 4 decision logic
+7. Call `get_state_summary()` and run Step 4 decision logic. Use
+   `search_skills()` to find the right technique skill based on the finding
+   description — skills no longer name specific next skills.
 8. Present the next action(s) to the operator via `AskUserQuestion` — always
    proactively recommend; never wait for the operator to ask "what's next."
    If 2+ independent paths exist, use Parallel Path Presentation format.
@@ -699,15 +704,18 @@ skill. Many tools (Kerberos, LDAP, ffuf vhost scanning) fail silently or
 with confusing errors when hostnames don't resolve — catching this early
 prevents wasted agent invocations.
 
-### Post-Web-Discovery Resolution Check
+### Vhost Discovery Routing
 
-After web-discovery returns, if vhosts were found (e.g., `dev.target.htb`,
-`admin.target.htb`), check whether each discovered hostname resolves:
+When web-discovery (or any agent) reports discovered vhosts — via interim event
+or return summary — the orchestrator owns routing. Agents do NOT enumerate
+discovered vhosts themselves.
 
-1. Collect vhost names from the web-discovery return summary.
+1. Collect vhost names from the agent's return or interim events.
 2. For each vhost, run `getent hosts <hostname>`.
-3. If ANY vhost does not resolve, trigger the **Hosts File Update** hard
-   stop before routing to web technique skills.
+3. If ANY vhost does not resolve, trigger the **Hosts File Update** hard stop.
+4. After hosts resolve, spawn a **new web-discovery-agent** per vhost with the
+   vhost as the target URL. These are independent targets — present as parallel
+   paths when multiple vhosts are found.
 
 ## Step 3: Vulnerability Discovery & Exploitation
 
@@ -949,6 +957,14 @@ to the operator (using Parallel Path Presentation when 2+ are independent):
    They know CVE names but invent endpoints, parameters, and payloads that
    don't exist. A single version check would have saved ~150K tokens and ~25
    minutes in a real engagement. Never skip this gate.
+
+   **After the gate passes — route, don't execute.** Once a CVE is verified,
+   immediately route to the appropriate technique agent via `search_skills()`
+   and the domain→agent map. Pass CVE details, PoC file paths, and
+   exploitation context in the agent prompt. Do NOT read PoC/exploit files
+   or run exploit commands from the orchestrator — the technique agent reads
+   and executes the PoC. Having the PoC in orchestrator context creates
+   gravity toward inline execution, which violates the routing rules.
 
    This is a normal routing decision — include it in parallelization
    opportunities. The research agent can run alongside other independent
@@ -1311,17 +1327,7 @@ places:
 
    - **Loopback listener** or **Dedicated proxy IP**:
      - Build the listener URL as `http://<ip>:<port>`
-     - Present a confirmation hard stop:
-       ```
-       [orchestrator] HARD STOP — start Burp listener
-
-       Configure Burp Suite Proxy → Options → Proxy listeners to listen on:
-         http://<ip>:<port>
-
-       Confirm when the listener is up. No web agent will be spawned until the
-       Burp listener is ready.
-       ```
-     - Wait for explicit operator confirmation
+     - Print: `Ensure Burp Suite is listening on http://<ip>:<port> before web traffic begins.`
      - Update `engagement/scope.md`:
        ```markdown
        ## Web Proxy
