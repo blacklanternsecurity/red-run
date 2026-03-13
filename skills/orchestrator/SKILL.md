@@ -958,6 +958,14 @@ to the operator (using Parallel Path Presentation when 2+ are independent):
    don't exist. A single version check would have saved ~150K tokens and ~25
    minutes in a real engagement. Never skip this gate.
 
+   **After the gate passes — route, don't execute.** Once a CVE is verified,
+   immediately route to the appropriate technique agent via `search_skills()`
+   and the domain→agent map. Pass CVE details, PoC file paths, and
+   exploitation context in the agent prompt. Do NOT read PoC/exploit files
+   or run exploit commands from the orchestrator — the technique agent reads
+   and executes the PoC. Having the PoC in orchestrator context creates
+   gravity toward inline execution, which violates the routing rules.
+
    This is a normal routing decision — include it in parallelization
    opportunities. The research agent can run alongside other independent
    paths (e.g., password spray, other discovery phases)
