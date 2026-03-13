@@ -357,6 +357,9 @@ def _extract_label(filepath: str) -> str:
                                 content += block.get("text", "") + " "
                 if content:
                     # "Load skill '<name>'" — custom skill agents
+                    # "Research ..." — research-agent (no skill prefix)
+                    if content.strip().startswith("Research "):
+                        return "research-agent"
                     m = re.search(r"Load skill ['\"]([^'\"]+)['\"]", content)
                     if m:
                         return m.group(1)
