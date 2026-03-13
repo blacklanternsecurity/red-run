@@ -7,7 +7,10 @@ set -euo pipefail
 # - All red-run native skills from ~/.claude/skills/
 # - Custom subagents from ~/.claude/agents/
 # - ChromaDB index (tools/skill-router/.chromadb/)
-# - Python venvs (tools/skill-router/.venv/, tools/nmap-server/.venv/, tools/shell-server/.venv/, tools/state-server/.venv/)
+# - Python venvs for all MCP servers
+# - Docker images (red-run-nmap, red-run-shell)
+# - Playwright browsers
+# - Viewer auth token (~/.config/red-run/)
 #
 # Does NOT remove .mcp.json or .claude/settings.json (project config).
 
@@ -21,6 +24,7 @@ MCP_NMAP_SERVER="${REPO_DIR}/tools/nmap-server"
 MCP_SHELL_SERVER="${REPO_DIR}/tools/shell-server"
 MCP_STATE_SERVER="${REPO_DIR}/tools/state-server"
 MCP_BROWSER_SERVER="${REPO_DIR}/tools/browser-server"
+MCP_RDP_SERVER="${REPO_DIR}/tools/rdp-server"
 
 # --- Step 1: Remove native skills ---
 echo "Removing native skills..."
@@ -85,12 +89,14 @@ if [[ -d "${MCP_NMAP_SERVER}/.venv" ]]; then
     mcp_cleaned=$((mcp_cleaned + 1))
 fi
 
-# nmap Docker image
-if command -v docker &>/dev/null && docker image inspect red-run-nmap:latest &>/dev/null 2>&1; then
-    docker rmi red-run-nmap:latest &>/dev/null
-    echo "  Removed Docker image: red-run-nmap:latest"
-    mcp_cleaned=$((mcp_cleaned + 1))
-fi
+# Docker images
+for img in red-run-nmap:latest red-run-shell:latest; do
+    if command -v docker &>/dev/null && docker image inspect "$img" &>/dev/null 2>&1; then
+        docker rmi "$img" &>/dev/null
+        echo "  Removed Docker image: ${img}"
+        mcp_cleaned=$((mcp_cleaned + 1))
+    fi
+done
 
 # shell-server
 if [[ -d "${MCP_SHELL_SERVER}/.venv" ]]; then
@@ -110,6 +116,25 @@ fi
 if [[ -d "${MCP_BROWSER_SERVER}/.venv" ]]; then
     rm -rf "${MCP_BROWSER_SERVER}/.venv"
     echo "  Removed browser-server venv"
+    mcp_cleaned=$((mcp_cleaned + 1))
+fi
+
+# rdp-server
+if [[ -d "${MCP_RDP_SERVER}/.venv" ]]; then
+    rm -rf "${MCP_RDP_SERVER}/.venv"
+    echo "  Removed rdp-server venv"
+    mcp_cleaned=$((mcp_cleaned + 1))
+fi
+
+# Playwright browsers
+if command -v playwright &>/dev/null; then
+    playwright uninstall chromium &>/dev/null 2>&1 && echo "  Removed Playwright Chromium" && mcp_cleaned=$((mcp_cleaned + 1))
+fi
+
+# Viewer auth token
+if [[ -d "${HOME}/.config/red-run" ]]; then
+    rm -rf "${HOME}/.config/red-run"
+    echo "  Removed viewer config (~/.config/red-run/)"
     mcp_cleaned=$((mcp_cleaned + 1))
 fi
 
