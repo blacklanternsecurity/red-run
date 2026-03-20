@@ -529,9 +529,9 @@ which captures operator preferences upfront — eliminating repeated hard stops
 on resume and allowing faster confirmation when context-dependent decisions
 arise later.
 
-Present **all 5 questions in a single `AskUserQuestion` call** so the operator
-answers them in one batch. Present sensible defaults and allow the operator to
-accept them quickly.
+Present **all 5 questions (scan, proxy, spray, cracking, AND callback) in a
+single `AskUserQuestion` call** so the operator answers them in one batch.
+The callback question is part of the config wizard, not a separate step.
 
 **Preamble** (print before questions):
 ```
