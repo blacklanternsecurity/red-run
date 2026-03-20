@@ -529,8 +529,9 @@ which captures operator preferences upfront — eliminating repeated hard stops
 on resume and allowing faster confirmation when context-dependent decisions
 arise later.
 
-Use `AskUserQuestion` for each setting. Present sensible defaults and allow
-the operator to accept them quickly.
+Present **all 5 questions in a single `AskUserQuestion` call** so the operator
+answers them in one batch. Present sensible defaults and allow the operator to
+accept them quickly.
 
 **Preamble** (print before questions):
 ```
