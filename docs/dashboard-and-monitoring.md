@@ -11,7 +11,7 @@ red-run provides real-time visibility into agent execution through dashboards an
 - **Chat** — redirect held agents, ask questions, or give new instructions mid-run
 - **Multi-agent tiling** — auto-tiled panes with real-time streaming and color-coded output
 
-Fail-open design — if the server isn't running, agents run normally. No hard dependency on red-run. See the [agentsee README](https://github.com/blacklanternsecurity/agentsee) for installation and usage.
+See the [agentsee README](https://github.com/blacklanternsecurity/agentsee) for installation and usage.
 
 ## Built-in Terminal Dashboard
 
