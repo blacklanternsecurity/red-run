@@ -21,6 +21,7 @@ Architectural shift from ephemeral subagents to Claude Code agent teams.
 - **Teammate spawn templates** (`teammates/`) — 10 templates (5 persistent domain teammates, 5 on-demand specialists) that the orchestrator reads at runtime to spawn teammates.
 - **Multi-orchestrator architecture** — multiple orchestrator variants coexist in the same repo, sharing state.db, MCP servers, and technique skills. Planned variants: `/red-run-notouch` (DLP-safe), `/red-run-train` (training mode).
 - **`startup_delay` parameter for `start_process`** in shell-server — prevents prompt probe race condition with slow-connecting tools like evil-winrm (use `startup_delay=30`).
+- **Sankey-style kill-chain graph** in state dashboard — replaces box-and-arrow layout with flow bands whose width represents downstream impact. Green=exploited, yellow=pending, red=blocked, gray=dead end. Pending nodes pulse to highlight actionable paths. Zoom/pan via mouse wheel and drag.
 
 ### Fixed
 
