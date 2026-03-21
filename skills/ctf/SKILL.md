@@ -538,12 +538,14 @@ Walk ALL items, collect every actionable finding, present to operator:
 
 **Clock Skew** (AD teammate returns KRB_AP_ERR_SKEW):
 ```
-1. Copy operator/templates/clock-sync.sh → temp_clock-sync.sh, fill DC_IP
-2. chmod +x temp_clock-sync.sh
-3. Present: "Run: sudo bash ./temp_clock-sync.sh &"
-4. Wait for confirmation
-5. Reassign same task to AD teammate
-6. Clean up script
+1. Bash: cp operator/templates/clock-sync.sh temp_clock-sync.sh
+2. Bash: sed -i 's/DC_IP="FILL_IN"/DC_IP="<actual DC IP from state>"/' temp_clock-sync.sh
+3. Bash: chmod +x temp_clock-sync.sh
+4. Present: "Run: sudo bash ./temp_clock-sync.sh &"
+   (Script disables VBox time sync and loops ntpdate every 5s)
+5. Wait for confirmation
+6. Reassign same task to AD teammate
+7. Clean up: rm temp_clock-sync.sh
 ```
 
 **AV Evasion** (teammate returns AV/EDR Blocked):
