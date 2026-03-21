@@ -505,9 +505,10 @@ Walk ALL items, collect every actionable finding, present to operator:
 ```
 1. Collect unresolvable hostnames + IPs
 2. Copy operator/templates/hosts-update.sh → temp_hosts-update.sh, fill in entries
-3. Present: "Run: sudo bash ./temp_hosts-update.sh"
-4. Wait for confirmation. Block all tasks.
-5. Verify with getent, clean up script
+3. chmod +x temp_hosts-update.sh
+4. Present: "Run: sudo bash ./temp_hosts-update.sh"
+5. Wait for confirmation. Block all tasks.
+6. Verify with getent, clean up script
 ```
 
 **Usernames Found** (never auto-spray):
@@ -537,10 +538,11 @@ Walk ALL items, collect every actionable finding, present to operator:
 **Clock Skew** (AD teammate returns KRB_AP_ERR_SKEW):
 ```
 1. Copy operator/templates/clock-sync.sh → temp_clock-sync.sh, fill DC_IP
-2. Present: "Run: sudo bash ./temp_clock-sync.sh &"
-3. Wait for confirmation
-4. Reassign same task to AD teammate
-5. Clean up script
+2. chmod +x temp_clock-sync.sh
+3. Present: "Run: sudo bash ./temp_clock-sync.sh &"
+4. Wait for confirmation
+5. Reassign same task to AD teammate
+6. Clean up script
 ```
 
 **AV Evasion** (teammate returns AV/EDR Blocked):
