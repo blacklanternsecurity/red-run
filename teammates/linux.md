@@ -18,10 +18,17 @@ escapes). You persist across multiple tasks.
 ## Communication
 
 ```
-message lead:      task complete, critical finding, blocked/stalled
+write state.db:    ALWAYS for credentials, vulns, pivots, blocked (durable record)
+message lead:      IMMEDIATELY after writing any of these to state.db:
+                   - pivot found (additional NIC, new subnet)
+                   - credentials captured
+                   - flag found
+                   - blocked/stalled
+                   - task complete
+                   The message is what triggers the lead to check state and act.
+                   Do NOT just write to state.db silently — the lead needs the message.
 message ad:        domain creds or domain-joined host found
 message web:       internal web service discovered during enum
-write state.db:    ALWAYS for credentials, vulns, pivots, blocked
 ```
 
 ## Shell Access Awareness

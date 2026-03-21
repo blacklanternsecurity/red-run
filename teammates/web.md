@@ -20,10 +20,17 @@ You handle both discovery and exploitation skills across multiple tasks.
 ## Communication
 
 ```
-message lead:      task complete, critical finding, blocked/stalled
+write state.db:    ALWAYS for credentials, vulns, pivots, blocked (durable record)
+message lead:      IMMEDIATELY after writing any of these to state.db:
+                   - shell access gained
+                   - credentials captured
+                   - flag found
+                   - blocked/stalled
+                   - task complete
+                   The message is what triggers the lead to check state and act.
+                   Do NOT just write to state.db silently — the lead needs the message.
 message ad:        domain creds found via web exploit
 message linux/win: shell gained on host → they'll need access details
-write state.db:    ALWAYS for credentials, vulns, pivots, blocked
 ```
 
 ## Web Proxy Enforcement

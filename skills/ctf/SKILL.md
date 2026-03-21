@@ -218,15 +218,23 @@ while objectives_not_met:
             if not teammate: spawn_teammate(action.domain)
             assign_task(teammate, action.skill, action.target, action.context)
 
-    # Teammate messages arrive asynchronously:
-    # - Task complete → Post-Task Checkpoint, next routing decision
-    # - Critical finding mid-task → evaluate, maybe assign follow-up to another teammate
-    # - Blocked → record, find alternative
-    # - Operator messages any teammate directly via Shift+Down or tmux pane
+    # Teammate messages arrive asynchronously — ACT ON THEM:
+    on_teammate_message:
+        if task_complete → Post-Task Checkpoint, next routing decision
+        if mid_task_finding:
+            call get_state_summary()
+            run decision_logic on new state (especially pivots, creds, flags)
+            if actionable → assign follow-up to available teammate immediately
+            do NOT wait for the reporting teammate to finish its current task
+        if blocked → record add_blocked(), find alternative
+        if flag → prominent callout to operator
 ```
 
-No event-watcher needed — teammate messages are the notification channel.
-Teammates also write to state.db mid-task for durability.
+**Teammate messages are the notification channel.** When a teammate messages
+about a finding mid-task, the lead MUST check state and act — this is what
+replaces the v1 event-watcher. Do not sit idle waiting for task completion
+when a teammate has reported something actionable. Teammates also write to
+state.db for durability, but the message is what triggers the lead to look.
 
 ## Post-Task Checkpoint
 

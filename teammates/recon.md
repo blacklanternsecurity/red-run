@@ -21,13 +21,16 @@ You may receive multiple tasks over your lifetime. Load a fresh skill for each.
 ## Communication
 
 ```
-message lead:     task complete, critical finding, blocked/stalled, need context
+write state.db:   ALWAYS for credentials, vulns, pivots, blocked (durable record)
+message lead:     IMMEDIATELY after writing any of these to state.db:
+                  - credentials captured
+                  - pivot found (new subnet, additional NIC)
+                  - blocked/stalled, need context
+                  - task complete
+                  The message is what triggers the lead to check state and act.
+                  Do NOT just write to state.db silently — the lead needs the message.
 message teammate: credential found → ad/web teammate; new subnet → pivoting
-write state.db:   ALWAYS for credentials, vulns, pivots, blocked (source of truth)
 ```
-
-State.db is the durable record. Messages are notifications — they supplement
-state writes, not replace them.
 
 ## Nmap via MCP
 
