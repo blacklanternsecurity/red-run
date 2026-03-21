@@ -1,6 +1,18 @@
 # Running an Engagement
 
-This page describes how the **CTF orchestrator** drives a penetration test from target to objective. The orchestrator is one skill (`skills/orchestrator/SKILL.md`) — a different orchestrator would use the same skill library with completely different workflow logic. See [Architecture](architecture.md#platform-vs-strategy) for more on this separation.
+This page describes how the **CTF orchestrator** drives a penetration test from target to objective. The orchestrator uses [Claude Code agent teams](https://code.claude.com/docs/en/agent-teams) to coordinate persistent domain teammates. See [Architecture](architecture.md#platform-vs-strategy) for more on this separation.
+
+## Prerequisites
+
+Agent teams requires `--dangerously-skip-permissions` mode. In standard mode, teammate permission requests don't surface to the operator, causing teammates to hang. The orchestrator's `AskUserQuestion` gates still provide human-in-the-loop control for exploitation decisions.
+
+```bash
+claude --dangerously-skip-permissions
+```
+
+For split-pane teammate visibility, start Claude Code inside a tmux session.
+
+> **Note:** This limitation may change if Anthropic fixes permission bubbling in a future agent teams release.
 
 ## Starting a Test
 

@@ -93,6 +93,8 @@ Agent teams requires Claude Code v2.1.32+ and the experimental feature flag. The
 
 No manual setup needed — cloning the repo and running `./install.sh` is sufficient. For split-pane teammate visibility, start Claude Code inside a tmux session. Without tmux, teammates run in-process (cycle with Shift+Down).
 
+**Known limitation:** Agent teams currently requires `--dangerously-skip-permissions` mode. In standard mode, teammate permission requests are sent to the team lead but the approval prompt does not surface to the operator, causing teammates to hang indefinitely. The orchestrator's `AskUserQuestion` gates still provide human-in-the-loop control for exploitation decisions. This may change if Anthropic fixes permission bubbling in a future agent teams release.
+
 ## State Dashboard
 
 Browser-based read-only dashboard for `engagement/state.db` with a kill-chain attack graph and live SSE updates:
@@ -113,7 +115,7 @@ See `operator/state-dashboard/README.md` for details.
 
 ## Running
 
-All skills delegate to autonomous teammates with `bypassPermissions`. Run with:
+Agent teams requires `--dangerously-skip-permissions` due to a permission bubbling limitation (see [Agent Teams](#agent-teams) above). Run with:
 
 ```bash
 claude --dangerously-skip-permissions
