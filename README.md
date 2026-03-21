@@ -6,9 +6,9 @@ Offensive security toolkit for Claude Code.
   <img src="docs/dashboard.jpg" width="700" alt="Agent dashboard showing live multi-pane output from parallel agents">
 </p>
 
-red-run combines skills, MCP servers, and agents with routing logic that guides Claude through the phases of an infrastructure-focused attack — recon, initial access, lateral movement, privilege escalation, and post-exploitation. It tracks engagement state in a SQLite database that persists across context compactions, routes to skills via semantic search (RAG), and delegates execution to focused agents that each handle one technique per invocation.
+red-run combines skills, MCP servers, and [Claude Code agent teams](https://code.claude.com/docs/en/agent-teams) with routing logic that guides Claude through the phases of an infrastructure-focused attack — recon, initial access, lateral movement, privilege escalation, and post-exploitation. It tracks engagement state in a SQLite database that persists across context compactions, routes to skills via semantic search (RAG), and delegates execution to persistent domain teammates that accumulate context across tasks and communicate with each other directly.
 
-The orchestrator presents the attack surface, chain analysis, and available paths — you choose what to hit next. Once you pick a path, the agent runs end-to-end and reports back. When web ports are found, the orchestrator can hard-stop for optional Burp listener setup and pass that proxy to web agents for request capture. See the [Architecture docs](https://blacklanternsecurity.github.io/red-run/architecture/) for diagrams and data flow.
+The orchestrator (team lead) presents the attack surface, chain analysis, and available paths — you choose what to hit next. Teammates work in their own tmux panes where you can watch them, press Escape to interrupt, and type directly to redirect. When web ports are found, the orchestrator can hard-stop for optional Burp listener setup and pass that proxy to web teammates for request capture. See the [Architecture docs](https://blacklanternsecurity.github.io/red-run/architecture/) for diagrams and data flow.
 
 ## Skills
 
@@ -47,7 +47,7 @@ See also: [ARCHITECTURE.md](ARCHITECTURE.md) for Mermaid diagrams, [Skills Inven
 ./uninstall.sh        # Remove everything
 ```
 
-The installer sets up the orchestrator, agents, and MCP servers, and indexes `skills/` into ChromaDB for semantic retrieval. The repo must stay in place — skill-router reads from `skills/` at runtime.
+The installer sets up the orchestrator, teammate templates, and MCP servers, and indexes `skills/` into ChromaDB for semantic retrieval. The repo must stay in place — skill-router reads from `skills/` at runtime.
 
 After installing, run the preflight check to verify attackbox dependencies (nmap, ffuf, sqlmap, hashcat, impacket, etc.):
 
@@ -57,9 +57,26 @@ bash preflight.sh
 
 See [dependencies](docs/dependencies.md) for the full list of required tools and [Installation docs](https://blacklanternsecurity.github.io/red-run/installation/) for firewall setup and troubleshooting.
 
-## Agent Monitoring
+## Agent Teams
 
-For real-time agent control, use [agentsee](https://github.com/blacklanternsecurity/agentsee) — a browser-based operator control plane that lets you watch agents work, hold/release them mid-run, chat with held agents, and set per-agent leash thresholds for supervised execution. A built-in terminal dashboard (`bash operator/agent-dashboard/dashboard.sh`) is also available for lightweight read-only observation. See the [monitoring docs](https://blacklanternsecurity.github.io/red-run/dashboard-and-monitoring/) for setup details.
+red-run uses [Claude Code agent teams](https://code.claude.com/docs/en/agent-teams) to coordinate multiple Claude Code sessions working together. The orchestrator runs as the team lead, spawning persistent domain teammates (recon, web, AD, Linux/Windows privesc) that each get their own tmux pane. Benefits over the legacy subagent model:
+
+- **Persistent context** — teammates accumulate knowledge across tasks instead of starting fresh each time
+- **Peer-to-peer messaging** — teammates notify each other directly (e.g., web teammate finds domain creds → messages AD teammate)
+- **Operator visibility** — watch all teammates working in split tmux panes, press Escape to interrupt any teammate, type directly to redirect
+- **Shared task list** — coordinated parallel work with the lead assigning all tasks
+
+Agent teams requires Claude Code v2.1.32+ and the experimental feature flag. Add to `.claude/settings.json` (project-level):
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  }
+}
+```
+
+For split-pane visibility, start Claude Code inside a tmux session. Without tmux, teammates run in-process (cycle with Shift+Down).
 
 ## State Dashboard
 
@@ -81,35 +98,19 @@ See `operator/state-dashboard/README.md` for details.
 
 ## Running
 
-All skills delegate to autonomous agents with `bypassPermissions`. Run with:
+All skills delegate to autonomous teammates with `bypassPermissions`. Run with:
 
 ```bash
 claude --dangerously-skip-permissions
 ```
 
-The orchestrator still presents routing decisions for operator approval before spawning each agent. An optional nftables firewall is available in `operator/engagement-firewall/` for operators who want OS-level network isolation.
+The orchestrator presents routing decisions for operator approval before assigning exploitation tasks. An optional nftables firewall is available in `operator/engagement-firewall/` for operators who want OS-level network isolation.
 
 Run from an isolated VM or dedicated pentesting machine. You are responsible for containing Claude on your systems and for any legal consequences under the CFAA or equivalent legislation.
 
-## Experimental: Agent Teams Variant
+## Legacy Orchestrator
 
-`/red-run-ctf` is an experimental orchestrator that uses [Claude Code agent teams](https://code.claude.com/docs/en/agent-teams) instead of subagents. Teammates are persistent Claude Code sessions with peer-to-peer messaging and operator visibility via tmux split panes. Requires Claude Code v2.1.32+ and the experimental agent teams feature flag.
-
-**Setup:**
-
-1. Run `./install.sh` to install the `/red-run-ctf` skill
-2. Enable agent teams by adding to `.claude/settings.json` (project-level):
-
-```json
-{
-  "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
-  }
-}
-```
-
-3. For split-pane teammate visibility, start Claude Code inside a tmux session. Without tmux, teammates run in-process (cycle with Shift+Down).
-4. Invoke with `/red-run-ctf` — it will not auto-trigger from natural language.
+The original subagent-based orchestrator is still available as `/red-run-legacy`. It uses ephemeral subagents (one skill per invocation) instead of agent teams. Invoke manually if needed — it does not auto-trigger.
 
 ## Disclaimer
 

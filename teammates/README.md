@@ -47,5 +47,5 @@ multiple tasks until dismissed:
 
 These templates replace `agents/*.md` for the agent-teams orchestrator. The v1
 agent definitions remain in `agents/` for the subagent-based orchestrator
-(`/red-run-orchestrator`). Both systems share the same technique skills and
+(`/red-run-legacy`). Both systems share the same technique skills and
 MCP servers.

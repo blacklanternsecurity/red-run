@@ -6,8 +6,8 @@ Claude Code skill library for penetration testing and CTF work.
 
 **MANDATORY:** When the user mentions targets, attacking, scanning, pentesting,
 or references an existing engagement (resuming, continuing, next steps, status),
-invoke the `red-run-orchestrator` skill via the Skill tool IMMEDIATELY — before
-reading state, running tools, or generating any analysis. The orchestrator skill
+invoke the `red-run-ctf` skill via the Skill tool IMMEDIATELY — before reading
+state, running tools, or generating any analysis. The orchestrator skill
 contains all routing logic, approval gates, and state management rules. Never
 manually call state-server MCP tools, run attack commands, or present engagement
 analysis from the main thread without the orchestrator skill loaded.
@@ -37,20 +37,30 @@ and technique skills. Each variant uses a different execution model.
 
 | Variant | Invoke | Status | Execution Model |
 |---------|--------|--------|-----------------|
-| `/red-run-orchestrator` | Keywords ("attack X") + slash command | **Active** (default) | Subagents (ephemeral, one skill per invocation) |
-| `/red-run-ctf` | Slash command only | **Experimental** | Agent teams (persistent teammates, peer messaging) |
+| `/red-run-ctf` | Keywords ("attack X") + slash command | **Active** (default) | Agent teams (persistent teammates, peer messaging) |
+| `/red-run-legacy` | Slash command only | **Legacy** | Subagents (ephemeral, one skill per invocation) |
 
-**`/red-run-ctf`** requires Claude Code agent teams (experimental). Enable with
-`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in env or settings.json. It uses
-teammate spawn templates from `teammates/` instead of agent definitions from
-`agents/`. See `teammates/README.md` for the template format.
+**`/red-run-ctf`** uses Claude Code agent teams. Requires
+`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in env or `.claude/settings.json`.
+Teammate spawn templates live in `teammates/` — see `teammates/README.md`.
+
+**`/red-run-legacy`** is the original subagent-based orchestrator. Agent
+definitions live in `agents/`. Invoke with `/red-run-legacy` if needed.
 
 Both orchestrators use the same state.db schema, MCP servers, and technique
 skills. An engagement started with one can be resumed with the other.
 
 ## Architecture
 
-The default **orchestrator** (`/red-run-orchestrator`) is a native Claude Code skill that runs in the main conversation thread. It routes skill execution to **custom domain subagents** — each subagent has MCP access and executes one skill per invocation. All other skills (63 discovery + technique skills) are served on-demand via the **MCP skill-router**.
+The default **orchestrator** (`/red-run-ctf`) uses Claude Code agent teams.
+The lead session runs the orchestrator skill, spawns persistent domain
+teammates, assigns tasks, and chains vulnerabilities. Teammates communicate
+via peer-to-peer messaging and write to state.db for durability. All technique
+skills (67 discovery + technique skills) are served on-demand via the **MCP
+skill-router**.
+
+The legacy orchestrator (`/red-run-legacy`) uses ephemeral subagents — each
+handles one skill per invocation and returns. See `agents/` for definitions.
 
 ### Subagent Model
 
@@ -169,7 +179,7 @@ red-run/
   CLAUDE.md               # Development instructions (this file)
   install.sh              # Installs orchestrator, agents, MCP servers
   uninstall.sh            # Removes installed skills, agents, MCP data
-  agents/                 # Custom subagent definitions for /red-run-orchestrator
+  agents/                 # Custom subagent definitions for /red-run-legacy
     network-recon-agent.md
     web-discovery-agent.md
     web-exploit-agent.md
@@ -195,8 +205,8 @@ red-run/
     research.md            # Deep analysis (opus, on-demand)
   skills/
     _template/SKILL.md    # Canonical template
-    orchestrator/SKILL.md # /red-run-orchestrator (subagent-based, default)
-    ctf/SKILL.md          # /red-run-ctf (agent teams, experimental)
+    ctf/SKILL.md          # /red-run-ctf (agent teams, default)
+    legacy/SKILL.md       # /red-run-legacy (subagent-based, manual invoke only)
     web/                  # Web application attacks
     ad/                   # Active Directory
     credential/           # Credential attacks (password spraying)
@@ -318,5 +328,5 @@ Anthropic API + scope targets. See `operator/engagement-firewall/README.md`.
 ./uninstall.sh
 ```
 
-The installer puts the orchestrator in `~/.claude/skills/red-run-orchestrator/`, subagents in `~/.claude/agents/`, and sets up MCP servers (skill-router, nmap-server, shell-server, browser-server, state-server). Requires [uv](https://docs.astral.sh/uv/), Docker for nmap, and Playwright for browser automation (Chromium installed automatically).
+The installer puts orchestrators in `~/.claude/skills/red-run-ctf/` and `~/.claude/skills/red-run-legacy/`, subagents in `~/.claude/agents/`, and sets up MCP servers (skill-router, nmap-server, shell-server, browser-server, state-server). Requires [uv](https://docs.astral.sh/uv/), Docker for nmap, and Playwright for browser automation (Chromium installed automatically).
 

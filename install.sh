@@ -64,7 +64,7 @@ MCP_RDP_SERVER="${REPO_DIR}/tools/rdp-server"
 
 # Only the orchestrator is installed as a native Claude Code skill.
 # Everything else is served on-demand via the MCP skill-router.
-NATIVE_SKILLS=("orchestrator" "ctf")
+NATIVE_SKILLS=("ctf" "legacy")
 
 MODE="symlink"
 REBUILD_DOCKER=false

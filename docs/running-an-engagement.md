@@ -204,17 +204,15 @@ When tools fail on hostname resolution, the orchestrator follows the same hostna
 
 Two options for watching agents — see [Dashboard and Monitoring](dashboard-and-monitoring.md) for full details.
 
-**[agentsee](https://github.com/blacklanternsecurity/agentsee) (recommended)** — browser-based control plane. Watch agents in real time, hold/release them mid-run, chat with held agents to redirect or ask questions, and set per-agent leash thresholds for supervised execution. Start the server, open `http://localhost:4900`, and agents appear automatically.
+**Agent teams (default)** — each teammate runs in its own tmux pane. Watch all teammates working in parallel, press Escape to interrupt any teammate, type directly to redirect. Start Claude Code inside a tmux session for split-pane mode.
 
-**Built-in terminal dashboard** — lightweight read-only viewer. No dependencies beyond Python 3:
+**Built-in terminal dashboard** — lightweight read-only terminal viewer for legacy subagent runs:
 
 ```bash
 bash operator/agent-dashboard/dashboard.sh
 ```
 
-### Event Watcher
-
-The orchestrator spawns an event watcher (`tools/hooks/event-watcher.sh`) in the background to poll `state_events` for real-time findings from discovery agents. When a discovery agent writes a credential or vulnerability mid-run, the event watcher detects it and notifies the orchestrator.
+Teammates communicate findings directly via peer-to-peer messaging and write to state.db for durability. No event watcher needed — teammate messages are the notification channel.
 
 See [Dashboard and Monitoring](dashboard-and-monitoring.md) for full details.
 

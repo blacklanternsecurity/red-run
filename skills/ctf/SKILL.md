@@ -1,13 +1,37 @@
 ---
-name: red-run-ctf
+name: ctf
 description: >
-  Agent-teams-based CTF orchestrator for red-run. Uses Claude Code agent teams
-  for persistent teammates with peer-to-peer messaging. Invoke with /red-run-ctf.
-  Do NOT auto-trigger — manual invocation only.
-disable-model-invocation: true
+  USE THIS SKILL when the user provides a target or list of targets (IPs,
+  hostnames, URLs, subnets) and asks to attack, pentest, hack, scan, assess,
+  or test them. ALSO USE THIS SKILL when the user references an existing
+  engagement — resuming, continuing, picking up, checking status, or asking
+  about next steps. Trigger phrases: "attack X", "pentest X", "hack X",
+  "scan X", "start testing X", "pop X", "CTF target X", "engage X",
+  "these targets", "resume engagement", "pick it up", "continue testing",
+  "next steps", "where were we", "resuming", "advise next steps",
+  "what should we do next", "engagement status".
+  This is the entry point for all multi-phase penetration tests — handles
+  recon, attack surface mapping, vulnerability chaining, and routes to
+  technique skills for exploitation. Do NOT use when the user names a specific
+  single technique (e.g., "run kerberoasting against X").
 keywords:
-  - red-run-ctf
-  - agent teams pentest
+  - pentest this target
+  - start an engagement
+  - scan this host
+  - assess this network
+  - attack this target
+  - full pentest
+  - start testing
+  - engagement against
+  - begin assessment
+  - structured assessment
+  - pentest orchestration
+  - resume engagement
+  - continue engagement
+  - pick up where we left off
+  - next steps engagement
+  - engagement status
+  - advise next steps
 tools: []
 opsec: medium
 ---

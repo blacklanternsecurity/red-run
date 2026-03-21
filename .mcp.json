@@ -55,15 +55,39 @@
     },
     "state-reader": {
       "command": "uv",
-      "args": ["run", "--directory", "tools/state-server", "python", "server.py", "--mode", "read"]
+      "args": [
+        "run",
+        "--directory",
+        "tools/state-server",
+        "python",
+        "server.py",
+        "--mode",
+        "read"
+      ]
     },
     "state-interim": {
       "command": "uv",
-      "args": ["run", "--directory", "tools/state-server", "python", "server.py", "--mode", "interim"]
+      "args": [
+        "run",
+        "--directory",
+        "tools/state-server",
+        "python",
+        "server.py",
+        "--mode",
+        "interim"
+      ]
     },
     "state-writer": {
       "command": "uv",
-      "args": ["run", "--directory", "tools/state-server", "python", "server.py", "--mode", "write"]
+      "args": [
+        "run",
+        "--directory",
+        "tools/state-server",
+        "python",
+        "server.py",
+        "--mode",
+        "write"
+      ]
     }
   }
 }

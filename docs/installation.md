@@ -24,7 +24,7 @@ cd red-run
 
 The installer runs five steps:
 
-**1. Native skills** — Installs the orchestrator skill to `~/.claude/skills/red-run-orchestrator/`. This is the only skill installed as a native Claude Code skill. All other skills (67 discovery + technique skills) are served on-demand via the MCP skill-router.
+**1. Native skills** — Installs orchestrator skills to `~/.claude/skills/red-run-ctf/` (agent teams, default) and `~/.claude/skills/red-run-legacy/` (subagent-based). All other skills (67 discovery + technique skills) are served on-demand via the MCP skill-router.
 
 **2. Custom subagents** — Installs 10 domain-specific agent definitions to `~/.claude/agents/`. These are the `.md` files that define each agent's system prompt, available tools, and execution model.
 
@@ -128,7 +128,7 @@ Install Docker and ensure the daemon is running. The nmap-server and shell-serve
 ### Broken symlinks
 
 ```
-ERROR: Broken skill: ~/.claude/skills/red-run-orchestrator/SKILL.md -> unknown
+ERROR: Broken skill: ~/.claude/skills/red-run-ctf/SKILL.md -> unknown
 ```
 
 The repo directory was moved or deleted after install. Either move it back or re-run `./install.sh`.
