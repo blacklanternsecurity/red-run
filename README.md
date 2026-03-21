@@ -93,7 +93,23 @@ Run from an isolated VM or dedicated pentesting machine. You are responsible for
 
 ## Experimental: Agent Teams Variant
 
-`/red-run-ctf` is an experimental orchestrator that uses [Claude Code agent teams](https://code.claude.com/docs/en/agent-teams) instead of subagents. Teammates are persistent Claude Code sessions with peer-to-peer messaging and operator visibility via tmux split panes. Requires the experimental agent teams feature flag — see `CLAUDE.md` for setup.
+`/red-run-ctf` is an experimental orchestrator that uses [Claude Code agent teams](https://code.claude.com/docs/en/agent-teams) instead of subagents. Teammates are persistent Claude Code sessions with peer-to-peer messaging and operator visibility via tmux split panes. Requires Claude Code v2.1.32+ and the experimental agent teams feature flag.
+
+**Setup:**
+
+1. Run `./install.sh` to install the `/red-run-ctf` skill
+2. Enable agent teams by adding to `.claude/settings.json` (project-level):
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  }
+}
+```
+
+3. For split-pane teammate visibility, start Claude Code inside a tmux session. Without tmux, teammates run in-process (cycle with Shift+Down).
+4. Invoke with `/red-run-ctf` — it will not auto-trigger from natural language.
 
 ## Disclaimer
 
