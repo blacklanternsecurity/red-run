@@ -8,7 +8,22 @@ Offensive security toolkit for Claude Code.
 
 red-run combines skills, MCP servers, and [Claude Code agent teams](https://code.claude.com/docs/en/agent-teams) with routing logic that guides Claude through the phases of an infrastructure-focused attack — recon, initial access, lateral movement, privilege escalation, and post-exploitation. It tracks engagement state in a SQLite database that persists across context compactions, routes to skills via semantic search (RAG), and delegates execution to persistent domain teammates that accumulate context across tasks and communicate with each other directly.
 
-The orchestrator (team lead) presents the attack surface, chain analysis, and available paths — you choose what to hit next. Teammates work in their own tmux panes where you can watch them, press Escape to interrupt, and type directly to redirect. When web ports are found, the orchestrator can hard-stop for optional Burp listener setup and pass that proxy to web teammates for request capture. See the [Architecture docs](https://blacklanternsecurity.github.io/red-run/architecture/) for diagrams and data flow.
+The orchestrator (team lead) presents the attack surface, chain analysis, and available paths — you choose what to hit next. Teammates work in their own tmux panes where you can watch them, press Escape to interrupt, and type directly to redirect. See the [Architecture docs](https://blacklanternsecurity.github.io/red-run/architecture/) for diagrams and data flow.
+
+## Engagement Config
+
+At the start of each engagement, the orchestrator runs a configuration wizard that writes `engagement/config.yaml`. This captures operator preferences upfront so the orchestrator doesn't have to ask repeatedly during the run. Omit any key to be prompted interactively when the decision becomes relevant.
+
+| Setting | Options | Default | What it controls |
+|---------|---------|---------|-----------------|
+| `scan_type` | `quick` \| `full` | `quick` | Nmap scan scope — top 1000 ports vs all 65535 |
+| `web_proxy.enabled` | `true` \| `false` | `true` | Route attackbox HTTP(S) through Burp for capture |
+| `web_proxy.url` | URL | `http://127.0.0.1:8080` | Burp listener address |
+| `spray.default_tier` | `light` \| `medium` \| `heavy` \| `skip` | `light` | Password spray intensity (~30 / ~10k / ~100k passwords) |
+| `cracking.default_method` | `local` \| `external` \| `skip` | `local` | Hash cracking approach (hashcat on attackbox vs external rig) |
+| `callback_ip` | IP address | auto-detect tun0/wg0 | Reverse shell callback address |
+
+The orchestrator still presents approval gates before exploitation tasks — the config just pre-selects defaults so confirmation is one keystroke.
 
 ## Skills
 
