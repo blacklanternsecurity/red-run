@@ -505,11 +505,17 @@ Walk ALL items, collect every actionable finding, present to operator:
 **Hosts File Update:**
 ```
 1. Collect unresolvable hostnames + IPs
-2. Copy operator/templates/hosts-update.sh → temp_hosts-update.sh, fill in entries
-3. chmod +x temp_hosts-update.sh
-4. Present: "Run: sudo bash ./temp_hosts-update.sh"
-5. Wait for confirmation. Block all tasks.
-6. Verify with getent, clean up script
+2. Copy operator/templates/hosts-update.sh → temp_hosts-update.sh
+3. Replace TARGET_IP="FILL_IN" with the actual IP
+4. Replace entries array with literal strings (no variable refs):
+   entries=(
+       "10.10.10.5  DC01.corp.local corp.local"
+       "10.10.10.5  web.corp.local"
+   )
+5. chmod +x temp_hosts-update.sh
+6. Present: "Run: sudo bash ./temp_hosts-update.sh"
+7. Wait for confirmation. Block all tasks.
+8. Verify with getent, clean up script
 ```
 
 **Usernames Found** (never auto-spray):
