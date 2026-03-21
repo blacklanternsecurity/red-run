@@ -4,13 +4,15 @@ Claude Code skill library for penetration testing and CTF work.
 
 ## Engagement Workflow
 
-**MANDATORY:** When the user mentions targets, attacking, scanning, pentesting,
-or references an existing engagement (resuming, continuing, next steps, status),
-invoke the `red-run-ctf` skill via the Skill tool IMMEDIATELY — before reading
-state, running tools, or generating any analysis. The orchestrator skill
-contains all routing logic, approval gates, and state management rules. Never
-manually call state-server MCP tools, run attack commands, or present engagement
-analysis from the main thread without the orchestrator skill loaded.
+**MANDATORY (team lead only — teammates ignore this):** When the user mentions
+targets, attacking, scanning, pentesting, or references an existing engagement
+(resuming, continuing, next steps, status), invoke the `red-run-ctf` skill via
+the Skill tool IMMEDIATELY — before reading state, running tools, or generating
+any analysis. The orchestrator skill contains all routing logic, approval gates,
+and state management rules. **If you are an agent teams teammate** (you were
+spawned by a team lead and received a task assignment), **do NOT invoke the
+orchestrator skill.** Load technique skills via
+`mcp__skill-router__get_skill()` instead — never via the Skill tool.
 
 ## Token Budget
 
