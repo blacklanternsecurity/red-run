@@ -41,6 +41,8 @@ and technique skills. Each variant uses a different execution model.
 |---------|--------|--------|-----------------|
 | `/red-run-ctf` | Keywords ("attack X") + slash command | **Active** (default) | Agent teams (persistent teammates, peer messaging) |
 | `/red-run-legacy` | Slash command only | **Legacy** | Subagents (ephemeral, one skill per invocation) |
+| `/red-run-notouch` | Slash command only | **Planned** | DLP-safe — operator runs commands, reports sanitized output |
+| `/red-run-train` | Slash command only | **Planned** | Training mode — guided walkthrough with explanations |
 
 **`/red-run-ctf`** uses Claude Code agent teams. Requires
 `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in env or `.claude/settings.json`.

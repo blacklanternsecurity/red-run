@@ -10,6 +10,19 @@ red-run combines skills, MCP servers, and [Claude Code agent teams](https://code
 
 The orchestrator (team lead) presents the attack surface, chain analysis, and available paths — you choose what to hit next. Teammates work in their own tmux panes where you can watch them, press Escape to interrupt, and type directly to redirect. See the [Architecture docs](https://blacklanternsecurity.github.io/red-run/architecture/) for diagrams and data flow.
 
+## Orchestrators
+
+red-run supports multiple orchestrator variants that share the same skills, MCP servers, and engagement state. Each variant targets a different use case. Community contributions welcome.
+
+| Orchestrator | Trigger | Status | Purpose |
+|---|---|---|---|
+| `/red-run-ctf` | Auto (natural language) + `/red-run-ctf` | **Active** | CTF and lab environments. Agent teams with persistent teammates, full autonomy, aggressive exploitation. |
+| `/red-run-legacy` | `/red-run-legacy` only | **Legacy** | Original subagent-based orchestrator. Ephemeral agents, one skill per invocation. |
+| `/red-run-notouch` | `/red-run-notouch` only | **Planned** | DLP-safe mode. The operator executes commands in separate tmux panes and reports sanitized output back to the orchestrator. No client data touches Anthropic servers. |
+| `/red-run-train` | `/red-run-train` only | **Planned** | Training mode. Guided walkthrough with explanations at each step. Designed for learning offensive methodology with AI assistance. |
+
+All orchestrators write to the same `engagement/state.db` — an engagement started with one variant can be resumed with another.
+
 ## Skills
 
 67 skills across 7 categories — see [Skills Inventory](docs/skills-inventory.md) for the full inventory.
@@ -109,10 +122,6 @@ claude --dangerously-skip-permissions
 The orchestrator presents routing decisions for operator approval before assigning exploitation tasks. An optional nftables firewall is available in `operator/engagement-firewall/` for operators who want OS-level network isolation.
 
 Run from an isolated VM or dedicated pentesting machine. You are responsible for containing Claude on your systems and for any legal consequences under the CFAA or equivalent legislation.
-
-## Legacy Orchestrator
-
-The original subagent-based orchestrator is still available as `/red-run-legacy`. It uses ephemeral subagents (one skill per invocation) instead of agent teams. Invoke manually if needed — it does not auto-trigger.
 
 ## Disclaimer
 
