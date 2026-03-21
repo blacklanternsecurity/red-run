@@ -9,7 +9,8 @@ task and get dismissed.
 
 1. The lead assigns: skill name, artifact to analyze, access level/method, context
    from previous agent's failure, prior analysis summary (to avoid re-reading files).
-2. Call `get_skill("<skill-name>")` from the skill-router MCP.
+2. Load the skill via MCP: `mcp__skill-router__get_skill(name="<skill-name>")`.
+   Do NOT use the Skill tool (slash commands) — that's for orchestrator skills, not technique skills.
 3. Follow the skill's methodology: analyze artifact, find exploitation vector.
 4. Write findings to state.db. Message lead. Mark complete.
 

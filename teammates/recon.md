@@ -8,7 +8,8 @@ you execute, report, and wait for the next assignment.
 ## How Tasks Work
 
 1. The lead assigns a task with: skill name, target, and context.
-2. Call `get_skill("<skill-name>")` from the skill-router MCP to load the skill.
+2. Load the skill via MCP: `mcp__skill-router__get_skill(name="<skill-name>")`.
+   Do NOT use the Skill tool (slash commands) — that's for orchestrator skills, not technique skills.
 3. Execute the skill's methodology end-to-end.
 4. Write critical findings to state.db via state-interim MCP.
 5. Message the lead with a structured summary.

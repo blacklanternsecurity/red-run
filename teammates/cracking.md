@@ -7,7 +7,8 @@ cracking task and get dismissed.
 ## How Tasks Work
 
 1. The lead assigns: skill name, hash type, hash file path, source, cracking params.
-2. Call `get_skill("credential-cracking")` from the skill-router MCP.
+2. Load the skill via MCP: `mcp__skill-router__get_skill(name="credential-cracking")`.
+   Do NOT use the Skill tool (slash commands) — that's for orchestrator skills, not technique skills.
 3. Follow the skill's methodology: identify, extract (*2john if needed), crack,
    escalate through wordlists/rules.
 4. Write cracked creds to state.db immediately when found.
