@@ -6,24 +6,9 @@ Offensive security toolkit for Claude Code.
   <img src="docs/dashboard.jpg" width="700" alt="Agent dashboard showing live multi-pane output from parallel agents">
 </p>
 
-red-run combines skills, MCP servers, and [Claude Code agent teams](https://code.claude.com/docs/en/agent-teams) with routing logic that guides Claude through the phases of an infrastructure-focused attack — recon, initial access, lateral movement, privilege escalation, and post-exploitation. It tracks engagement state in a SQLite database that persists across context compactions, routes to skills via semantic search (RAG), and delegates execution to persistent domain teammates that accumulate context across tasks and communicate with each other directly.
+red-run combines skills, MCP servers, and [Claude Code agent teams](https://code.claude.com/docs/en/agent-teams) with routing logic that guides Claude and the operator through the phases of an infrastructure-focused attack — recon, initial access, lateral movement, privilege escalation, and post-exploitation. It tracks engagement state in a SQLite database that persists across context compactions, routes to skills via semantic search (RAG), and delegates execution to persistent domain teammates that accumulate context across tasks and communicate with each other directly.
 
 The orchestrator (team lead) presents the attack surface, chain analysis, and available paths — you choose what to hit next. Teammates work in their own tmux panes where you can watch them, press Escape to interrupt, and type directly to redirect. See the [Architecture docs](https://blacklanternsecurity.github.io/red-run/architecture/) for diagrams and data flow.
-
-## Engagement Config
-
-At the start of each engagement, the orchestrator runs a configuration wizard that writes `engagement/config.yaml`. This captures operator preferences upfront so the orchestrator doesn't have to ask repeatedly during the run. Omit any key to be prompted interactively when the decision becomes relevant.
-
-| Setting | Options | Default | What it controls |
-|---------|---------|---------|-----------------|
-| `scan_type` | `quick` \| `full` | `quick` | Nmap scan scope — top 1000 ports vs all 65535 |
-| `web_proxy.enabled` | `true` \| `false` | `true` | Route attackbox HTTP(S) through Burp for capture |
-| `web_proxy.url` | URL | `http://127.0.0.1:8080` | Burp listener address |
-| `spray.default_tier` | `light` \| `medium` \| `heavy` \| `skip` | `light` | Password spray intensity (~30 / ~10k / ~100k passwords) |
-| `cracking.default_method` | `local` \| `external` \| `skip` | `local` | Hash cracking approach (hashcat on attackbox vs external rig) |
-| `callback_ip` | IP address | auto-detect tun0/wg0 | Reverse shell callback address |
-
-The orchestrator still presents approval gates before exploitation tasks — the config just pre-selects defaults so confirmation is one keystroke.
 
 ## Skills
 
@@ -81,7 +66,7 @@ red-run uses [Claude Code agent teams](https://code.claude.com/docs/en/agent-tea
 - **Operator visibility** — watch all teammates working in split tmux panes, press Escape to interrupt any teammate, type directly to redirect
 - **Shared task list** — coordinated parallel work with the lead assigning all tasks
 
-Agent teams requires Claude Code v2.1.32+ and the experimental feature flag. The repo's `.claude/settings.json` already includes this:
+Agent teams requires the Claude Code experimental feature flag. The repo's `.claude/settings.json` already includes this:
 
 ```json
 {
@@ -91,7 +76,7 @@ Agent teams requires Claude Code v2.1.32+ and the experimental feature flag. The
 }
 ```
 
-No manual setup needed — cloning the repo and running `./install.sh` is sufficient. For split-pane teammate visibility, start Claude Code inside a tmux session. Without tmux, teammates run in-process (cycle with Shift+Down).
+No manual setup needed — cloning the repo and running `./install.sh` is sufficient. For split-pane teammate visibility, start Claude Code inside a tmux session. Without tmux, teammates run in-process (cycle with Shift+Down - this is not recommended for optimal control).
 
 **Known limitation:** Agent teams is an experimental feature and currently requires `--dangerously-skip-permissions` mode. In standard mode, teammate permission requests don't always surface to the operator, causing teammates to hang. This is a stability issue with the experimental agent teams feature. The orchestrator's `AskUserQuestion` gates still provide human-in-the-loop control for exploitation decisions. This may improve as agent teams matures.
 
