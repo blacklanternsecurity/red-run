@@ -55,10 +55,15 @@ evil-winrm: 5985/5986 | psexec/smbexec: 445 | wmiexec: 135 | SSH: 22
 
 **Evil-WinRM for file transfer** (preferred on Windows when 5985/5986 open):
 ```
-start_process(command="evil-winrm -i TARGET -u user -p pass", privileged=True)
+start_process(command="evil-winrm -i TARGET -u user -p pass", privileged=True, startup_delay=30)
 send_command(session_id, "upload /path/to/tool.exe C:\\Windows\\Temp\\tool.exe")
 send_command(session_id, "download C:\\Users\\admin\\Desktop\\loot.zip /local/path/")
 ```
+
+**startup_delay=30** is critical for evil-winrm — it takes 20-30s to negotiate
+authentication. Without it, the prompt probe fires before connection and the
+session is marked degraded. Also use startup_delay=30 for psexec.py and
+wmiexec.py over slow links.
 
 **Do NOT write custom scripts to interact with remote services.** No Ruby WinRM
 scripts, no Python WMI scripts, no raw socket code. Use the tools available via

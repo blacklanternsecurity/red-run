@@ -78,6 +78,10 @@ Port checks before connecting:
 evil-winrm: 5985/5986 | psexec/smbexec: 445 | wmiexec: 135 | SSH: 22
 ```
 
+**Use startup_delay=30** for evil-winrm, psexec.py, wmiexec.py — they take
+20-30s to negotiate authentication. Without it, the prompt probe fires before
+connection and the session is marked degraded.
+
 ## Scope Boundaries
 
 - Do NOT call `search_skills()` or `list_skills()` — only `get_skill()`.

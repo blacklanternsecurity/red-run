@@ -434,6 +434,7 @@ def create_server() -> FastMCP:
         label: str = "",
         timeout: int = 30,
         privileged: bool = False,
+        startup_delay: int = 2,
     ) -> str:
         """Spawn a local interactive process in a PTY.
 
@@ -450,6 +451,9 @@ def create_server() -> FastMCP:
             timeout: Seconds to wait for the process to start and produce
                      initial output (default 30).
             privileged: Run inside the red-run-shell Docker container.
+            startup_delay: Seconds to wait before probing for a prompt
+                     (default 2). Increase for slow-connecting tools like
+                     evil-winrm (30) or psexec.py over high-latency links.
                        The container includes a full pentest toolkit:
                        evil-winrm, impacket (psexec/wmiexec/smbexec/
                        smbclient/mssqlclient), chisel, ligolo-ng, socat,
@@ -508,8 +512,8 @@ def create_server() -> FastMCP:
         except Exception as e:
             return f"ERROR: Failed to start process — {e}"
 
-        # Wait for initial output
-        time.sleep(2.0)
+        # Wait for the process to start (and optionally connect to remote)
+        time.sleep(startup_delay)
 
         # Check if process exited immediately
         if proc.poll() is not None:
