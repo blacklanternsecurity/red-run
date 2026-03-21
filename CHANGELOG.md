@@ -30,6 +30,6 @@ All notable changes to red-run will be documented in this file. Format follows [
 - Dashboard and monitoring docs rewritten for agent teams as primary visibility mechanism.
 - README restructured: added orchestrators table, agent teams section, removed skills table (lives in docs only), removed agentsee references.
 
-## [0.1.0] — 2026-03-15
+## [0.1.0] — 2026-02-22
 
 Initial release. Subagent-based orchestrator with 67 skills, 12 domain-specific agents, 6 MCP servers, and SQLite engagement state management.
