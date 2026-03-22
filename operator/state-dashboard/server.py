@@ -755,11 +755,12 @@ function renderGraph() {
   for (const h of remainHosts) { hostCol[h] = 1; }
 
   // --- Build actionable items per host ---
+  const sevOrder = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
   function getActionable(host) {
     const items = [];
     // Vulns not exploited and not blocked with retry=no
     const blockedTechniques = new Set((blockedByHost[host] || []).filter(b => b.retry === 'no').map(b => b.technique));
-    for (const v of (allVulnsByHost[host] || [])) {
+    for (const v of (allVulnsByHost[host] || []).slice().sort((a,b) => (sevOrder[a.severity]||9) - (sevOrder[b.severity]||9))) {
       if (v.status === 'found' && v.severity !== 'info' && !blockedTechniques.has(v.title)) {
         items.push({ icon: '\u26A0', text: v.title, detail: `${v.severity} | ${v.status}\n${v.details||''}` });
       }
