@@ -945,9 +945,10 @@ function renderGraph() {
     if (!dst) continue;
     // Find which provided cred username
     const accOnHost = (accessByHost[h] || []).find(a => providedCredUsernames.has(a.username));
-    const label = accOnHost ? accOnHost.username : 'provided cred';
+    const credUser = accOnHost ? accOnHost.username : 'provided cred';
+    const accessMethod = accOnHost ? `${credUser} (${accOnHost.access_type})` : credUser;
     graphEdges.push({ srcCard: cardById['attacker'], dstCard: dst,
-      label, edgeClass: 'card-edge-active', detail: `Access via provided credential: ${label}` });
+      label: accessMethod, edgeClass: 'card-edge-active', detail: `Access via provided credential: ${credUser}\nMethod: ${accOnHost ? accOnHost.method : 'unknown'}` });
   }
 
   // Attacker -> hosts discovered but no access via provided creds (recon)
@@ -1006,18 +1007,9 @@ function renderGraph() {
     // Arrowhead
     const arrowSize = 6;
     svgHtml += `<polygon points="${dx},${dy} ${dx-arrowSize},${dy-arrowSize/2} ${dx-arrowSize},${dy+arrowSize/2}" fill="${getEdgeColor(e.edgeClass)}" opacity="${e.edgeClass==='card-edge-recon'?'0.5':'1'}"/>`;
-
-    // Edge label
-    if (e.label) {
-      const lx = (sx + dx) / 2;
-      const ly = (sy + dy) / 2 - 6;
-      const labelW = e.label.length * 6 + 10;
-      svgHtml += `<rect x="${lx - labelW/2}" y="${ly - 7}" width="${labelW}" height="14" rx="3" fill="#0d1117" fill-opacity="0.9"/>`;
-      svgHtml += `<text class="edge-label" x="${lx}" y="${ly + 3}" text-anchor="middle" fill="${getEdgeColor(e.edgeClass)}" font-weight="600">${esc(trunc(e.label, 25))}</text>`;
-    }
   }
 
-  // Draw cards
+  // Draw cards (on top of edge paths)
   for (const card of cards) {
     const isActionable = card.sections.some(s => s.glow);
     const gCls = 'host-card node-new' + (isActionable ? ' card-actionable-glow' : '');
@@ -1073,6 +1065,22 @@ function renderGraph() {
     }
 
     svgHtml += `</g>`;
+  }
+
+  // --- Edge labels (drawn after cards so they render on top) ---
+  for (const e of graphEdges) {
+    if (!e.label) continue;
+    const sc = e.srcCard, dc = e.dstCard;
+    if (!sc || !dc) continue;
+    const sx = sc.x + CARD_W;
+    const sy = sc.y + sc.height / 2;
+    const dx = dc.x;
+    const dy = dc.y + dc.height / 2;
+    const lx = (sx + dx) / 2;
+    const ly = (sy + dy) / 2 - 6;
+    const labelW = Math.min(trunc(e.label, 30).length * 6.5 + 12, COL_GAP - 10);
+    svgHtml += `<rect x="${lx - labelW/2}" y="${ly - 8}" width="${labelW}" height="16" rx="3" fill="#0d1117" fill-opacity="0.92"/>`;
+    svgHtml += `<text class="edge-label" x="${lx}" y="${ly + 4}" text-anchor="middle" font-size="10" fill="${getEdgeColor(e.edgeClass)}" font-weight="600">${esc(trunc(e.label, 30))}</text>`;
   }
 
   // --- Legend ---
