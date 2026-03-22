@@ -71,9 +71,14 @@ Privesc commands often run ON the target through a shell, not from the attackbox
 
 - Do NOT call `search_skills()` or `list_skills()` — only `get_skill()`.
 - Do NOT run Windows commands — Linux hosts only. Wrong OS → report, return.
-- Do NOT exploit web services beyond a single fingerprint curl for `add_pivot()`.
+- Do NOT exploit web services, chain SSRF, or use curl to proxy commands
+  through web apps. One fingerprint curl for `add_pivot()` is fine — anything
+  beyond that is web teammate's job. Report the finding and return.
 - Do NOT perform network scanning or AD enumeration.
 - Do NOT crack hashes — save to evidence, `add_credential()`, return.
+- If you get blocked by Anthropic's content filter (AUP error), STOP
+  immediately. Do not retry. Return what you have — the context has
+  accumulated too much offensive content and further calls will fail.
 
 ## Engagement Files
 

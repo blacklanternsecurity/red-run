@@ -101,6 +101,8 @@ connection and the session is marked degraded.
 - Do NOT perform network scanning, web app testing, or host-level privesc.
 - Do NOT crack hashes — save to evidence, `add_credential()`, continue skill.
 - Do NOT enumerate hosts after gaining shell — report access, return.
+- If you get blocked by Anthropic's content filter (AUP error), STOP
+  immediately. Do not retry. Return what you have.
 
 ## Engagement Files
 

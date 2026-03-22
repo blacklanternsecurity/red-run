@@ -101,6 +101,8 @@ your turn waiting for a 5-minute ffuf scan.
   service enumeration. That is the linux/windows teammate's job.
 - Do NOT run commands as a shell user beyond verifying access (whoami) and
   reading flag files. No /etc/passwd, no netstat, no process listing.
+- If you get blocked by Anthropic's content filter (AUP error), STOP
+  immediately. Do not retry. Return what you have.
 
 ## Responder for NTLM Capture
 
