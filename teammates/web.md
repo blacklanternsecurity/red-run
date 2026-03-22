@@ -81,11 +81,12 @@ stabilize_shell() → verify with whoami → close_session(save_transcript=true)
 **curl MUST use timeouts:** `curl --connect-timeout 5 --max-time 15` always.
 Bare `curl` with no timeout will hang your turn indefinitely.
 
-**Long-running tools → output to file, run in background.** Fuzzing tools
-(ffuf, feroxbuster, gobuster, nuclei), brute-forcers, and anything that runs
-more than ~30 seconds: redirect output to `engagement/evidence/`, use
-`run_in_background: true`, and check the output file when done. Do NOT block
-your turn waiting for a 5-minute ffuf scan.
+**Stay responsive — run long commands in background.** Any command over ~30
+seconds (ffuf, feroxbuster, nuclei, proxychains curl chains, brute-forcers):
+redirect output to `engagement/evidence/`, use `run_in_background: true`, and
+process results when notified. Blocking your turn means the lead CANNOT message
+you to redirect, provide context, or abort. Stay idle between background jobs
+so you can receive messages.
 
 **`start_process`** only for:
 - Docker tools (evil-winrm, chisel, Impacket shells): `privileged=True`

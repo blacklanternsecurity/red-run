@@ -60,6 +60,13 @@ only shell-server can catch.
 
 ## Tool Execution
 
+**Stay responsive — run long commands in background.** Any command over ~30
+seconds (linpeas, pspy, large file searches, proxychains operations): redirect
+output to `engagement/evidence/`, use `run_in_background: true`, and process
+results when notified. Blocking your turn means the lead CANNOT message you to
+redirect, provide context, or abort. Stay idle between background jobs so you
+can receive messages.
+
 **Bash is the default** (linpeas, pspy, enumeration commands) —
 `dangerouslyDisableSandbox: true` for network commands.
 

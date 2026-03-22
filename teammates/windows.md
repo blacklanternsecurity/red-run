@@ -54,6 +54,13 @@ list_sessions() → stabilize_shell() → verify privilege level → close_sessi
 **Bash is the default** for CLI tools — `dangerouslyDisableSandbox: true` for
 network commands.
 
+**Stay responsive — run long commands in background.** Any command over ~30
+seconds (winPEAS, Seatbelt, large file searches, proxychains operations):
+redirect output to `engagement/evidence/`, use `run_in_background: true`, and
+process results when notified. Blocking your turn means the lead CANNOT message
+you to redirect, provide context, or abort. Stay idle between background jobs
+so you can receive messages.
+
 **`start_process` via shell-server MCP** for interactive sessions:
 - Docker tools (evil-winrm, Impacket interactive shells): `privileged=True`
 - Host tools (ssh, msfconsole): `privileged=False`
