@@ -251,14 +251,19 @@ When a teammate messages that a task is complete:
    - add_vuln/update_vuln for confirmed vulns
    - add_pivot for new paths
    - add_blocked for failed techniques (see retry policy)
-4. Retry policy for blocked:
+4. UPDATE VULN STATUS based on technique outcome:
+   - Technique succeeded (access gained, creds extracted) → update_vuln(status="exploited")
+   - Technique exhausted methodology and failed → update_vuln(status="blocked")
+   - This is critical for the kill-chain graph — vulns stuck at status="found"
+     show as actionable forever. Close the loop.
+6. Retry policy for blocked:
    - Discovery agent blocked → retry: "with_context" (technique skill has deeper methodology)
    - Technique agent exhausted → retry: "no"
    - Needs new context (creds, access) → retry: "later"
-5. Record tool workarounds in target notes via update_target(notes=...)
-6. Check for new usernames → trigger Usernames Found hard stop if needed
-7. get_state_summary() → run Decision Logic → present next actions
-8. If 2+ independent paths: use Parallel Path format
+7. Record tool workarounds in target notes via update_target(notes=...)
+8. Check for new usernames → trigger Usernames Found hard stop if needed
+9. get_state_summary() → run Decision Logic → present next actions
+10. If 2+ independent paths: use Parallel Path format
 ```
 
 ## Parallel Execution

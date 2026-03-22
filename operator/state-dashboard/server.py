@@ -814,10 +814,14 @@ function renderGraph() {
     const vulns = vulnsByHost[host] || [];
     if (vulns.length) {
       const items = vulns.map(v => {
-        const color = v.severity === 'critical' ? '#f85149' : '#d29922';
+        const isExploited = v.status === 'exploited';
+        const isBlocked = v.status === 'blocked';
+        const color = isExploited ? '#3fb950' : isBlocked ? '#484f58' : v.severity === 'critical' ? '#f85149' : '#d29922';
+        const icon = isExploited ? '\u2713' : isBlocked ? '\u2717' : '\u25A0';
         const text = v.title;
+        const cls = isExploited ? 'card-item' : isBlocked ? 'card-item-blocked' : 'card-item';
         const detail = `${v.severity} | ${v.status}\n${v.endpoint||''}\n${v.details||''}`;
-        return { icon: '\u25A0', text, cls: 'card-item', detail, color };
+        return { icon, text, cls, detail, color };
       });
       sections.push({ title: 'VULNS', items });
     }
