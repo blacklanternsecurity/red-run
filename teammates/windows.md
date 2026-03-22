@@ -95,6 +95,12 @@ failure — do not reinvent it.
 - Do NOT exploit web services — report and return.
 - Do NOT perform network scanning or AD-specific enumeration (BloodHound, ADCS).
 - Do NOT crack hashes — save to evidence, `add_credential()`, return.
+- **Outbound connectivity issues from target** (reverse shell never
+  connects, target can't reach listener, callback never arrives):
+  do NOT debug the attackbox network stack. If your listener is up, the
+  problem is on the target side. Record `add_blocked()`, message the
+  lead with what you observed, and STOP. The lead has network context
+  you don't.
 
 ## Engagement Files
 

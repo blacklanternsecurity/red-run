@@ -88,6 +88,12 @@ Privesc commands often run ON the target through a shell, not from the attackbox
 - If you get blocked by Anthropic's content filter (AUP error), STOP
   immediately. Do not retry. Return what you have — the context has
   accumulated too much offensive content and further calls will fail.
+- **Outbound connectivity issues from target** (reverse shell never
+  connects, target can't reach listener, callback never arrives):
+  do NOT debug the attackbox network stack. If your listener is up, the
+  problem is on the target side. Record `add_blocked()`, message the
+  lead with what you observed, and STOP. The lead has network context
+  you don't.
 
 ## Engagement Files
 

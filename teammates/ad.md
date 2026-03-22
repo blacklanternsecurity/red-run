@@ -112,6 +112,12 @@ connection and the session is marked degraded.
 - Do NOT enumerate hosts after gaining shell — report access, return.
 - If you get blocked by Anthropic's content filter (AUP error), STOP
   immediately. Do not retry. Return what you have.
+- **Outbound connectivity issues from target** (coercion succeeds but no
+  callback, reverse shell never connects, target can't reach listener):
+  do NOT debug the attackbox network stack. If your listener is up, the
+  problem is on the target side. Record `add_blocked()`, message the
+  lead with what you observed, and STOP. The lead has network context
+  you don't.
 
 ## Engagement Files
 

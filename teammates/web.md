@@ -106,6 +106,12 @@ so you can receive messages.
   reading flag files. No /etc/passwd, no netstat, no process listing.
 - If you get blocked by Anthropic's content filter (AUP error), STOP
   immediately. Do not retry. Return what you have.
+- **Outbound connectivity issues from target** (reverse shell never
+  connects, SSRF callback never arrives, target can't reach listener):
+  do NOT debug the attackbox network stack. If your listener is up, the
+  problem is on the target side. Record `add_blocked()`, message the
+  lead with what you observed, and STOP. The lead has network context
+  you don't.
 
 ## Responder for NTLM Capture
 

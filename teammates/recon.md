@@ -82,6 +82,10 @@ can receive messages.
 - Do NOT interact with HTTP services (no curl/wget against web ports) — that's the web teammate.
 - Do NOT perform web app testing, AD enumeration, or privilege escalation.
 - Do NOT crack hashes — save to evidence, write `add_credential()`, report.
+- **Outbound connectivity issues from target** (target can't reach
+  listener, callback never arrives): do NOT debug the attackbox network
+  stack. If your listener is up, the problem is on the target side.
+  Record `add_blocked()`, message the lead, and STOP.
 
 ## Engagement Files
 
