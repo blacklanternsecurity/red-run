@@ -817,15 +817,7 @@ function renderGraph() {
       sections.push({ title: 'CREDS FOUND', items });
     }
 
-    // ACTIONABLE — found vulns (not blocked), uncracked hashes, identified pivots
-    const actionable = getActionable(host);
-    if (actionable.length) {
-      sections.push({ title: 'ACTIONABLE', items: actionable.map(a => ({
-        icon: a.icon, text: a.text, cls: 'card-item-pending', detail: a.detail
-      })), glow: true });
-    }
-
-    // EXPLOITED — successfully exploited vulns only
+    // EXPLOITED — successfully exploited vulns (above actionable = "done" first)
     const exploitedVulns = (allVulnsByHost[host] || []).filter(v => v.status === 'exploited');
     if (exploitedVulns.length) {
       const items = exploitedVulns.map(v => {
@@ -834,6 +826,14 @@ function renderGraph() {
         return { icon: '\u2713', text, cls: 'card-item-active', detail, color: '#3fb950' };
       });
       sections.push({ title: 'EXPLOITED', items });
+    }
+
+    // ACTIONABLE — found vulns (not blocked), uncracked hashes, identified pivots
+    const actionable = getActionable(host);
+    if (actionable.length) {
+      sections.push({ title: 'ACTIONABLE', items: actionable.map(a => ({
+        icon: a.icon, text: a.text, cls: 'card-item-pending', detail: a.detail
+      })), glow: true });
     }
 
     // Calculate height
@@ -879,31 +879,43 @@ function renderGraph() {
     else if (actionable.length) borderColor = '#e3b341';
 
     // Resolve hostname and IP for display
+    // Sources: host field, notes, port banners (LDAP often has "Hostname: X")
     const hostIsIP = /^\d+\.\d+\.\d+\.\d+$/.test(t.host);
     let hostname = '';
     let ip = '';
 
+    // Collect all text to search: notes + port banners
+    const searchText = [t.notes || ''];
+    for (const p of (t.ports || [])) {
+      if (p.banner) searchText.push(p.banner);
+    }
+    const allText = searchText.join(' | ');
+
     if (hostIsIP) {
       ip = t.host;
-      // Extract hostname from notes (e.g., "DC01.pirate.htb")
-      if (t.notes) {
-        const fqdnMatch = t.notes.match(/([A-Za-z0-9_-]+\.[A-Za-z0-9._-]+\.[a-z]{2,})/);
+      // Try "Hostname: X" from banners first (most reliable)
+      const hnMatch = allText.match(/[Hh]ostname:\s*([A-Za-z0-9_-]+)/);
+      if (hnMatch) {
+        // Combine with domain if available
+        const domMatch = allText.match(/[Dd]omain:\s*([A-Za-z0-9._-]+\.[a-z]{2,})/);
+        hostname = domMatch ? `${hnMatch[1]}.${domMatch[1]}` : hnMatch[1];
+      } else {
+        // Fall back to FQDN pattern in notes (e.g., "DC01.pirate.htb")
+        const fqdnMatch = allText.match(/\b([A-Za-z][A-Za-z0-9_-]*\.[A-Za-z0-9._-]+\.[a-z]{2,})\b/);
         if (fqdnMatch) hostname = fqdnMatch[1];
       }
     } else {
       hostname = t.host;
-      // Extract IP from notes
-      if (t.notes) {
-        const ipMatch = t.notes.match(/(?:IP|ip)[:\s]*(\d+\.\d+\.\d+\.\d+)/);
-        if (ipMatch) ip = ipMatch[1];
-        else {
-          const anyIP = t.notes.match(/(\d+\.\d+\.\d+\.\d+)/);
-          if (anyIP) ip = anyIP[1];
-        }
+      // Extract IP from notes/banners
+      const ipMatch = allText.match(/(?:IP|ip)[:\s]*(\d+\.\d+\.\d+\.\d+)/);
+      if (ipMatch) ip = ipMatch[1];
+      else {
+        const anyIP = allText.match(/(\d+\.\d+\.\d+\.\d+)/);
+        if (anyIP) ip = anyIP[1];
       }
     }
 
-    // Label: "HOSTNAME\nIP" or just one if the other is missing
+    // Label: "HOSTNAME (IP)" or just one if the other is missing
     const headerLabel = hostname && ip ? `${hostname} (${ip})`
                       : hostname ? hostname : ip;
     const subtitle = [t.os, t.role].filter(Boolean).join(' \u00B7 ');
