@@ -1278,6 +1278,8 @@ function showTip(evt) {
   const tipRect = tip.getBoundingClientRect();
   if (tx + tipRect.width > rect.width - 8) tx = rect.width - tipRect.width - 8;
   if (ty + tipRect.height > rect.height - 8) ty = ty - tipRect.height - 24;
+  if (ty < 4) ty = evt.clientY - rect.top + 16; // flip below cursor if clipped at top
+  if (tx < 4) tx = 4;
   tip.style.left = tx + 'px';
   tip.style.top = ty + 'px';
 }
