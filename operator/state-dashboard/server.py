@@ -1001,6 +1001,8 @@ function renderGraph() {
     if (t.includes('recon') || t.includes('discover')) return 'recon';
     if (t.includes('tunnel') || t.includes('socks')) return 'tunnel';
     if (t.includes('relay')) return 'relay';
+    if (t.includes('webshell') || t.includes('web shell')) return 'webshell';
+    if (t.includes('reverse shell') || t.includes('rev shell')) return 'revshell';
     // Fall back: skip words that look like hostnames/IPs, take first method-like word
     const words = text.split(/[\s(,]+/);
     for (const w of words) {
@@ -1043,10 +1045,13 @@ function renderGraph() {
     if (pivotDestHosts.has(t.host)) continue;
     const dst = cardById[`host:${t.host}`];
     if (!dst) continue;
-    const hasAccess = (accessByHost[t.host] || []).some(a => a.active);
-    if (hasAccess) {
+    const activeAccess = (accessByHost[t.host] || []).filter(a => a.active);
+    if (activeAccess.length) {
+      const acc = activeAccess[0];
+      const label = shortEdgeLabel(acc.method) || acc.access_type || 'access';
+      const detail = `${acc.username} (${acc.access_type}, ${acc.privilege})\n${acc.method}`;
       graphEdges.push({ srcCard: cardById['attacker'], dstCard: dst,
-        shortLabel: '', edgeClass: 'card-edge-active', detail: 'Direct access' });
+        shortLabel: label, edgeClass: 'card-edge-active', detail });
     } else {
       graphEdges.push({ srcCard: cardById['attacker'], dstCard: dst,
         shortLabel: '', edgeClass: 'card-edge-recon', detail: 'Discovered via recon' });
