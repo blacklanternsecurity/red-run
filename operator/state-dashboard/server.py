@@ -333,8 +333,12 @@ tr:hover td { background: var(--bg2); }
 .card-edge-blocked { stroke: var(--red); stroke-dasharray: 6 3; }
 .card-edge-recon { stroke: var(--dim); stroke-dasharray: 3 4; stroke-width: 1; opacity: 0.5; }
 .edge-label { font-size: 9px; pointer-events: none; }
-.graph-legend text { font-size: 10px; fill: var(--text); }
-.graph-legend .legend-dim { fill: var(--dim); font-weight: 600; }
+.graph-legend { position: absolute; bottom: 6px; left: 6px; right: 6px;
+  background: var(--bg2); border-top: 1px solid var(--border); padding: 4px 8px;
+  font-size: 10px; color: var(--text); display: flex; gap: 8px; align-items: center;
+  flex-wrap: wrap; z-index: 5; pointer-events: none; }
+.graph-legend .legend-dim { color: var(--dim); font-weight: 600; }
+.graph-legend .legend-item { display: inline-flex; align-items: center; gap: 4px; }
 .tooltip { position: absolute; background: var(--bg3); border: 1px solid var(--border);
   border-radius: 4px; padding: 6px 10px; font-size: 11px; pointer-events: none;
   display: none; z-index: 10; max-width: 300px; white-space: pre-wrap; }
@@ -354,7 +358,7 @@ tr:hover td { background: var(--bg2); }
 <div class="section">
   <h2 onclick="toggleSection('graph')">Kill-Chain Graph <button class="refresh-btn" onclick="event.stopPropagation(); refreshAll()">Refresh</button></h2>
   <div id="graph-body" class="section-body">
-    <div id="graph-container"><svg id="graph"></svg><div class="tooltip" id="tooltip"></div></div>
+    <div id="graph-container"><svg id="graph"></svg><div class="tooltip" id="tooltip"></div><div class="graph-legend" id="graph-legend"></div></div>
   </div>
 </div>
 
@@ -756,7 +760,7 @@ function renderGraph() {
     // Vulns not exploited and not blocked with retry=no
     const blockedTechniques = new Set((blockedByHost[host] || []).filter(b => b.retry === 'no').map(b => b.technique));
     for (const v of (allVulnsByHost[host] || [])) {
-      if (v.status === 'found' && !blockedTechniques.has(v.title)) {
+      if (v.status === 'found' && v.severity !== 'info' && !blockedTechniques.has(v.title)) {
         items.push({ icon: '\u26A0', text: v.title, detail: `${v.severity} | ${v.status}\n${v.details||''}` });
       }
     }
@@ -1069,9 +1073,8 @@ function renderGraph() {
   // --- SVG dimensions ---
   const svgW = PAD * 2 + (maxCol + 1) * CARD_W + maxCol * COL_GAP;
   const svgH = Math.max(200, maxColHeight);
-  const legendH = 40;
   const totalW = Math.max(svgW, 700);
-  const totalH = svgH + legendH;
+  const totalH = svgH;
 
   // --- Render SVG ---
   let svgHtml = '<defs></defs>';
@@ -1170,43 +1173,18 @@ function renderGraph() {
     }
   }
 
-  // --- Legend ---
-  const legendY = svgH - 4;
-  let lx = PAD;
-  svgHtml += `<g class="graph-legend">`;
-
-  // Card border colors
-  svgHtml += `<text class="legend-dim" x="${lx}" y="${legendY + 14}">CARDS</text>`;
-  lx += 46;
-  const cardLegend = [
-    { color: '#3fb950', label: 'Has Access' },
-    { color: '#e3b341', label: 'Actionable' },
-    { color: '#58a6ff', label: 'Discovered' },
-  ];
-  for (const item of cardLegend) {
-    svgHtml += `<rect x="${lx}" y="${legendY + 4}" width="14" height="14" rx="3" fill="#161b22" stroke="${item.color}" stroke-width="2"/>`;
-    svgHtml += `<text x="${lx + 19}" y="${legendY + 15}">${item.label}</text>`;
-    lx += 22 + item.label.length * 6.5 + 10;
-  }
-
-  // Edge styles
-  lx += 12;
-  svgHtml += `<text class="legend-dim" x="${lx}" y="${legendY + 14}">EDGES</text>`;
-  lx += 46;
-  const edgeLegend = [
-    { cls: 'card-edge-active', label: 'Active tunnel', dash: '' },
-    { cls: 'card-edge-pending', label: 'Identified', dash: '6 3' },
-    { cls: 'card-edge-blocked', label: 'Blocked', dash: '6 3' },
-  ];
-  for (const item of edgeLegend) {
-    const color = getEdgeColor(item.cls);
-    const dashAttr = item.dash ? ` stroke-dasharray="${item.dash}"` : '';
-    svgHtml += `<line x1="${lx}" y1="${legendY + 11}" x2="${lx + 20}" y2="${legendY + 11}" stroke="${color}" stroke-width="2"${dashAttr}/>`;
-    svgHtml += `<text x="${lx + 25}" y="${legendY + 15}">${item.label}</text>`;
-    lx += 28 + item.label.length * 6.5 + 10;
-  }
-
-  svgHtml += `</g>`;
+  // --- Legend (HTML overlay, not in SVG) ---
+  const legendEl = document.getElementById('graph-legend');
+  legendEl.innerHTML = [
+    '<span class="legend-dim">CARDS</span>',
+    ...[ ['#3fb950','Has Access'], ['#e3b341','Actionable'], ['#58a6ff','Discovered'] ].map(
+      ([c,l]) => `<span class="legend-item"><span style="display:inline-block;width:12px;height:12px;border:2px solid ${c};border-radius:3px;background:#161b22;"></span>${l}</span>`
+    ),
+    '<span class="legend-dim" style="margin-left:8px;">EDGES</span>',
+    ...[ ['#3fb950','','Active'], ['#e3b341','6 3','Identified'], ['#f85149','6 3','Blocked'] ].map(
+      ([c,d,l]) => `<span class="legend-item"><svg width="20" height="12"><line x1="0" y1="6" x2="20" y2="6" stroke="${c}" stroke-width="2"${d?` stroke-dasharray="${d}"`:''}/></svg>${l}</span>`
+    ),
+  ].join('');
 
   svg.setAttribute('width', '100%');
   svg.setAttribute('height', Math.max(totalH, container.clientHeight || 400));
