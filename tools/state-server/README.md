@@ -100,7 +100,7 @@ The database has 10 tables:
 | `engagement` | Singleton row — engagement name, status, mode (`ctf` or `pentest`), timestamps |
 | `targets` | Host IPs/hostnames, OS, role |
 | `ports` | Per-target ports, services, banners (1:many from targets) |
-| `credentials` | Username/secret pairs with type (password, ntlm_hash, ssh_key, etc.) |
+| `credentials` | Username/secret pairs with type (password, ntlm_hash, net_ntlm, kerberos_tgs, dcc2, webapp_hash, dpapi, etc.) |
 | `credential_access` | Where each credential has been tested and whether it worked |
 | `access` | Active footholds — shells, sessions, tokens |
 | `vulns` | Confirmed vulnerabilities with severity and status (found/exploited/blocked) |

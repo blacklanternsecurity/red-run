@@ -47,7 +47,7 @@ The database has 10 tables:
 
 ### Credential types
 
-The `secret_type` field in `credentials` supports: `password`, `ntlm_hash`, `aes_key`, `kerberos_tgt`, `kerberos_tgs`, `ssh_key`, `token`, `certificate`, `other`.
+The `secret_type` field in `credentials` supports: `password`, `ntlm_hash`, `net_ntlm`, `aes_key`, `kerberos_tgt`, `kerberos_tgs`, `dcc2`, `ssh_key`, `token`, `certificate`, `webapp_hash`, `dpapi`, `other`.
 
 ### Vulnerability lifecycle
 

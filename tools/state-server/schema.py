@@ -9,7 +9,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
 
 SCHEMA_SQL = """\
 PRAGMA journal_mode=WAL;
@@ -54,9 +54,10 @@ CREATE TABLE IF NOT EXISTS credentials (
     username      TEXT NOT NULL DEFAULT '',
     secret        TEXT NOT NULL DEFAULT '',
     secret_type   TEXT NOT NULL DEFAULT 'password'
-                  CHECK (secret_type IN ('password', 'ntlm_hash', 'aes_key',
-                         'kerberos_tgt', 'kerberos_tgs', 'ssh_key', 'token',
-                         'certificate', 'other')),
+                  CHECK (secret_type IN ('password', 'ntlm_hash', 'net_ntlm',
+                         'aes_key', 'kerberos_tgt', 'kerberos_tgs', 'dcc2',
+                         'ssh_key', 'token', 'certificate', 'webapp_hash',
+                         'dpapi', 'other')),
     domain        TEXT NOT NULL DEFAULT '',
     source        TEXT NOT NULL DEFAULT '',
     cracked       INTEGER NOT NULL DEFAULT 0,
@@ -218,6 +219,47 @@ def _migrate_v2_to_v3(conn: sqlite3.Connection) -> None:
         """)
 
 
+def _migrate_v6_to_v7(conn: sqlite3.Connection) -> None:
+    """Migrate schema from v6 to v7: expand credential secret_type.
+
+    Adds net_ntlm, dcc2, webapp_hash, dpapi to the CHECK constraint.
+    Recreates credentials table (SQLite can't ALTER CHECK).
+    """
+    conn.executescript("""
+        ALTER TABLE credentials RENAME TO _credentials_old;
+
+        CREATE TABLE credentials (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            username      TEXT NOT NULL DEFAULT '',
+            secret        TEXT NOT NULL DEFAULT '',
+            secret_type   TEXT NOT NULL DEFAULT 'password'
+                          CHECK (secret_type IN ('password', 'ntlm_hash', 'net_ntlm',
+                                 'aes_key', 'kerberos_tgt', 'kerberos_tgs', 'dcc2',
+                                 'ssh_key', 'token', 'certificate', 'webapp_hash',
+                                 'dpapi', 'other')),
+            domain        TEXT NOT NULL DEFAULT '',
+            source        TEXT NOT NULL DEFAULT '',
+            cracked       INTEGER NOT NULL DEFAULT 0,
+            via_access_id INTEGER REFERENCES access(id) ON DELETE SET NULL,
+            notes         TEXT NOT NULL DEFAULT '',
+            discovered_by TEXT NOT NULL DEFAULT '',
+            created_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+            updated_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+        );
+
+        INSERT INTO credentials (id, username, secret, secret_type, domain, source,
+                                cracked, via_access_id, notes, discovered_by,
+                                created_at, updated_at)
+            SELECT id, username, secret, secret_type, domain, source,
+                   cracked, via_access_id, notes, discovered_by,
+                   created_at, updated_at
+            FROM _credentials_old;
+
+        DROP TABLE _credentials_old;
+    """)
+    conn.commit()
+
+
 def _migrate_v5_to_v6(conn: sqlite3.Connection) -> None:
     """Migrate schema from v5 to v6: change vuln status lifecycle.
 
@@ -314,6 +356,8 @@ def init_db(db_path: str | Path) -> sqlite3.Connection:
         _migrate_v4_to_v5(conn)
     if current_version <= 5:
         _migrate_v5_to_v6(conn)
+    if current_version <= 6:
+        _migrate_v6_to_v7(conn)
 
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()

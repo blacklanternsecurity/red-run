@@ -825,9 +825,10 @@ def create_server() -> FastMCP:
         Args:
             username: Username or account name.
             secret: The credential value (password, hash, key, token).
-            secret_type: Type of secret: password, ntlm_hash, aes_key,
-                        kerberos_tgt, kerberos_tgs, ssh_key, token,
-                        certificate, other.
+            secret_type: Type of secret: password, ntlm_hash, net_ntlm,
+                        aes_key, kerberos_tgt, kerberos_tgs, dcc2,
+                        ssh_key, token, certificate, webapp_hash,
+                        dpapi, other.
             domain: Domain (for AD credentials).
             source: Where this credential was found.
             via_access_id: Access ID that led to finding this credential
