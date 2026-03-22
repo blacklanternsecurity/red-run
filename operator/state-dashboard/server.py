@@ -327,7 +327,7 @@ tr:hover td { background: var(--bg2); }
 .card-actionable-glow { animation: pulseGlow 2s ease-in-out infinite; }
 .node-new { animation: fadeIn 0.5s ease-in; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-.card-edge { fill: none; stroke-width: 2; }
+.card-edge { fill: none; stroke-width: 3; }
 .card-edge-active { stroke: var(--green); stroke-dasharray: none; }
 .card-edge-pending { stroke: var(--yellow); stroke-dasharray: 6 3; }
 .card-edge-blocked { stroke: var(--red); stroke-dasharray: 6 3; }
@@ -905,7 +905,7 @@ function renderGraph() {
   }
 
   // --- Layout: columns ---
-  const COL_GAP = 120;
+  const COL_GAP = 180;
   const ROW_GAP = 30;
   const PAD = 40;
 
@@ -944,30 +944,48 @@ function renderGraph() {
   const cardById = {};
   for (const c of cards) cardById[c.id] = c;
 
+  // Helper: extract short label for edge pill (e.g., "smb", "winrm", "chisel")
+  function shortEdgeLabel(text) {
+    if (!text) return '';
+    const t = text.toLowerCase();
+    if (t.includes('chisel')) return 'chisel';
+    if (t.includes('ligolo')) return 'ligolo';
+    if (t.includes('sshuttle')) return 'sshuttle';
+    if (t.includes('ssh tunnel') || t.includes('ssh -')) return 'ssh';
+    if (t.includes('winrm')) return 'winrm';
+    if (t.includes('smb')) return 'smb';
+    if (t.includes('rdp')) return 'rdp';
+    if (t.includes('ssh')) return 'ssh';
+    if (t.includes('psexec')) return 'psexec';
+    if (t.includes('wmiexec') || t.includes('wmi')) return 'wmi';
+    if (t.includes('pivot')) return 'pivot';
+    if (t.includes('recon')) return 'recon';
+    // Fall back to first word, max 10 chars
+    return text.split(/[\s(,]/)[0].slice(0, 10);
+  }
+
   // Attacker -> hosts with access via provided creds
   for (const h of hostsViaProvidedCred) {
     const dst = cardById[`host:${h}`];
     if (!dst) continue;
-    // Find which provided cred and how
     const accOnHost = (accessByHost[h] || []).find(a => providedCredUsernames.has(a.username));
     if (accOnHost) {
-      const label = `${accOnHost.username} (${accOnHost.access_type})`;
       graphEdges.push({ srcCard: cardById['attacker'], dstCard: dst,
-        label, edgeClass: 'card-edge-active', detail: `Access via provided credential: ${accOnHost.username}\nMethod: ${accOnHost.method}` });
+        shortLabel: accOnHost.access_type, edgeClass: 'card-edge-active',
+        detail: `${accOnHost.username} (${accOnHost.access_type})\nMethod: ${accOnHost.method}` });
     } else {
-      // No access record but tested_against was successful
-      let label = 'provided cred';
+      let shortLabel = 'auth';
       let detail = 'Authenticated via provided credential';
       for (const c of providedCreds) {
         const tested = (c.tested_against || []).find(t => t.host === h && t.works);
         if (tested) {
-          label = `${c.username} (${tested.service})`;
-          detail = `Authenticated: ${c.username} via ${tested.service}`;
+          shortLabel = tested.service;
+          detail = `${c.username} via ${tested.service}`;
           break;
         }
       }
       graphEdges.push({ srcCard: cardById['attacker'], dstCard: dst,
-        label, edgeClass: 'card-edge-active', detail });
+        shortLabel, edgeClass: 'card-edge-active', detail });
     }
   }
 
@@ -979,12 +997,11 @@ function renderGraph() {
     if (!dst) continue;
     const hasAccess = (accessByHost[t.host] || []).some(a => a.active);
     if (hasAccess) {
-      // Has access but not via provided creds — still directly reachable
       graphEdges.push({ srcCard: cardById['attacker'], dstCard: dst,
-        label: '', edgeClass: 'card-edge-active', detail: 'Direct access' });
+        shortLabel: '', edgeClass: 'card-edge-active', detail: 'Direct access' });
     } else {
       graphEdges.push({ srcCard: cardById['attacker'], dstCard: dst,
-        label: '', edgeClass: 'card-edge-recon', detail: 'Discovered via recon' });
+        shortLabel: '', edgeClass: 'card-edge-recon', detail: 'Discovered via recon' });
     }
   }
 
@@ -997,7 +1014,7 @@ function renderGraph() {
     if (pe.status === 'exploited') edgeClass = 'card-edge-active';
     else if (pe.status === 'blocked') edgeClass = 'card-edge-blocked';
     graphEdges.push({ srcCard: src, dstCard: dst,
-      label: pe.method, edgeClass, detail: pe.detail });
+      shortLabel: shortEdgeLabel(pe.method), edgeClass, detail: pe.detail });
   }
 
   // --- SVG dimensions ---
@@ -1088,13 +1105,19 @@ function renderGraph() {
     const arrowSize = 6;
     svgHtml += `<polygon points="${dx},${dy} ${dx-arrowSize},${dy-arrowSize/2} ${dx-arrowSize},${dy+arrowSize/2}" fill="${getEdgeColor(e.edgeClass)}" opacity="${e.edgeClass==='card-edge-recon'?'0.5':'1'}"/>`;
 
-    // Edge label
-    if (e.label) {
+    // Edge label pill (short label, full detail on hover)
+    if (e.shortLabel) {
       const lx = (sx + dx) / 2;
-      const ly = (sy + dy) / 2 - 6;
-      const labelW = Math.min(trunc(e.label, 30).length * 6.5 + 12, COL_GAP - 10);
-      svgHtml += `<rect x="${lx - labelW/2}" y="${ly - 8}" width="${labelW}" height="16" rx="3" fill="#0d1117" fill-opacity="0.92"/>`;
-      svgHtml += `<text class="edge-label" x="${lx}" y="${ly + 4}" text-anchor="middle" font-size="10" fill="${getEdgeColor(e.edgeClass)}" font-weight="600">${esc(trunc(e.label, 30))}</text>`;
+      const ly = (sy + dy) / 2;
+      const pillText = e.shortLabel;
+      const pillW = pillText.length * 7 + 14;
+      const pillH = 18;
+      const edgeCol = getEdgeColor(e.edgeClass);
+      const detailAttr = escAttr(e.detail);
+      svgHtml += `<g data-detail="${detailAttr}" onmouseenter="showTip(evt)" onmouseleave="hideTip()" style="cursor:default">`;
+      svgHtml += `<rect x="${lx - pillW/2}" y="${ly - pillH/2}" width="${pillW}" height="${pillH}" rx="${pillH/2}" fill="#0d1117" stroke="${edgeCol}" stroke-width="1.5"/>`;
+      svgHtml += `<text x="${lx}" y="${ly + 4}" text-anchor="middle" font-size="10" fill="${edgeCol}" font-weight="600">${esc(pillText)}</text>`;
+      svgHtml += `</g>`;
     }
   }
 
