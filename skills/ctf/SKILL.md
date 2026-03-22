@@ -317,15 +317,20 @@ Gather: targets, out-of-scope, credentials, ROE, objectives.
 
 ### CTF Acknowledgement
 
-Hard stop via `AskUserQuestion`:
-> "This orchestrator is a CTF solver. It runs fully autonomous agents with no
-> OPSEC considerations. By continuing, you accept responsibility for ensuring
-> authorization. Confirm to proceed."
+**You MUST call the `AskUserQuestion` tool here — do NOT just print the
+disclaimer as text.** Call `AskUserQuestion` with a single-select question.
+Execution MUST stop until the operator responds via the tool.
+
+Question: "This orchestrator is a CTF solver. It runs fully autonomous agents
+with no OPSEC considerations. By continuing, you accept responsibility for
+ensuring authorization. Confirm to proceed."
 Options: Confirm | Cancel
+
+If Cancel → stop immediately.
 
 ### Engagement Configuration
 
-After CTF disclaimer, **all 4 questions in one `AskUserQuestion`**:
+**You MUST call `AskUserQuestion` here — all 4 questions in one call:**
 
 ```
 Q1 — Scan type: Quick (recommended) | Full | Ask each time
