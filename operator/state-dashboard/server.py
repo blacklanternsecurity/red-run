@@ -354,8 +354,7 @@ tr:hover td { background: var(--bg2); }
 <div class="section">
   <h2 onclick="toggleSection('graph')">Kill-Chain Graph <button class="refresh-btn" onclick="event.stopPropagation(); refreshAll()">Refresh</button></h2>
   <div id="graph-body" class="section-body">
-    <div id="graph-container"><svg id="graph"></svg></div>
-    <div class="tooltip" id="tooltip"></div>
+    <div id="graph-container"><svg id="graph"></svg><div class="tooltip" id="tooltip"></div></div>
   </div>
 </div>
 
@@ -1005,11 +1004,18 @@ function renderGraph() {
     }
   }
 
-  // Pivot edges
+  // Pivot edges — deduplicate: if an exploited pivot exists between two hosts,
+  // skip identified pivots between the same pair (they're superseded)
+  const exploitedPivotPairs = new Set();
+  for (const pe of pivotEdges) {
+    if (pe.status === 'exploited') exploitedPivotPairs.add(`${pe.srcHost}|${pe.dstHost}`);
+  }
   for (const pe of pivotEdges) {
     const src = cardById[`host:${pe.srcHost}`];
     const dst = cardById[`host:${pe.dstHost}`];
     if (!src || !dst) continue;
+    // Skip identified/pending pivots when an exploited pivot already covers this pair
+    if (pe.status !== 'exploited' && exploitedPivotPairs.has(`${pe.srcHost}|${pe.dstHost}`)) continue;
     let edgeClass = 'card-edge-pending';
     if (pe.status === 'exploited') edgeClass = 'card-edge-active';
     else if (pe.status === 'blocked') edgeClass = 'card-edge-blocked';
@@ -1240,9 +1246,18 @@ function showTip(evt) {
   const tip = document.getElementById('tooltip');
   tip.textContent = detail;
   tip.style.display = 'block';
-  const rect = document.getElementById('graph-container').getBoundingClientRect();
-  tip.style.left = (evt.clientX - rect.left + 12) + 'px';
-  tip.style.top = (evt.clientY - rect.top + 12) + 'px';
+  const container = document.getElementById('graph-container');
+  const rect = container.getBoundingClientRect();
+  // Use clientX/Y minus container rect — works with zoom/pan since
+  // tooltip is positioned relative to the container, not the SVG viewBox
+  let tx = evt.clientX - rect.left + 12;
+  let ty = evt.clientY - rect.top + 12;
+  // Keep tooltip inside container bounds
+  const tipRect = tip.getBoundingClientRect();
+  if (tx + tipRect.width > rect.width - 8) tx = rect.width - tipRect.width - 8;
+  if (ty + tipRect.height > rect.height - 8) ty = ty - tipRect.height - 24;
+  tip.style.left = tx + 'px';
+  tip.style.top = ty + 'px';
 }
 function hideTip() { document.getElementById('tooltip').style.display = 'none'; }
 
