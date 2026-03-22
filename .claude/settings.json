@@ -22,6 +22,17 @@
           }
         ]
       }
+    ],
+    "TeammateIdle": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/tools/hooks/save-teammate-log.sh"
+          }
+        ]
+      }
     ]
   }
 }
