@@ -756,7 +756,7 @@ function renderGraph() {
     // Vulns not exploited and not blocked with retry=no
     const blockedTechniques = new Set((blockedByHost[host] || []).filter(b => b.retry === 'no').map(b => b.technique));
     for (const v of (allVulnsByHost[host] || [])) {
-      if (v.status !== 'exploited' && !blockedTechniques.has(v.title)) {
+      if (v.status === 'found' && !blockedTechniques.has(v.title)) {
         items.push({ icon: '\u26A0', text: v.title, detail: `${v.severity} | ${v.status}\n${v.details||''}` });
       }
     }
@@ -859,14 +859,15 @@ function renderGraph() {
   }
   let attackerH = HEADER_H;
   for (const s of attackerSections) { attackerH += SECTION_HEADER_H + s.items.length * ITEM_H + SECTION_GAP; }
-  attackerH = Math.max(MIN_CARD_H, attackerH + CARD_PAD);
+  attackerH = attackerSections.length ? Math.max(MIN_CARD_H, attackerH + CARD_PAD) : HEADER_H + 4;
+  const ATTACKER_W = attackerSections.length ? CARD_W : 120;
 
   cards.push({
     id: 'attacker', host: null, col: 0,
     label: 'ATTACKER', subtitle: '',
     borderColor: '#f85149',
     sections: attackerSections, height: attackerH,
-    x: 0, y: 0, w: CARD_W
+    x: 0, y: 0, w: ATTACKER_W
   });
 
   // Host cards
