@@ -585,6 +585,9 @@ Walk ALL items, collect every actionable finding, present to operator:
 3. Crack locally → spawn cracking teammate in background
    Export → print hash file + hashcat command, wait for plaintext
    Skip → continue other paths
+4. When plaintext arrives (from cracking teammate OR operator):
+   update_credential(id=<hash_id>, cracked=True, secret="<plaintext>")
+   Then trigger "Untested credentials" routing (item 4 in Decision Logic)
 ```
 
 ### Recovery Procedures
