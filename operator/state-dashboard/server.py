@@ -643,9 +643,13 @@ function renderGraph() {
   }
 
   // Vulns by host (all statuses)
+  // Orphaned vulns (target_id=NULL, host=unknown) get assigned to the sole
+  // target when there's exactly one — avoids invisible vulns on the graph.
   const allVulnsByHost = {};
+  const soleHost = targetHosts.length === 1 ? targetHosts[0] : null;
   for (const v of state.vulns) {
-    const h = v.host || 'unknown';
+    let h = v.host || 'unknown';
+    if (h === 'unknown' && soleHost) h = soleHost;
     if (!allVulnsByHost[h]) allVulnsByHost[h] = [];
     allVulnsByHost[h].push(v);
   }
@@ -653,7 +657,8 @@ function renderGraph() {
   // Blocked by host
   const blockedByHost = {};
   for (const b of state.blocked) {
-    const h = b.host || 'unknown';
+    let h = b.host || 'unknown';
+    if (h === 'unknown' && soleHost) h = soleHost;
     if (!blockedByHost[h]) blockedByHost[h] = [];
     blockedByHost[h].push(b);
   }
