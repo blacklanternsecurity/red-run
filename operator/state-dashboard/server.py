@@ -978,41 +978,52 @@ function renderGraph() {
   const cardById = {};
   for (const c of cards) cardById[c.id] = c;
 
-  // Helper: extract short label for edge pill (e.g., "smb", "winrm", "chisel")
+  // Helper: extract short label for edge pill from method text.
+  // Two tiers: access mechanism (how you interact) before transport/delivery
+  // (how it got there). "PHP webshell via SMB write" → "webshell" not "smb".
   function shortEdgeLabel(text) {
     if (!text) return '';
     const t = text.toLowerCase();
+    // Tier 1: access mechanism — what the attacker interacts with
+    if (t.includes('webshell') || t.includes('web shell') || t.includes('cmd.php') || t.includes('cmd.aspx') || t.includes('cmd.jsp')) return 'webshell';
+    if (t.includes('reverse shell') || t.includes('rev shell') || t.includes('revshell')) return 'revshell';
+    if (t.includes('winrm') || t.includes('evil-winrm')) return 'winrm';
+    if (t.includes('psexec')) return 'psexec';
+    if (t.includes('wmiexec') || t.includes('wmi')) return 'wmi';
+    if (t.includes('dcom')) return 'dcom';
+    if (t.includes('rdp')) return 'rdp';
+    if (t.includes('ssh') && !t.includes('ssh tunnel') && !t.includes('ssh -')) return 'ssh';
+    // Tier 2: transport/delivery/technique
     if (t.includes('chisel')) return 'chisel';
     if (t.includes('ligolo')) return 'ligolo';
     if (t.includes('sshuttle')) return 'sshuttle';
-    if (t.includes('ssh tunnel') || t.includes('ssh -')) return 'ssh';
-    if (t.includes('winrm')) return 'winrm';
+    if (t.includes('ssh tunnel') || t.includes('ssh -')) return 'ssh tunnel';
     if (t.includes('smb')) return 'smb';
-    if (t.includes('rdp')) return 'rdp';
-    if (t.includes('ssh')) return 'ssh';
-    if (t.includes('psexec')) return 'psexec';
-    if (t.includes('wmiexec') || t.includes('wmi')) return 'wmi';
     if (t.includes('dns record') || t.includes('dns')) return 'dns';
     if (t.includes('constrained delegation') || t.includes('s4u')) return 'delegation';
-    if (t.includes('dcom')) return 'dcom';
     if (t.includes('kerberoast') || t.includes('tgs')) return 'kerberoast';
     if (t.includes('crack')) return 'crack';
-    if (t.includes('pivot')) return 'pivot';
-    if (t.includes('recon') || t.includes('discover')) return 'recon';
     if (t.includes('tunnel') || t.includes('socks')) return 'tunnel';
     if (t.includes('relay')) return 'relay';
-    if (t.includes('webshell') || t.includes('web shell')) return 'webshell';
-    if (t.includes('reverse shell') || t.includes('rev shell')) return 'revshell';
-    // Fall back: skip words that look like hostnames/IPs, take first method-like word
+    if (t.includes('pivot')) return 'pivot';
+    if (t.includes('recon') || t.includes('discover')) return 'recon';
+    // Fall back: skip hostnames/IPs/filler, take first method-like word
     const words = text.split(/[\s(,]+/);
     for (const w of words) {
-      if (/^\d+\.\d+/.test(w)) continue;           // skip IPs
-      if (/^[A-Z0-9_-]+\./i.test(w)) continue;     // skip FQDNs
+      if (/^\d+\.\d+/.test(w)) continue;
+      if (/^[A-Z0-9_-]+\./i.test(w)) continue;
       if (/^(the|a|an|on|in|to|via|from|for|has|need|with)$/i.test(w)) continue;
       return w.slice(0, 12);
     }
     return 'pivot';
   }
+
+  // Map access_type enum to display label. Specific types are used directly;
+  // generic types (shell, other) fall through to method text parsing.
+  const accessTypeLabels = {
+    web_shell: 'webshell', ssh: 'ssh', winrm: 'winrm', rdp: 'rdp',
+    db: 'db', token: 'token', vpn: 'vpn'
+  };
 
   // Attacker -> hosts with access via provided creds
   for (const h of hostsViaProvidedCred) {
@@ -1021,7 +1032,7 @@ function renderGraph() {
     const accOnHost = (accessByHost[h] || []).find(a => providedCredUsernames.has(a.username));
     if (accOnHost) {
       graphEdges.push({ srcCard: cardById['attacker'], dstCard: dst,
-        shortLabel: accOnHost.access_type, edgeClass: 'card-edge-active',
+        shortLabel: accessTypeLabels[accOnHost.access_type] || shortEdgeLabel(accOnHost.method) || accOnHost.access_type, edgeClass: 'card-edge-active',
         detail: `${accOnHost.username} (${accOnHost.access_type})\nMethod: ${accOnHost.method}` });
     } else {
       let shortLabel = 'auth';
@@ -1048,7 +1059,7 @@ function renderGraph() {
     const activeAccess = (accessByHost[t.host] || []).filter(a => a.active);
     if (activeAccess.length) {
       const acc = activeAccess[0];
-      const label = shortEdgeLabel(acc.method) || acc.access_type || 'access';
+      const label = accessTypeLabels[acc.access_type] || shortEdgeLabel(acc.method) || acc.access_type || 'access';
       const detail = `${acc.username} (${acc.access_type}, ${acc.privilege})\n${acc.method}`;
       graphEdges.push({ srcCard: cardById['attacker'], dstCard: dst,
         shortLabel: label, edgeClass: 'card-edge-active', detail });
