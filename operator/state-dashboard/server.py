@@ -880,17 +880,35 @@ function renderGraph() {
     if (hasActiveAccess) borderColor = '#3fb950';
     else if (actionable.length) borderColor = '#e3b341';
 
-    // Extract IP from notes if available
+    // Resolve hostname and IP for display
+    const hostIsIP = /^\d+\.\d+\.\d+\.\d+$/.test(t.host);
+    let hostname = '';
     let ip = '';
-    if (t.notes) {
-      const ipMatch = t.notes.match(/\d+\.\d+\.\d+\.\d+/);
-      if (ipMatch) ip = ipMatch[0];
-    }
-    // If host itself is an IP, don't repeat it
-    if (/^\d+\.\d+\.\d+\.\d+$/.test(t.host)) ip = '';
 
+    if (hostIsIP) {
+      ip = t.host;
+      // Extract hostname from notes (e.g., "DC01.pirate.htb")
+      if (t.notes) {
+        const fqdnMatch = t.notes.match(/([A-Za-z0-9_-]+\.[A-Za-z0-9._-]+\.[a-z]{2,})/);
+        if (fqdnMatch) hostname = fqdnMatch[1];
+      }
+    } else {
+      hostname = t.host;
+      // Extract IP from notes
+      if (t.notes) {
+        const ipMatch = t.notes.match(/(?:IP|ip)[:\s]*(\d+\.\d+\.\d+\.\d+)/);
+        if (ipMatch) ip = ipMatch[1];
+        else {
+          const anyIP = t.notes.match(/(\d+\.\d+\.\d+\.\d+)/);
+          if (anyIP) ip = anyIP[1];
+        }
+      }
+    }
+
+    // Label: "HOSTNAME\nIP" or just one if the other is missing
+    const headerLabel = hostname && ip ? `${hostname} (${ip})`
+                      : hostname ? hostname : ip;
     const subtitle = [t.os, t.role].filter(Boolean).join(' \u00B7 ');
-    const headerLabel = ip ? `${t.host} (${ip})` : t.host;
 
     const { sections, height } = buildCardContent(t.host, t);
 
@@ -957,10 +975,24 @@ function renderGraph() {
     if (t.includes('ssh')) return 'ssh';
     if (t.includes('psexec')) return 'psexec';
     if (t.includes('wmiexec') || t.includes('wmi')) return 'wmi';
+    if (t.includes('dns record') || t.includes('dns')) return 'dns';
+    if (t.includes('constrained delegation') || t.includes('s4u')) return 'delegation';
+    if (t.includes('dcom')) return 'dcom';
+    if (t.includes('kerberoast') || t.includes('tgs')) return 'kerberoast';
+    if (t.includes('crack')) return 'crack';
     if (t.includes('pivot')) return 'pivot';
-    if (t.includes('recon')) return 'recon';
-    // Fall back to first word, max 10 chars
-    return text.split(/[\s(,]/)[0].slice(0, 10);
+    if (t.includes('recon') || t.includes('discover')) return 'recon';
+    if (t.includes('tunnel') || t.includes('socks')) return 'tunnel';
+    if (t.includes('relay')) return 'relay';
+    // Fall back: skip words that look like hostnames/IPs, take first method-like word
+    const words = text.split(/[\s(,]+/);
+    for (const w of words) {
+      if (/^\d+\.\d+/.test(w)) continue;           // skip IPs
+      if (/^[A-Z0-9_-]+\./i.test(w)) continue;     // skip FQDNs
+      if (/^(the|a|an|on|in|to|via|from|for|has|need|with)$/i.test(w)) continue;
+      return w.slice(0, 12);
+    }
+    return 'pivot';
   }
 
   // Attacker -> hosts with access via provided creds
