@@ -147,6 +147,9 @@ teammates inherit all MCP servers from the lead session.
 3. Track: {name, domain, status: active|idle, spawned_at}
 ```
 
+**Before spawning, print the task assignment** so the operator sees it:
+`[spawning <name>] <skill> on <target>`
+
 When spawning, include engagement context:
 - For persistent teammates: current state summary excerpt relevant to their domain
 - For on-demand: specific task context (hash file, AV detection details, etc.)
