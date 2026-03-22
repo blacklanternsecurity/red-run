@@ -18,7 +18,7 @@ multiple tasks until dismissed:
 
 | File | Domain | Model |
 |------|--------|-------|
-| `recon.md` | Network recon + service enumeration | haiku |
+| `recon.md` | Network recon + service enumeration | sonnet |
 | `web.md` | Web discovery + exploitation | sonnet |
 | `ad.md` | AD discovery + exploitation | sonnet |
 | `linux.md` | Linux discovery + privilege escalation | sonnet |

@@ -115,7 +115,7 @@ Read spawn templates from `teammates/` at runtime via the Read tool.
 
 | Template | Domain | Model | Skills |
 |----------|--------|-------|--------|
-| `teammates/recon.md` | Network recon + enumeration | haiku | network-recon, smb-enumeration, db-enumeration, remote-access-enumeration, infrastructure-enumeration, smb-exploitation |
+| `teammates/recon.md` | Network recon + enumeration | sonnet | network-recon, smb-enumeration, db-enumeration, remote-access-enumeration, infrastructure-enumeration, smb-exploitation |
 | `teammates/web.md` | Web discovery + exploitation | sonnet | web-discovery, all web technique skills |
 | `teammates/ad.md` | AD discovery + exploitation | sonnet | ad-discovery, all AD technique skills |
 | `teammates/linux.md` | Linux discovery + privesc | sonnet | linux-discovery, all linux privesc skills, container-escapes |
