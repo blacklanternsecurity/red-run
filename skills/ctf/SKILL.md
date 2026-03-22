@@ -363,6 +363,15 @@ Write `engagement/scope.md`. Call `init_engagement(name="...")`.
 Copy dump-state script (use Bash `cp`, do NOT read the file):
 `cp operator/templates/dump-state.sh engagement/dump-state.sh && chmod +x engagement/dump-state.sh`
 
+After initialization, remind the operator to start the state dashboard:
+```
+Tip: For real-time engagement visualization, start the state dashboard
+in a separate terminal:
+  python3 operator/state-dashboard/server.py
+Then open http://127.0.0.1:8099 to see the kill-chain graph, targets,
+credentials, and attack progress update live as teammates work.
+```
+
 ## Step 2: Reconnaissance
 
 ### Network Recon
