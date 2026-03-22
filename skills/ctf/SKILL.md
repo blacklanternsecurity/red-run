@@ -51,6 +51,11 @@ and are visible to the operator via tmux split panes or in-process mode.
 > teammate, use `AskUserQuestion` to present the routing decision and block until
 > the operator responds. State: what skill, which teammate, what target, and why.
 > Discovery tasks (recon, enumeration) can be assigned after initial approval.
+> **Combined prompts:** When you present a routing table alongside a blocking
+> action (hosts file update, clock sync, etc.), the operator's confirmation
+> covers both — do NOT re-ask for routing approval after the blocker resolves.
+> Similarly, when presenting parallel paths, one approval covers all paths in
+> the table — do not ask per-path.
 
 > **DO NOT RUN ATTACK TOOLS.** You are a router. If you're about to type `nmap`,
 > `ffuf`, `nuclei`, `netexec`, or `curl` against a target — assign it to a
