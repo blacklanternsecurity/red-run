@@ -606,7 +606,10 @@ Walk ALL items, collect every actionable finding, present to operator:
 ```
 1. add_blocked(retry="with_context")
 2. Spawn research teammate with artifact path + prior analysis summary
-3. On return:
+3. Research teammate writes findings to engagement/evidence/research/<name>.md
+   and messages with just the file path + one-line summary
+4. Read the findings file to get full details (CVEs, exploit methods, privesc angles)
+5. Route based on findings:
    Exploitation succeeded → record findings
    Known vuln class identified → assign to technique teammate
    No vector → add_blocked(retry="no"), move on
