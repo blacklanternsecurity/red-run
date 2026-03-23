@@ -346,7 +346,7 @@ tr:hover td { background: var(--bg2); }
   flex-wrap: wrap; z-index: 5; pointer-events: none; }
 .graph-legend .legend-dim { color: var(--dim); font-weight: 600; }
 .graph-legend .legend-item { display: inline-flex; align-items: center; gap: 4px; }
-.tooltip { position: absolute; background: var(--bg3); border: 1px solid var(--border);
+.tooltip { position: fixed; background: var(--bg3); border: 1px solid var(--border);
   border-radius: 4px; padding: 6px 10px; font-size: 11px; pointer-events: none;
   display: none; z-index: 10; max-width: 300px; white-space: pre-wrap; }
 .refresh-btn { background: var(--bg3); color: var(--dim); border: 1px solid var(--border);
@@ -365,7 +365,8 @@ tr:hover td { background: var(--bg2); }
 <div class="section">
   <h2 onclick="toggleSection('graph')">Kill-Chain Graph <button class="refresh-btn" onclick="event.stopPropagation(); refreshAll()">Refresh</button></h2>
   <div id="graph-body" class="section-body">
-    <div id="graph-container"><svg id="graph"></svg><div class="tooltip" id="tooltip"></div><div class="graph-legend" id="graph-legend"></div></div>
+    <div id="graph-container"><svg id="graph"></svg><div class="graph-legend" id="graph-legend"></div></div>
+    <div class="tooltip" id="tooltip"></div>
   </div>
 </div>
 
@@ -1292,17 +1293,15 @@ function showTip(evt) {
   const tip = document.getElementById('tooltip');
   tip.textContent = detail;
   tip.style.display = 'block';
-  const container = document.getElementById('graph-container');
-  const rect = container.getBoundingClientRect();
-  // Use clientX/Y minus container rect — works with zoom/pan since
-  // tooltip is positioned relative to the container, not the SVG viewBox
-  let tx = evt.clientX - rect.left + 12;
-  let ty = evt.clientY - rect.top + 12;
-  // Keep tooltip inside container bounds
+  // Position fixed relative to viewport — immune to container scroll/overflow
+  let tx = evt.clientX + 12;
+  let ty = evt.clientY + 12;
   const tipRect = tip.getBoundingClientRect();
-  if (tx + tipRect.width > rect.width - 8) tx = rect.width - tipRect.width - 8;
-  if (ty + tipRect.height > rect.height - 8) ty = ty - tipRect.height - 24;
-  if (ty < 4) ty = evt.clientY - rect.top + 16; // flip below cursor if clipped at top
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  if (tx + tipRect.width > vw - 8) tx = vw - tipRect.width - 8;
+  if (ty + tipRect.height > vh - 8) ty = evt.clientY - tipRect.height - 8;
+  if (ty < 4) ty = evt.clientY + 16;
   if (tx < 4) tx = 4;
   tip.style.left = tx + 'px';
   tip.style.top = ty + 'px';
