@@ -147,7 +147,7 @@ def _build_state(db_path: Path) -> dict:
         for c in credentials:
             c["tested_against"] = _rows(
                 conn,
-                "SELECT ca.*, t.host FROM credential_access ca "
+                "SELECT ca.*, t.ip FROM credential_access ca "
                 "JOIN targets t ON t.id = ca.target_id "
                 "WHERE ca.credential_id = ?",
                 (c["id"],),
@@ -155,19 +155,19 @@ def _build_state(db_path: Path) -> dict:
 
         access = _rows(
             conn,
-            "SELECT a.*, t.host FROM access a "
+            "SELECT a.*, t.ip FROM access a "
             "JOIN targets t ON t.id = a.target_id ORDER BY a.id",
         )
         vulns = _rows(
             conn,
-            "SELECT v.*, t.host FROM vulns v "
+            "SELECT v.*, t.ip FROM vulns v "
             "LEFT JOIN targets t ON t.id = v.target_id ORDER BY v.id",
         )
         pivot_map = _rows(conn, "SELECT * FROM pivot_map ORDER BY id")
         tunnels = _rows(conn, "SELECT * FROM tunnels ORDER BY id")
         blocked = _rows(
             conn,
-            "SELECT b.*, t.host FROM blocked b "
+            "SELECT b.*, t.ip FROM blocked b "
             "LEFT JOIN targets t ON t.id = b.target_id ORDER BY b.id",
         )
         events = _rows(
@@ -458,18 +458,18 @@ function card(num, label, sub) {
 // --- Tables ---
 const TABLE_DEFS = [
   { id: 'targets', title: 'Targets', key: 'targets',
-    cols: ['host','os','role','ports','notes'],
+    cols: ['ip','os','role','ports','notes'],
     fmt: { ports: r => (r.ports||[]).map(p=>`${p.port}/${p.protocol} ${p.service}`).join(', ') }},
   { id: 'credentials', title: 'Credentials', key: 'credentials',
     cols: ['domain','username','secret_type','secret','cracked','source','tested'],
     fmt: { secret: r => r.secret || '',
            cracked: r => r.cracked ? 'yes' : '',
-           tested: r => (r.tested_against||[]).map(t=>`${t.host}/${t.service}:${t.works?'OK':'FAIL'}`).join(', ') }},
+           tested: r => (r.tested_against||[]).map(t=>`${t.ip}/${t.service}:${t.works?'OK':'FAIL'}`).join(', ') }},
   { id: 'access', title: 'Access', key: 'access',
-    cols: ['host','username','access_type','privilege','method','active','session_ref'],
+    cols: ['ip','username','access_type','privilege','method','active','session_ref'],
     fmt: { active: r => `<span class="status-${r.active?'active':'revoked'}">${r.active?'active':'revoked'}</span>` }},
   { id: 'vulns', title: 'Vulns', key: 'vulns',
-    cols: ['title','severity','status','host','vuln_type','details'],
+    cols: ['title','severity','status','ip','vuln_type','details'],
     fmt: { severity: r => `<span class="badge sev-${r.severity}">${r.severity}</span>`,
            details: r => r.details || '' }},
   { id: 'pivot_map', title: 'Pivot Map', key: 'pivot_map',
@@ -480,7 +480,7 @@ const TABLE_DEFS = [
     fmt: { requires_proxychains: r => r.requires_proxychains ? 'yes' : '',
            status: r => `<span class="status-${r.status}">${r.status}</span>` }},
   { id: 'blocked', title: 'Blocked', key: 'blocked',
-    cols: ['technique','host','reason','retry'],
+    cols: ['technique','ip','reason','retry'],
     fmt: {}},
   { id: 'events', title: 'Event Timeline', key: 'events',
     cols: ['created_at','event_type','agent','summary'],
@@ -595,7 +595,7 @@ function renderGraph() {
   function trunc(s, max) { s = String(s||''); return s.length > max ? s.slice(0, max-1)+'\u2026' : s; }
 
   const providedPattern = /\b(provided|scope|pre-engagement|given|initial|pentest|operator)\b/i;
-  const targetHosts = state.targets.map(t => t.host);
+  const targetHosts = state.targets.map(t => t.ip);
 
   // --- Build per-host data ---
   // Provided credentials
@@ -605,8 +605,8 @@ function renderGraph() {
   // Access by host
   const accessByHost = {};
   for (const a of state.access) {
-    if (!accessByHost[a.host]) accessByHost[a.host] = [];
-    accessByHost[a.host].push(a);
+    if (!accessByHost[a.ip]) accessByHost[a.ip] = [];
+    accessByHost[a.ip].push(a);
   }
 
   // Creds associated with each host via multiple heuristics
@@ -618,8 +618,8 @@ function renderGraph() {
     if (c.via_access_id) {
       const linkedAccess = state.access.find(a => a.id === c.via_access_id);
       if (linkedAccess) {
-        if (!credsByHost[linkedAccess.host]) credsByHost[linkedAccess.host] = [];
-        credsByHost[linkedAccess.host].push(c);
+        if (!credsByHost[linkedAccess.ip]) credsByHost[linkedAccess.ip] = [];
+        credsByHost[linkedAccess.ip].push(c);
         assigned = true;
       }
     }
@@ -648,9 +648,9 @@ function renderGraph() {
     // 4. tested_against with works=true
     if (!assigned) {
       for (const ta of (c.tested_against || [])) {
-        if (ta.works && ta.host) {
-          if (!credsByHost[ta.host]) credsByHost[ta.host] = [];
-          credsByHost[ta.host].push(c);
+        if (ta.works && ta.ip) {
+          if (!credsByHost[ta.ip]) credsByHost[ta.ip] = [];
+          credsByHost[ta.ip].push(c);
           assigned = true;
           break;
         }
@@ -664,7 +664,7 @@ function renderGraph() {
   const allVulnsByHost = {};
   const soleHost = targetHosts.length === 1 ? targetHosts[0] : null;
   for (const v of state.vulns) {
-    let h = v.host || 'unknown';
+    let h = v.ip || 'unknown';
     if (h === 'unknown' && soleHost) h = soleHost;
     if (!allVulnsByHost[h]) allVulnsByHost[h] = [];
     allVulnsByHost[h].push(v);
@@ -673,7 +673,7 @@ function renderGraph() {
   // Blocked by host
   const blockedByHost = {};
   for (const b of state.blocked) {
-    let h = b.host || 'unknown';
+    let h = b.ip || 'unknown';
     if (h === 'unknown' && soleHost) h = soleHost;
     if (!blockedByHost[h]) blockedByHost[h] = [];
     blockedByHost[h].push(b);
@@ -694,8 +694,8 @@ function renderGraph() {
     // Fall back: find access on source host
     if (!srcHost) {
       for (const a of state.access) {
-        if (a.active && (a.host === p.source || p.source.includes(a.host))) {
-          srcHost = a.host; break;
+        if (a.active && (a.ip === p.source || p.source.includes(a.ip))) {
+          srcHost = a.ip; break;
         }
       }
     }
@@ -721,12 +721,12 @@ function renderGraph() {
   const hostsViaProvidedCred = new Set();
   for (const a of state.access) {
     if (providedCredUsernames.has(a.username)) {
-      hostsViaProvidedCred.add(a.host);
+      hostsViaProvidedCred.add(a.ip);
     }
   }
   for (const c of providedCreds) {
     for (const t of (c.tested_against || [])) {
-      if (t.works) hostsViaProvidedCred.add(t.host);
+      if (t.works) hostsViaProvidedCred.add(t.ip);
     }
   }
 
@@ -738,11 +738,11 @@ function renderGraph() {
   const col1Hosts = [];
   const remainHosts = [];
   for (const t of state.targets) {
-    if (!pivotDestHosts.has(t.host)) {
-      hostCol[t.host] = 1;
-      col1Hosts.push(t.host);
+    if (!pivotDestHosts.has(t.ip)) {
+      hostCol[t.ip] = 1;
+      col1Hosts.push(t.ip);
     } else {
-      remainHosts.push(t.host);
+      remainHosts.push(t.ip);
     }
   }
   // BFS through pivots for deeper columns
@@ -890,16 +890,16 @@ function renderGraph() {
 
   // Host cards
   for (const t of state.targets) {
-    const col = hostCol[t.host] || 1;
-    const hasActiveAccess = (accessByHost[t.host] || []).some(a => a.active);
-    const actionable = getActionable(t.host);
+    const col = hostCol[t.ip] || 1;
+    const hasActiveAccess = (accessByHost[t.ip] || []).some(a => a.active);
+    const actionable = getActionable(t.ip);
     let borderColor = '#58a6ff'; // discovered
     if (hasActiveAccess) borderColor = '#3fb950';
     else if (actionable.length) borderColor = '#e3b341';
 
     // Resolve hostname and IP for display
     // Sources: host field, notes, port banners (LDAP often has "Hostname: X")
-    const hostIsIP = /^\d+\.\d+\.\d+\.\d+$/.test(t.host);
+    const hostIsIP = /^\d+\.\d+\.\d+\.\d+$/.test(t.ip);
     let hostname = '';
     let ip = '';
 
@@ -911,7 +911,7 @@ function renderGraph() {
     const allText = searchText.join(' | ');
 
     if (hostIsIP) {
-      ip = t.host;
+      ip = t.ip;
       // Try "Hostname: X" from banners first (most reliable)
       const hnMatch = allText.match(/[Hh]ostname:\s*([A-Za-z0-9_-]+)/);
       if (hnMatch) {
@@ -924,7 +924,7 @@ function renderGraph() {
         if (fqdnMatch) hostname = fqdnMatch[1];
       }
     } else {
-      hostname = t.host;
+      hostname = t.ip;
       // Extract IP from notes/banners
       const ipMatch = allText.match(/(?:IP|ip)[:\s]*(\d+\.\d+\.\d+\.\d+)/);
       if (ipMatch) ip = ipMatch[1];
@@ -939,10 +939,10 @@ function renderGraph() {
                       : hostname ? hostname : ip;
     const subtitle = [t.os, t.role].filter(Boolean).join(' \u00B7 ');
 
-    const { sections, height } = buildCardContent(t.host, t);
+    const { sections, height } = buildCardContent(t.ip, t);
 
     cards.push({
-      id: `host:${t.host}`, host: t.host, col,
+      id: `host:${t.ip}`, host: t.ip, col,
       label: headerLabel, subtitle,
       borderColor,
       sections, height,
@@ -1050,7 +1050,7 @@ function renderGraph() {
       let shortLabel = 'auth';
       let detail = 'Authenticated via provided credential';
       for (const c of providedCreds) {
-        const tested = (c.tested_against || []).find(t => t.host === h && t.works);
+        const tested = (c.tested_against || []).find(t => t.ip === h && t.works);
         if (tested) {
           shortLabel = tested.service;
           detail = `${c.username} via ${tested.service}`;
@@ -1064,11 +1064,11 @@ function renderGraph() {
 
   // Attacker -> hosts discovered but no access via provided creds (recon)
   for (const t of state.targets) {
-    if (hostsViaProvidedCred.has(t.host)) continue;
-    if (pivotDestHosts.has(t.host)) continue;
-    const dst = cardById[`host:${t.host}`];
+    if (hostsViaProvidedCred.has(t.ip)) continue;
+    if (pivotDestHosts.has(t.ip)) continue;
+    const dst = cardById[`host:${t.ip}`];
     if (!dst) continue;
-    const activeAccess = (accessByHost[t.host] || []).filter(a => a.active);
+    const activeAccess = (accessByHost[t.ip] || []).filter(a => a.active);
     if (activeAccess.length) {
       const acc = activeAccess[0];
       const label = accessTypeLabels[acc.access_type] || shortEdgeLabel(acc.method) || acc.access_type || 'access';

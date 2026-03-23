@@ -60,7 +60,7 @@ teammates may write simultaneously.
 | Tool | Parameters | Description |
 |------|-----------|-------------|
 | `get_state_summary` | `max_lines` (default 200) | Compact markdown summary of all engagement state |
-| `get_targets` | `host` (optional filter) | Targets with their ports and services |
+| `get_targets` | `ip` (optional filter) | Targets with their ports and services |
 | `get_credentials` | `untested_only` (default false) | Credentials with tested-against information |
 | `get_access` | `target` (optional), `active_only` (default true) | Current footholds and sessions |
 | `get_vulns` | `status` (optional), `target` (optional) | Confirmed vulnerabilities |
@@ -75,19 +75,19 @@ teammates may write simultaneously.
 |------|-----------|-------------|
 | `init_engagement` | `name` (optional), `mode` (optional, default 'ctf') | Create state.db with full schema |
 | `close_engagement` | (none) | Mark engagement as closed |
-| `add_target` | `host` (required), `os`, `role`, `notes`, `ports` (JSON) | Add or update a target host (upserts on host) |
-| `update_target` | `host` (required), `os`, `role`, `notes` | Update fields on an existing target |
-| `add_port` | `host` (required), `port` (required), `protocol`, `service`, `banner` | Add port to target (upserts on target+port+protocol) |
+| `add_target` | `ip` (required), `hostname`, `os`, `role`, `notes`, `ports` (JSON) | Add or update a target (upserts on ip) |
+| `update_target` | `ip` (required), `hostname`, `os`, `role`, `notes` | Update fields on an existing target |
+| `add_port` | `ip` (required), `port` (required), `protocol`, `service`, `banner` | Add port to target (upserts on target+port+protocol) |
 | `add_credential` | `username`, `secret`, `secret_type`, `domain`, `source` | Record a credential (deduplicates on username+type+secret) |
 | `update_credential` | `id` (required), `cracked`, `secret`, `notes` | Update credential (e.g., mark hash as cracked) |
-| `test_credential` | `credential_id`, `host`, `service`, `works` (all required) | Record whether a credential works against a target/service |
-| `add_access` | `host` (required), `access_type`, `username`, `privilege`, `method` | Record a new foothold on a target |
+| `test_credential` | `credential_id`, `ip`, `service`, `works` (all required) | Record whether a credential works against a target/service |
+| `add_access` | `ip` (required), `access_type`, `username`, `privilege`, `method` | Record a new foothold on a target |
 | `update_access` | `id` (required), `active`, `privilege`, `notes` | Update access record (e.g., revoke) |
-| `add_vuln` | `title` (required), `host` (required), `vuln_type`, `severity`, `details` | Record a vulnerability (deduplicates on target+title) |
+| `add_vuln` | `title` (required), `ip` (required), `vuln_type`, `severity`, `details` | Record a vulnerability (deduplicates on target+title) |
 | `update_vuln` | `id` (required), `status`, `severity`, `details` | Update vulnerability status (found/exploited/blocked) |
 | `add_pivot` | `source`, `destination` (required), `method`, `status` | Record a pivot path |
 | `update_pivot` | `id` (required), `status`, `notes` | Update pivot path status |
-| `add_blocked` | `technique`, `reason` (required), `host`, `retry`, `notes` | Record a blocked/failed technique |
+| `add_blocked` | `technique`, `reason` (required), `ip`, `retry`, `notes` | Record a blocked/failed technique |
 | `add_tunnel` | `tunnel_type`, `pivot_host`, `target_subnet`, `local_endpoint`, `remote_endpoint`, `requires_proxychains` | Record an established tunnel |
 | `update_tunnel` | `id` (required), `status`, `notes` | Update tunnel status (active/down/closed) |
 

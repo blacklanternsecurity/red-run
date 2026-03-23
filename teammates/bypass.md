@@ -26,7 +26,7 @@ write state.db:    add_vuln() for confirmed bypasses, add_blocked() for failures
 ```
 
 **State DB parameter reference** (avoid validation errors):
-- `add_vuln(host=, title=, ...)` — `host` not `target`. Required.
+- `add_vuln(ip=, title=, ...)` — `ip` is required.
 - `add_vuln(status=)` — valid: `found`, `exploited`, `blocked`
 - `add_vuln(severity=)` — valid: `info`, `low`, `medium`, `high`, `critical`
 - `add_blocked(retry=)` — valid: `no`, `later`, `with_context`

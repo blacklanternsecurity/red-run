@@ -95,19 +95,23 @@ can receive messages.
 
 ```
 read state:     get_state_summary() from state MCP
-writes:         add_credential(), add_vuln(host required), add_pivot(), add_blocked()
+writes:         add_credential(), add_vuln(ip required), add_pivot(), add_blocked()
                 (only actionable findings — not routine progress)
 evidence:       save to engagement/evidence/ with descriptive filenames
 ```
 **State DB parameter reference** (avoid validation errors):
-- `add_vuln(host=, title=, ...)` — `host` not `target`. Required.
+- **`ip`** is the target lookup key in all tools. Use the IP that was
+  passed to `add_target()`. Hostname lookup also works if `hostname` was set.
+- `update_target(ip=, hostname=, os=, role=)` — set `hostname` to associate
+  a DNS name with an IP-based target (e.g., `ip="10.10.10.5", hostname="DC01.corp.local"`)
+- `add_vuln(ip=, title=, ...)` — `ip` is required.
 - `add_credential(secret_type=)` — valid types: `password`, `ntlm_hash`,
   `net_ntlm`, `aes_key`, `kerberos_tgt`, `kerberos_tgs`, `dcc2`, `ssh_key`,
   `token`, `certificate`, `webapp_hash`, `dpapi`, `other`
 - `add_credential(secret=)` — required, no empty secrets
 - `add_vuln(status=)` — valid: `found`, `exploited`, `blocked`
 - `add_vuln(severity=)` — valid: `info`, `low`, `medium`, `high`, `critical`
-- `add_blocked(host=)` — must match an existing target if provided
+- `add_blocked(ip=)` — must match an existing target if provided
 
 ## Task Summary Format
 

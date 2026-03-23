@@ -80,9 +80,11 @@ def _rows_to_dicts(rows: list[sqlite3.Row]) -> list[dict]:
     return [dict(row) for row in rows]
 
 
-def _resolve_target_id(conn: sqlite3.Connection, host: str) -> int | None:
-    """Look up target_id by host. Returns None if not found."""
-    row = conn.execute("SELECT id FROM targets WHERE host = ?", (host,)).fetchone()
+def _resolve_target_id(conn: sqlite3.Connection, ip: str) -> int | None:
+    """Look up target_id by ip or hostname. Returns None if not found."""
+    row = conn.execute(
+        "SELECT id FROM targets WHERE ip = ? OR hostname = ?", (ip, ip)
+    ).fetchone()
     return row["id"] if row else None
 
 
@@ -166,7 +168,7 @@ def create_server() -> FastMCP:
             # Targets
             sections.append("## Targets\n")
             targets = conn.execute(
-                "SELECT t.id, t.host, t.os, t.role FROM targets t ORDER BY t.id"
+                "SELECT t.id, t.ip, t.hostname, t.os, t.role FROM targets t ORDER BY t.id"
             ).fetchall()
             for t in targets:
                 ports = conn.execute(
@@ -181,7 +183,10 @@ def create_server() -> FastMCP:
                     for p in ports
                 )
                 svc_str = ",".join(p["service"] for p in ports if p["service"])
-                parts = [t["host"]]
+                host_display = t["ip"]
+                if t["hostname"]:
+                    host_display += f" ({t['hostname']})"
+                parts = [host_display]
                 if t["os"]:
                     parts.append(t["os"])
                 if t["role"]:
@@ -220,16 +225,16 @@ def create_server() -> FastMCP:
                     parts.append("[cracked]")
                 # Show where it works
                 access_rows = conn.execute(
-                    "SELECT t.host, ca.service, ca.works FROM credential_access ca "
+                    "SELECT t.ip, ca.service, ca.works FROM credential_access ca "
                     "JOIN targets t ON ca.target_id = t.id "
                     "WHERE ca.credential_id = ?",
                     (c["id"],),
                 ).fetchall()
                 works_on = [
-                    f"{r['host']}:{r['service']}" for r in access_rows if r["works"]
+                    f"{r['ip']}:{r['service']}" for r in access_rows if r["works"]
                 ]
                 fails_on = [
-                    f"{r['host']}:{r['service']}" for r in access_rows if not r["works"]
+                    f"{r['ip']}:{r['service']}" for r in access_rows if not r["works"]
                 ]
                 if works_on:
                     parts.append(f"works: {', '.join(works_on)}")
@@ -252,13 +257,13 @@ def create_server() -> FastMCP:
             # Access
             sections.append("## Access\n")
             accesses = conn.execute(
-                "SELECT a.*, t.host FROM access a "
+                "SELECT a.*, t.ip FROM access a "
                 "JOIN targets t ON a.target_id = t.id "
                 "WHERE a.active = 1 ORDER BY a.id"
             ).fetchall()
             for a in accesses:
                 parts = [
-                    a["host"],
+                    a["ip"],
                     f"{a['username']} via {a['access_type']}",
                     f"[{a['privilege']}]",
                 ]
@@ -271,13 +276,13 @@ def create_server() -> FastMCP:
                 sections.append(f"- {' | '.join(parts)}")
             # Also show revoked access
             revoked = conn.execute(
-                "SELECT a.*, t.host FROM access a "
+                "SELECT a.*, t.ip FROM access a "
                 "JOIN targets t ON a.target_id = t.id "
                 "WHERE a.active = 0 ORDER BY a.id"
             ).fetchall()
             for a in revoked:
                 sections.append(
-                    f"- ~~{a['host']} | {a['username']} via {a['access_type']}~~ [revoked]"
+                    f"- ~~{a['ip']} | {a['username']} via {a['access_type']}~~ [revoked]"
                 )
             if not accesses and not revoked:
                 sections.append("_(none)_")
@@ -286,12 +291,12 @@ def create_server() -> FastMCP:
             # Vulns
             sections.append("## Vulns\n")
             vulns = conn.execute(
-                "SELECT v.*, t.host FROM vulns v "
+                "SELECT v.*, t.ip FROM vulns v "
                 "LEFT JOIN targets t ON v.target_id = t.id "
                 "ORDER BY v.id"
             ).fetchall()
             for v in vulns:
-                host = v["host"] or "unknown"
+                host = v["ip"] or "unknown"
                 parts = [
                     f"{v['title']} [{v['status']}]",
                     f"[{v['severity']}]",
@@ -355,12 +360,12 @@ def create_server() -> FastMCP:
             # Blocked
             sections.append("## Blocked\n")
             blocked = conn.execute(
-                "SELECT b.*, t.host FROM blocked b "
+                "SELECT b.*, t.ip FROM blocked b "
                 "LEFT JOIN targets t ON b.target_id = t.id "
                 "ORDER BY b.id"
             ).fetchall()
             for b in blocked:
-                host = b["host"] or ""
+                host = b["ip"] or ""
                 parts = [b["technique"]]
                 if host:
                     parts.append(host)
@@ -380,16 +385,16 @@ def create_server() -> FastMCP:
             return "\n".join(lines)
 
     @mcp.tool()
-    def get_targets(host: str = "") -> str:
+    def get_targets(ip: str = "") -> str:
         """Get targets with their ports and services.
 
         Args:
-            host: Filter by host (empty = all targets).
+            ip: Filter by IP (empty = all targets).
         """
         with _get_db() as conn:
-            if host:
+            if ip:
                 targets = conn.execute(
-                    "SELECT * FROM targets WHERE host = ?", (host,)
+                    "SELECT * FROM targets WHERE ip = ?", (ip,)
                 ).fetchall()
             else:
                 targets = conn.execute("SELECT * FROM targets ORDER BY id").fetchall()
@@ -422,7 +427,7 @@ def create_server() -> FastMCP:
             for c in creds:
                 c_dict = dict(c)
                 access_rows = conn.execute(
-                    "SELECT ca.*, t.host FROM credential_access ca "
+                    "SELECT ca.*, t.ip FROM credential_access ca "
                     "JOIN targets t ON ca.target_id = t.id "
                     "WHERE ca.credential_id = ?",
                     (c["id"],),
@@ -451,12 +456,12 @@ def create_server() -> FastMCP:
             active_only: Only return active sessions (default true).
         """
         with _get_db() as conn:
-            query = "SELECT a.*, t.host FROM access a JOIN targets t ON a.target_id = t.id"
+            query = "SELECT a.*, t.ip FROM access a JOIN targets t ON a.target_id = t.id"
             conditions = []
             params: list = []
 
             if target:
-                conditions.append("t.host = ?")
+                conditions.append("t.ip = ?")
                 params.append(target)
             if active_only:
                 conditions.append("a.active = 1")
@@ -478,7 +483,7 @@ def create_server() -> FastMCP:
         """
         with _get_db() as conn:
             query = (
-                "SELECT v.*, t.host FROM vulns v LEFT JOIN targets t ON v.target_id = t.id"
+                "SELECT v.*, t.ip FROM vulns v LEFT JOIN targets t ON v.target_id = t.id"
             )
             conditions = []
             params: list = []
@@ -487,7 +492,7 @@ def create_server() -> FastMCP:
                 conditions.append("v.status = ?")
                 params.append(status)
             if target:
-                conditions.append("t.host = ?")
+                conditions.append("t.ip = ?")
                 params.append(target)
 
             if conditions:
@@ -524,14 +529,14 @@ def create_server() -> FastMCP:
         with _get_db() as conn:
             if target:
                 rows = conn.execute(
-                    "SELECT b.*, t.host FROM blocked b "
+                    "SELECT b.*, t.ip FROM blocked b "
                     "LEFT JOIN targets t ON b.target_id = t.id "
-                    "WHERE t.host = ? ORDER BY b.id",
+                    "WHERE t.ip = ? ORDER BY b.id",
                     (target,),
                 ).fetchall()
             else:
                 rows = conn.execute(
-                    "SELECT b.*, t.host FROM blocked b "
+                    "SELECT b.*, t.ip FROM blocked b "
                     "LEFT JOIN targets t ON b.target_id = t.id "
                     "ORDER BY b.id"
                 ).fetchall()
@@ -670,17 +675,20 @@ def create_server() -> FastMCP:
 
     @mcp.tool()
     def add_target(
-        host: str,
+        ip: str,
+        hostname: str = "",
         os: str = "",
         role: str = "",
         notes: str = "",
         discovered_by: str = "",
         ports: str = "",
     ) -> str:
-        """Add or update a target host. Upserts on host.
+        """Add or update a target host. Upserts on ip.
 
         Args:
-            host: IP address or hostname.
+            ip: IP address (primary identifier).
+            hostname: Associated hostname (e.g., "DC01.corp.local").
+                     Use when host is an IP and you discover a hostname.
             os: Operating system (e.g., "Ubuntu 22.04", "Windows Server 2019").
             role: Role (e.g., "DC", "Web", "DB").
             notes: Additional notes.
@@ -692,13 +700,16 @@ def create_server() -> FastMCP:
         """
         with _get_db() as conn:
             existing = conn.execute(
-                "SELECT id FROM targets WHERE host = ?", (host,)
+                "SELECT id FROM targets WHERE ip = ?", (ip,)
             ).fetchone()
 
             if existing:
                 target_id = existing["id"]
                 updates = []
                 params: list = []
+                if hostname:
+                    updates.append("hostname = ?")
+                    params.append(hostname)
                 if os:
                     updates.append("os = ?")
                     params.append(os)
@@ -720,9 +731,9 @@ def create_server() -> FastMCP:
                     )
             else:
                 cursor = conn.execute(
-                    "INSERT INTO targets (host, os, role, notes, discovered_by) "
-                    "VALUES (?, ?, ?, ?, ?)",
-                    (host, os, role, notes, discovered_by),
+                    "INSERT INTO targets (ip, hostname, os, role, notes, discovered_by) "
+                    "VALUES (?, ?, ?, ?, ?, ?)",
+                    (ip, hostname, os, role, notes, discovered_by),
                 )
                 target_id = cursor.lastrowid
 
@@ -746,12 +757,12 @@ def create_server() -> FastMCP:
                     )
 
             action = "updated" if existing else "created"
-            _emit_event(conn, "target", target_id, f"{host} ({action})", discovered_by)
+            _emit_event(conn, "target", target_id, f"{ip} ({action})", discovered_by)
             conn.commit()
             return json.dumps(
                 {
                     "target_id": target_id,
-                    "host": host,
+                    "ip": ip,
                     "action": action,
                 },
                 indent=2,
@@ -759,7 +770,8 @@ def create_server() -> FastMCP:
 
     @mcp.tool()
     def update_target(
-        host: str,
+        ip: str,
+        hostname: str = "",
         os: str = "",
         role: str = "",
         notes: str = "",
@@ -767,18 +779,23 @@ def create_server() -> FastMCP:
         """Update fields on an existing target.
 
         Args:
-            host: Target host to update (must exist).
+            ip: Target IP to update (must exist). Use the IP or
+               hostname that was used when the target was added.
+            hostname: Associated hostname (e.g., "DC01.corp.local").
             os: New OS value (empty = no change).
             role: New role value (empty = no change).
             notes: New notes value (empty = no change).
         """
         with _get_db() as conn:
-            target_id = _resolve_target_id(conn, host)
+            target_id = _resolve_target_id(conn, ip)
             if target_id is None:
-                return f"ERROR: Target '{host}' not found."
+                return f"ERROR: Target '{ip}' not found."
 
             updates = []
             params: list = []
+            if hostname:
+                updates.append("hostname = ?")
+                params.append(hostname)
             if os:
                 updates.append("os = ?")
                 params.append(os)
@@ -799,11 +816,11 @@ def create_server() -> FastMCP:
                 params,
             )
             conn.commit()
-            return json.dumps({"target_id": target_id, "host": host, "updated": True})
+            return json.dumps({"target_id": target_id, "ip": ip, "updated": True})
 
     @mcp.tool()
     def add_port(
-        host: str,
+        ip: str,
         port: int,
         protocol: str = "tcp",
         state: str = "open",
@@ -813,7 +830,7 @@ def create_server() -> FastMCP:
         """Add a port to an existing target. Upserts on (target, port, protocol).
 
         Args:
-            host: Target host (must exist).
+            ip: Target IP (must exist).
             port: Port number.
             protocol: Protocol (default "tcp").
             state: Port state (default "open").
@@ -821,9 +838,9 @@ def create_server() -> FastMCP:
             banner: Service banner/version string.
         """
         with _get_db() as conn:
-            target_id = _resolve_target_id(conn, host)
+            target_id = _resolve_target_id(conn, ip)
             if target_id is None:
-                return f"ERROR: Target '{host}' not found. Add the target first."
+                return f"ERROR: Target '{ip}' not found. Add the target first."
 
             conn.execute(
                 "INSERT INTO ports (target_id, port, protocol, state, service, banner) "
@@ -837,7 +854,7 @@ def create_server() -> FastMCP:
             conn.commit()
             return json.dumps(
                 {
-                    "host": host,
+                    "ip": ip,
                     "port": port,
                     "protocol": protocol,
                     "service": service,
@@ -971,7 +988,7 @@ def create_server() -> FastMCP:
     @mcp.tool()
     def test_credential(
         credential_id: int,
-        host: str,
+        ip: str,
         service: str,
         works: bool,
         tested_by: str = "",
@@ -982,15 +999,15 @@ def create_server() -> FastMCP:
 
         Args:
             credential_id: ID of the credential to test.
-            host: Target host (must exist in targets table).
+            ip: Target IP (must exist in targets table).
             service: Service tested (e.g., "smb", "ssh", "rdp", "winrm", "web").
             works: Whether the credential authenticated successfully.
             tested_by: Skill that performed the test.
         """
         with _get_db() as conn:
-            target_id = _resolve_target_id(conn, host)
+            target_id = _resolve_target_id(conn, ip)
             if target_id is None:
-                return f"ERROR: Target '{host}' not found."
+                return f"ERROR: Target '{ip}' not found."
 
             conn.execute(
                 "INSERT INTO credential_access "
@@ -1005,14 +1022,14 @@ def create_server() -> FastMCP:
             result_str = "works" if works else "fails"
             _emit_event(
                 conn, "credential_test", credential_id,
-                f"cred #{credential_id} {result_str} on {host}:{service}",
+                f"cred #{credential_id} {result_str} on {ip}:{service}",
                 tested_by,
             )
             conn.commit()
             return json.dumps(
                 {
                     "credential_id": credential_id,
-                    "host": host,
+                    "ip": ip,
                     "service": service,
                     "works": works,
                 }
@@ -1020,7 +1037,7 @@ def create_server() -> FastMCP:
 
     @mcp.tool()
     def add_access(
-        host: str,
+        ip: str,
         access_type: str = "shell",
         username: str = "",
         privilege: str = "user",
@@ -1032,7 +1049,7 @@ def create_server() -> FastMCP:
         """Record a new foothold/access on a target.
 
         Args:
-            host: Target host (must exist in targets table).
+            ip: Target IP (must exist in targets table).
             access_type: Type of access: shell, ssh, winrm, rdp, web_shell,
                         db, token, vpn, other.
             username: User/account that has access.
@@ -1050,9 +1067,9 @@ def create_server() -> FastMCP:
         if err:
             return err
         with _get_db() as conn:
-            target_id = _resolve_target_id(conn, host)
+            target_id = _resolve_target_id(conn, ip)
             if target_id is None:
-                return f"ERROR: Target '{host}' not found."
+                return f"ERROR: Target '{ip}' not found."
 
             cursor = conn.execute(
                 "INSERT INTO access "
@@ -1073,14 +1090,14 @@ def create_server() -> FastMCP:
             access_id = cursor.lastrowid
             _emit_event(
                 conn, "access", access_id,
-                f"{username}@{host} [{privilege}] via {access_type}",
+                f"{username}@{ip} [{privilege}] via {access_type}",
                 discovered_by,
             )
             conn.commit()
             return json.dumps(
                 {
                     "access_id": access_id,
-                    "host": host,
+                    "ip": ip,
                     "access_type": access_type,
                     "privilege": privilege,
                 },
@@ -1131,7 +1148,7 @@ def create_server() -> FastMCP:
     @mcp.tool()
     def add_vuln(
         title: str,
-        host: str,
+        ip: str,
         vuln_type: str = "",
         status: str = "found",
         severity: str = "medium",
@@ -1148,7 +1165,7 @@ def create_server() -> FastMCP:
 
         Args:
             title: Short vulnerability title (e.g., "SQLi in /search parameter").
-            host: Target host (required — must match an existing target).
+            ip: Target IP (required — must match an existing target).
             vuln_type: Vulnerability class (e.g., "sqli", "xss", "rce").
             status: Status: found, exploited, blocked.
             severity: Severity: info, low, medium, high, critical.
@@ -1165,11 +1182,11 @@ def create_server() -> FastMCP:
         if err:
             return err
         with _get_db() as conn:
-            if not host:
-                return "ERROR: host is required. Every vuln must be associated with a target."
-            target_id = _resolve_target_id(conn, host)
+            if not ip:
+                return "ERROR: ip is required. Every vuln must be associated with a target."
+            target_id = _resolve_target_id(conn, ip)
             if target_id is None:
-                return f"ERROR: Target '{host}' not found. Add the target first."
+                return f"ERROR: Target '{ip}' not found. Add the target first."
 
             # Dedup: check for existing vuln with same title on same target
             existing = conn.execute(
@@ -1209,8 +1226,8 @@ def create_server() -> FastMCP:
             )
             vuln_id = cursor.lastrowid
             summary = f"{title} [{severity}]"
-            if host:
-                summary += f" on {host}"
+            if ip:
+                summary += f" on {ip}"
             _emit_event(conn, "vuln", vuln_id, summary, discovered_by)
             conn.commit()
             return json.dumps(
@@ -1366,7 +1383,7 @@ def create_server() -> FastMCP:
     def add_blocked(
         technique: str,
         reason: str,
-        host: str = "",
+        ip: str = "",
         retry: str = "no",
         notes: str = "",
         blocked_by: str = "",
@@ -1376,7 +1393,7 @@ def create_server() -> FastMCP:
         Args:
             technique: Technique that was attempted (e.g., "kerberoasting").
             reason: Why it failed.
-            host: Target host (empty = not host-specific).
+            ip: Target IP (empty = not host-specific).
             retry: Retry assessment: no, later, with_context.
             notes: Additional notes.
             blocked_by: Skill that was blocked.
@@ -1386,10 +1403,10 @@ def create_server() -> FastMCP:
             return err
         with _get_db() as conn:
             target_id = None
-            if host:
-                target_id = _resolve_target_id(conn, host)
+            if ip:
+                target_id = _resolve_target_id(conn, ip)
                 if target_id is None:
-                    return f"ERROR: Target '{host}' not found. Add the target first."
+                    return f"ERROR: Target '{ip}' not found. Add the target first."
 
             cursor = conn.execute(
                 "INSERT INTO blocked "
@@ -1399,8 +1416,8 @@ def create_server() -> FastMCP:
             )
             blocked_id = cursor.lastrowid
             summary = technique
-            if host:
-                summary += f" on {host}"
+            if ip:
+                summary += f" on {ip}"
             summary += f" | {reason} [{retry}]"
             _emit_event(conn, "blocked", blocked_id, summary, blocked_by)
             conn.commit()
