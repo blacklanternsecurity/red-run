@@ -590,7 +590,8 @@ function toggleGraphFullscreen() {
   const btn = document.getElementById('graph-expand-btn');
   c.classList.toggle('fullscreen');
   btn.textContent = c.classList.contains('fullscreen') ? '\u2716' : '\u26F6';
-  renderGraph();
+  // Defer render until after CSS transition completes so container has final dimensions
+  setTimeout(() => renderGraph(), 220);
 }
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
