@@ -96,6 +96,12 @@ writes:         add_credential(), add_vuln(host required), add_pivot(), add_bloc
                 (only actionable findings — not routine progress)
 evidence:       save to engagement/evidence/ with descriptive filenames
 ```
+**State DB parameter reference** (avoid validation errors):
+- `add_vuln(host=, title=, ...)` — `host` not `target`. Required.
+- `add_credential(secret_type=)` — valid types: `password`, `ntlm_hash`,
+  `net_ntlm`, `aes_key`, `kerberos_tgt`, `kerberos_tgs`, `dcc2`, `ssh_key`,
+  `token`, `certificate`, `webapp_hash`, `dpapi`, `other`
+- `add_credential(secret=)` — required, no empty secrets
 
 ## Task Summary Format
 

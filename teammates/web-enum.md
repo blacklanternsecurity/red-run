@@ -94,6 +94,12 @@ read state:     get_state_summary() from state MCP
 writes:         add_credential(), add_vuln(host required), add_pivot(), add_blocked()
 evidence:       save to engagement/evidence/ with descriptive filenames
 ```
+**State DB parameter reference** (avoid validation errors):
+- `add_vuln(host=, title=, ...)` — `host` not `target`. Required.
+- `add_credential(secret_type=)` — valid types: `password`, `ntlm_hash`,
+  `net_ntlm`, `aes_key`, `kerberos_tgt`, `kerberos_tgs`, `dcc2`, `ssh_key`,
+  `token`, `certificate`, `webapp_hash`, `dpapi`, `other`
+- `add_credential(secret=)` — required, no empty secrets
 
 **Tool output files:** Tools like ffuf and nuclei dump files to cwd.
 Use `-o engagement/evidence/` or equivalent output flag. If a tool has no output

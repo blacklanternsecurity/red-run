@@ -118,13 +118,22 @@ so you can receive messages.
 
 ## Responder for NTLM Capture
 
-When a skill needs Responder (UNC path coercion via LFI, SSRF, file upload):
+**Before starting Responder, check port 445 is free.** Stale Docker containers
+from previous sessions silently hold ports — Responder starts but captures
+nothing. Always run this first:
+```bash
+ss -tlnp | grep :445
+# If something is listening, find and stop it:
+docker ps --filter name=red-run --format '{{.Names}}'
+# close_session() or docker stop <name> to free the port
+```
+
+When port 445 is free:
 ```
 start_process(command="/opt/Responder/Responder.py -I tun0 -v", label="responder", privileged=True, timeout=30)
 ```
 Monitor via Bash, not send_command:
 ```bash
-docker ps --filter name=red-run --format '{{.Names}}'
 docker exec <container> grep -i 'NTLMv2' /opt/Responder/logs/Responder-Session.log
 ```
 
@@ -135,6 +144,13 @@ read state:     get_state_summary() from state MCP
 writes:         add_credential(), add_vuln(host required), add_pivot(), add_blocked()
 evidence:       save to engagement/evidence/ with descriptive filenames
 ```
+
+**State DB parameter reference** (avoid validation errors):
+- `add_vuln(host=, title=, ...)` — `host` not `target`. Required.
+- `add_credential(secret_type=)` — valid types: `password`, `ntlm_hash`,
+  `net_ntlm`, `aes_key`, `kerberos_tgt`, `kerberos_tgs`, `dcc2`, `ssh_key`,
+  `token`, `certificate`, `webapp_hash`, `dpapi`, `other`
+- `add_credential(secret=)` — required, no empty secrets
 
 **Tool output files:** Tools like sqlmap dump files to cwd.
 Use `-o engagement/evidence/` or equivalent output flag. If a tool has no output
