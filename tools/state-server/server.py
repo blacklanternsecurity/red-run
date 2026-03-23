@@ -1256,6 +1256,10 @@ def create_server() -> FastMCP:
     ) -> str:
         """Update access record (e.g., revoke, update privilege level).
 
+        When access is revoked (active=false), sibling vulns that were pruned
+        from the flow graph when this access's exploited vulns succeeded are
+        restored — making alternative paths visible again.
+
         Args:
             id: Access record ID.
             active: Set to false to mark access as revoked.
@@ -1285,8 +1289,18 @@ def create_server() -> FastMCP:
                 params,
             )
             _emit_event(conn, "access_update", id, f"access #{id} updated")
+
+            # When access is revoked, restore sibling vulns that were pruned
+            # when exploited vulns from this access succeeded
+            restored = 0
+            if active is False:
+                restored = _restore_vulns_for_access(conn, id)
+
             conn.commit()
-            return json.dumps({"access_id": id, "updated": True})
+            result: dict = {"access_id": id, "updated": True}
+            if restored:
+                result["siblings_restored"] = restored
+            return json.dumps(result)
 
     @mcp.tool()
     def add_vuln(
@@ -1408,20 +1422,101 @@ def create_server() -> FastMCP:
                 indent=2,
             )
 
+    def _prune_sibling_vulns(conn: sqlite3.Connection, exploited_vuln_id: int) -> int:
+        """Set in_graph=0 on sibling 'found' vulns sharing the same via_access_id.
+
+        When a vuln is exploited, the alternative findings from the same access
+        point are noise in the flow graph. Prune them so only the actioned path
+        is visible. Returns count of pruned vulns.
+        """
+        row = conn.execute(
+            "SELECT via_access_id, target_id FROM vulns WHERE id = ?",
+            (exploited_vuln_id,),
+        ).fetchone()
+        if not row or not row["via_access_id"]:
+            return 0
+        cursor = conn.execute(
+            f"UPDATE vulns SET in_graph = 0, updated_at = {_now_sql()} "
+            "WHERE via_access_id = ? AND target_id = ? AND id != ? "
+            "AND status = 'found' AND in_graph = 1",
+            (row["via_access_id"], row["target_id"], exploited_vuln_id),
+        )
+        count = cursor.rowcount
+        if count:
+            _emit_event(
+                conn, "vuln_prune", exploited_vuln_id,
+                f"Pruned {count} sibling vuln(s) (vuln #{exploited_vuln_id} exploited)",
+            )
+        return count
+
+    def _restore_sibling_vulns(conn: sqlite3.Connection, vuln_id: int) -> int:
+        """Restore in_graph=1 on sibling vulns when an exploited path fails.
+
+        Called when a vuln is blocked or its parent access is revoked. Only
+        restores if no other exploited vuln exists from the same access point.
+        Returns count of restored vulns.
+        """
+        row = conn.execute(
+            "SELECT via_access_id, target_id FROM vulns WHERE id = ?",
+            (vuln_id,),
+        ).fetchone()
+        if not row or not row["via_access_id"]:
+            return 0
+        # Only restore if no other exploited vuln exists from same access
+        other = conn.execute(
+            "SELECT id FROM vulns WHERE via_access_id = ? AND target_id = ? "
+            "AND id != ? AND status = 'exploited'",
+            (row["via_access_id"], row["target_id"], vuln_id),
+        ).fetchone()
+        if other:
+            return 0
+        cursor = conn.execute(
+            f"UPDATE vulns SET in_graph = 1, updated_at = {_now_sql()} "
+            "WHERE via_access_id = ? AND target_id = ? "
+            "AND status = 'found' AND in_graph = 0",
+            (row["via_access_id"], row["target_id"]),
+        )
+        count = cursor.rowcount
+        if count:
+            _emit_event(
+                conn, "vuln_restore", vuln_id,
+                f"Restored {count} sibling vuln(s) (vuln #{vuln_id} path abandoned)",
+            )
+        return count
+
+    def _restore_vulns_for_access(conn: sqlite3.Connection, access_id: int) -> int:
+        """Restore sibling vulns for all exploited vulns under a revoked access."""
+        rows = conn.execute(
+            "SELECT id FROM vulns WHERE via_access_id = ? AND status = 'exploited'",
+            (access_id,),
+        ).fetchall()
+        total = 0
+        for row in rows:
+            total += _restore_sibling_vulns(conn, row["id"])
+        return total
+
     @mcp.tool()
     def update_vuln(
         id: int,
         status: str = "",
         severity: str = "",
         details: str = "",
+        in_graph: int | None = None,
     ) -> str:
         """Update vulnerability (e.g., change status after exploitation).
+
+        When status changes to 'exploited', sibling 'found' vulns from the
+        same access point are automatically hidden from the flow graph
+        (in_graph=0). When status changes to 'blocked', hidden siblings are
+        restored if no other exploited path exists.
 
         Args:
             id: Vulnerability ID.
             status: Updated status (found/exploited/blocked).
             severity: Updated severity.
             details: Updated details.
+            in_graph: Override graph visibility (1=show, 0=hide). Normally
+                     managed automatically by the prune/restore logic.
         """
         if status:
             err = _validate_enum("status", status, "vuln_status")
@@ -1443,6 +1538,9 @@ def create_server() -> FastMCP:
             if details:
                 updates.append("details = ?")
                 params.append(details)
+            if in_graph is not None:
+                updates.append("in_graph = ?")
+                params.append(in_graph)
 
             if not updates:
                 return "No fields to update."
@@ -1457,8 +1555,22 @@ def create_server() -> FastMCP:
             if status:
                 summary += f" -> {status}"
             _emit_event(conn, "vuln_update", id, summary)
+
+            # Auto-prune/restore sibling vulns based on status transition
+            pruned = 0
+            restored = 0
+            if status == "exploited":
+                pruned = _prune_sibling_vulns(conn, id)
+            elif status == "blocked":
+                restored = _restore_sibling_vulns(conn, id)
+
             conn.commit()
-            return json.dumps({"vuln_id": id, "updated": True})
+            result: dict = {"vuln_id": id, "updated": True}
+            if pruned:
+                result["siblings_pruned"] = pruned
+            if restored:
+                result["siblings_restored"] = restored
+            return json.dumps(result)
 
     @mcp.tool()
     def add_pivot(

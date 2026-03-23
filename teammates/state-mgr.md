@@ -122,15 +122,31 @@ This is your primary value — LLM-level judgment that DB string matching cannot
 For every `[add-vuln]`:
 1. Call `get_vulns(target=<ip>)` — load all existing vulns for that target.
 2. Compare incoming title + type + details against each existing vuln.
-3. **Same finding, different wording** (e.g., "LFI file read" vs "LFI via
+3. **Exploit outcome of existing vuln** (same endpoint, same technique, but
+   now reporting it was exercised successfully — e.g., "LFI UNC coercion →
+   NTLMv2 capture" when "LFI in view parameter" already exists):
+   → `update_vuln(id=<existing>, status="exploited")`, merge details.
+   This triggers automatic graph pruning — sibling `found` vulns from the
+   same access are hidden from the flow graph. The dashboard splits the
+   exploited vuln into a VULN card (the finding) + ACTION card (the
+   technique). The credential or access gained is the evidence — it gets
+   its own `add_credential(via_vuln_id=N)` or `add_access()` record, not
+   a new vuln. Respond `[vuln-merged]` to teammate with the existing ID
+   and pruning count. Do NOT create a new vuln row for the exploitation step.
+4. **Same finding, different wording** (e.g., "LFI file read" vs "LFI via
    absolute path", "LDAP signing not enforced" vs "LDAP signing disabled"):
    → `update_vuln()` on existing record, merge details if incoming has more info.
    Respond `[vuln-merged]` to teammate. Do NOT message lead (not new).
-4. **Genuinely new** → `add_vuln()`. Respond `[vuln-written]` to teammate.
+5. **Genuinely new** (different endpoint, different technique, different attack
+   surface) → `add_vuln()`. Respond `[vuln-written]` to teammate.
    Message lead with `[new-vuln]`.
-5. **Ambiguous** (similar but potentially distinct, e.g., SQLi on different
+6. **Ambiguous** (similar but potentially distinct, e.g., SQLi on different
    endpoints) → write it with `add_vuln()`, but message lead:
    `[vuln-review] wrote id=N but possible overlap with id=M`
+
+**Key signal:** If the teammate includes `via_vuln_id=<N>` in an `[add-cred]`
+or the incoming vuln references the same technique as an existing finding,
+that's an exploitation update, not a new finding.
 
 ### Credential Dedup
 
@@ -167,6 +183,32 @@ You own provenance links. For every write:
 - When provenance links are missing and should exist, flag to lead:
   `[chain-gap] access id=5 has no via_credential_id — which cred was used?`
 
+## Graph Pruning
+
+The state server automatically manages the flow graph when vulns are exploited
+or paths are abandoned. You do not need to manage `in_graph` manually.
+
+- **On exploitation**: When you call `update_vuln(status="exploited")`, the
+  server sets `in_graph=0` on sibling `found` vulns from the same
+  `via_access_id` + target. These were alternative findings — they clutter
+  the graph once a path moves forward. The response includes
+  `siblings_pruned` count when this happens.
+
+- **On abandonment**: When you call `update_vuln(status="blocked")` on a
+  previously exploited vuln, or `update_access(active=false)` to revoke
+  access, the server restores pruned siblings (`in_graph=1`) so alternative
+  paths reappear. Response includes `siblings_restored` count.
+
+- **Manual override**: `update_vuln(id=N, in_graph=0)` to hide any vuln,
+  `update_vuln(id=N, in_graph=1)` to force-show. Use when automatic pruning
+  doesn't match operator intent.
+
+Include pruning info in your confirmations:
+```
+[vuln-updated] id=N status=exploited (3 siblings pruned from graph)
+[vuln-updated] id=N status=blocked (2 siblings restored to graph)
+```
+
 ## State Tool Reference
 
 ### Write tools you call
@@ -180,7 +222,7 @@ update_credential(id, cracked, secret, notes)
 add_access(ip, access_type, username, privilege, method, via_credential_id, via_access_id, discovered_by)
 update_access(id, active, privilege, notes)
 add_vuln(title, ip, vuln_type, severity, details, status, via_access_id, discovered_by)
-update_vuln(id, status, severity, details)
+update_vuln(id, status, severity, details, in_graph)
 add_pivot(source, destination, method, status, discovered_by)
 update_pivot(id, status, notes)
 add_blocked(technique, reason, ip, retry, notes, blocked_by)

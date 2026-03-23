@@ -669,26 +669,46 @@ function renderFlowGraph() {
     for (const c of creds) credNodeMap[c.id] = canonicalId;
   }
 
-  // Vulns → ACTION (exploited) or ASSET (found, medium+)
+  // Vulns → VULN card (asset) + optional ACTION card (exploited only)
+  // Exploited vulns split into two nodes: the finding (VULN) and the
+  // exploitation technique (ACTION). Found-only vulns are single VULN cards.
+  const sevColors = { critical: '#bc8cff', high: '#f85149', medium: '#d29922', low: '#8b949e' };
   for (const v of state.vulns) {
     if (v.in_graph === 0) continue;
     if (v.severity === 'info') continue;
-    const isAction = v.status === 'exploited';
     const techniqueLabel = v.technique_id ? `[${v.technique_id}] ` : '';
-    const sevColors = { critical: '#bc8cff', high: '#f85149', medium: '#d29922', low: '#8b949e' };
-    const node = {
-      id: `vuln:${v.id}`, type: isAction ? 'action' : 'asset',
-      label: `${techniqueLabel}${trunc(v.title, 35)}`,
+    // VULN card (asset) — the finding/condition
+    const vulnNode = {
+      id: `vuln:${v.id}`, type: 'asset',
+      label: trunc(v.title, 35),
       sublabel: `${v.severity} | ${v.status}`,
       hostLabel: v.ip || '',
       detail: `${v.title}\n${v.severity} | ${v.status}${v.vuln_type ? '\ntype: ' + v.vuln_type : ''}${v.details ? '\n' + v.details : ''}`,
-      borderColor: isAction ? '#3fb950' : (sevColors[v.severity] || '#8b949e'),
-      headerColor: isAction ? '#238636' : '#d29922',
-      headerText: isAction ? 'EXPLOITED' : v.severity.toUpperCase(),
+      borderColor: sevColors[v.severity] || '#8b949e',
+      headerColor: v.status === 'exploited' ? '#1f6feb' : '#d29922',
+      headerText: v.severity.toUpperCase(),
       chain_order: v.chain_order || 0,
     };
-    nodes.push(node);
-    nodeById[node.id] = node;
+    nodes.push(vulnNode);
+    nodeById[vulnNode.id] = vulnNode;
+    // ACTION card — only for exploited vulns (the exploitation technique)
+    if (v.status === 'exploited') {
+      const actNode = {
+        id: `vuln-action:${v.id}`, type: 'action',
+        label: `${techniqueLabel}${trunc(v.title, 30)}`,
+        sublabel: v.vuln_type || '',
+        hostLabel: v.ip || '',
+        detail: `Exploited: ${v.title}\n${v.vuln_type || ''}`,
+        borderColor: '#58a6ff',
+        headerColor: '#1f6feb',
+        headerText: 'EXPLOITED',
+        chain_order: v.chain_order || 0,
+      };
+      nodes.push(actNode);
+      nodeById[actNode.id] = actNode;
+      // VULN → ACTION edge (the finding enables the exploitation)
+      edges.push({ from: `vuln:${v.id}`, to: `vuln-action:${v.id}`, color: '#58a6ff' });
+    }
   }
 
   // --- Build edges from provenance, synthesize action nodes for transitions ---
@@ -717,13 +737,13 @@ function renderFlowGraph() {
 
   // --- Intermediate vuln detection ---
   // When an exploited vuln shares via_access_id with a downstream node (access or
-  // credential), the vuln is the technique that produced the result. Route through
-  // it: access → vuln → downstream, instead of parallel branches.
-  const exploitedVulnByAccess = {};  // access_id → vuln node id
+  // credential), the vuln-action is the technique that produced the result. Route
+  // through: access → vuln → vuln-action → downstream.
+  const exploitedVulnByAccess = {};  // access_id → vuln-action node id
   for (const v of state.vulns) {
     if (v.in_graph === 0 || v.severity === 'info') continue;
-    if (v.status === 'exploited' && v.via_access_id && nodeById[`vuln:${v.id}`]) {
-      exploitedVulnByAccess[v.via_access_id] = `vuln:${v.id}`;
+    if (v.status === 'exploited' && v.via_access_id && nodeById[`vuln-action:${v.id}`]) {
+      exploitedVulnByAccess[v.via_access_id] = `vuln-action:${v.id}`;
     }
   }
 
@@ -772,14 +792,15 @@ function renderFlowGraph() {
       insertAction(sourceId, credDst, actionLabel, '#58a6ff',
         srcNode.chain_order, dstNode.chain_order);
     }
-    // vuln → credential — INSERT action node
-    if (c.via_vuln_id && nodeById[`vuln:${c.via_vuln_id}`]) {
-      const edgeKey = `vuln:${c.via_vuln_id}->${credDst}`;
+    // vuln → credential — route from vuln-action if exploited, else vuln
+    const vulnSrc = c.via_vuln_id && (nodeById[`vuln-action:${c.via_vuln_id}`] ? `vuln-action:${c.via_vuln_id}` : (nodeById[`vuln:${c.via_vuln_id}`] ? `vuln:${c.via_vuln_id}` : null));
+    if (vulnSrc) {
+      const edgeKey = `${vulnSrc}->${credDst}`;
       if (credEdgeSeen.has(edgeKey)) continue;
       credEdgeSeen.add(edgeKey);
-      const srcNode = nodeById[`vuln:${c.via_vuln_id}`];
+      const srcNode = nodeById[vulnSrc];
       const dstNode = nodeById[credDst];
-      insertAction(`vuln:${c.via_vuln_id}`, credDst, 'Hash Capture', '#58a6ff',
+      insertAction(vulnSrc, credDst, 'Hash Capture', '#58a6ff',
         srcNode.chain_order, dstNode.chain_order);
     }
   }
@@ -986,7 +1007,7 @@ function renderFlowGraph() {
     '<span class="legend-item"><svg width="12" height="12"><rect width="12" height="12" rx="3" fill="none" stroke="#3fb950" stroke-width="2"/></svg>Access</span>',
     '<span class="legend-item"><svg width="12" height="12"><rect width="12" height="12" rx="3" fill="none" stroke="#1f6feb" stroke-width="2"/></svg>Action</span>',
     '<span class="legend-item"><svg width="12" height="12"><rect width="12" height="12" rx="6" fill="none" stroke="#8b949e" stroke-width="1.5"/></svg>Credential</span>',
-    '<span class="legend-item"><svg width="12" height="12"><rect width="12" height="12" rx="3" fill="none" stroke="#238636" stroke-width="2"/></svg>Exploited vuln</span>',
+    '<span class="legend-item"><svg width="12" height="12"><rect width="12" height="12" rx="3" fill="none" stroke="#1f6feb" stroke-width="2"/></svg>Exploited vuln</span>',
   ].join('');
 
   svg.setAttribute('width', '100%');

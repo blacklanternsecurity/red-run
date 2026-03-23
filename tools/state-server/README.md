@@ -51,6 +51,23 @@ before writing. This catches cases that server-side string matching cannot
 Server-side dedup (exact title hard block, `vuln_type` soft warning) remains
 as a safety net but is not the primary dedup mechanism.
 
+### Flow graph pruning
+
+The server automatically manages `in_graph` flags to keep the dashboard flow
+graph clean:
+
+- **On exploitation**: `update_vuln(status="exploited")` sets `in_graph=0` on
+  sibling `found` vulns sharing the same `via_access_id` and target. Response
+  includes `"siblings_pruned": N`.
+
+- **On abandonment**: `update_vuln(status="blocked")` or
+  `update_access(active=false)` restores pruned siblings (`in_graph=1`) if no
+  other exploited vuln exists from the same access. Response includes
+  `"siblings_restored": N`.
+
+- **Manual override**: `update_vuln(id=N, in_graph=0|1)` to force
+  visibility. Overrides automatic pruning.
+
 ### Concurrent writes
 
 SQLite WAL mode + `PRAGMA busy_timeout=30000` handles concurrent writers
@@ -97,9 +114,9 @@ writer, contention is minimal.
 | `update_credential` | `id` (required), `cracked`, `secret`, `notes` | Update credential (e.g., mark hash as cracked) |
 | `test_credential` | `credential_id`, `ip`, `service`, `works` (all required) | Record whether a credential works against a target/service |
 | `add_access` | `ip` (required), `access_type`, `username`, `privilege`, `method`, `via_credential_id` | Record a new foothold on a target (chain provenance via credential) |
-| `update_access` | `id` (required), `active`, `privilege`, `notes` | Update access record (e.g., revoke) |
+| `update_access` | `id` (required), `active`, `privilege`, `notes` | Update access record (e.g., revoke). Restores pruned sibling vulns on revocation |
 | `add_vuln` | `title` (required), `ip` (required), `vuln_type`, `severity`, `details` | Record a vulnerability (deduplicates on target+title) |
-| `update_vuln` | `id` (required), `status`, `severity`, `details` | Update vulnerability status (found/exploited/blocked) |
+| `update_vuln` | `id` (required), `status`, `severity`, `details`, `in_graph` | Update vulnerability status (found/exploited/blocked). Auto-prunes sibling found vulns on exploit, restores on block |
 | `add_pivot` | `source`, `destination` (required), `method`, `status` | Record a pivot path |
 | `update_pivot` | `id` (required), `status`, `notes` | Update pivot path status |
 | `add_blocked` | `technique`, `reason` (required), `ip`, `retry`, `notes` | Record a blocked/failed technique |
