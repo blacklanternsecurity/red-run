@@ -13,7 +13,7 @@ lateral movement). You persist across multiple tasks.
 
 1. The lead assigns a task with: skill name, DC/domain info, credentials, context.
 2. Load the skill via MCP: `mcp__skill-router__get_skill(name="<skill-name>")`.
-   Do NOT use the Skill tool (slash commands) — that's for orchestrator skills, not technique skills.
+   Do NOT use the Skill tool or the Agent tool — execute skills yourself, never spawn subagents.
 3. Execute the skill's methodology end-to-end.
 4. Write critical findings to state.db via state MCP.
 5. Message the lead with a structured summary.
