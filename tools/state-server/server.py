@@ -596,7 +596,7 @@ def create_server() -> FastMCP:
                 r["id"]: dict(r)
                 for r in conn.execute(
                     "SELECT a.id, a.username, a.access_type, a.privilege, "
-                    "a.method, a.via_credential_id, a.active, "
+                    "a.method, a.via_credential_id, a.via_access_id, a.active, "
                     "t.ip FROM access a JOIN targets t ON a.target_id = t.id"
                 ).fetchall()
             }
@@ -652,6 +652,10 @@ def create_server() -> FastMCP:
                 for c in creds.values():
                     if c.get("via_access_id") == aid:
                         add_cred(c["id"], depth + 1, "access", aid)
+                # Follow: access escalations from this access (privesc chains)
+                for a2 in accesses.values():
+                    if a2.get("via_access_id") == aid:
+                        add_access(a2["id"], depth + 1, "access", aid)
                 # Follow: vulns found via this access
                 for v in vulns:
                     if v.get("via_access_id") == aid:
@@ -668,9 +672,9 @@ def create_server() -> FastMCP:
                 if not c.get("via_access_id"):
                     add_cred(cid, 0)
 
-            # Root accesses: no via_credential_id (unauthenticated RCE, etc.)
+            # Root accesses: no via_credential_id and no via_access_id
             for aid, a in accesses.items():
-                if not a.get("via_credential_id"):
+                if not a.get("via_credential_id") and not a.get("via_access_id"):
                     add_access(aid, 0)
 
             # Orphans: records not reached by BFS
@@ -1158,6 +1162,7 @@ def create_server() -> FastMCP:
         method: str = "",
         session_ref: str = "",
         via_credential_id: int | None = None,
+        via_access_id: int | None = None,
         discovered_by: str = "",
         notes: str = "",
     ) -> str:
@@ -1173,8 +1178,9 @@ def create_server() -> FastMCP:
             method: How access was gained (e.g., "XXE -> webshell -> rev shell").
             session_ref: Reference to shell-server session ID if applicable.
             via_credential_id: Credential ID used to gain this access
-                              (for chain provenance). None = no credential used
-                              (e.g., unauthenticated RCE, privesc).
+                              (for chain provenance). None = no credential used.
+            via_access_id: Access ID this was escalated from (for privesc
+                          chains on the same host). None = initial access.
             discovered_by: Skill that gained access.
             notes: Additional notes.
         """
@@ -1192,8 +1198,8 @@ def create_server() -> FastMCP:
             cursor = conn.execute(
                 "INSERT INTO access "
                 "(target_id, access_type, username, privilege, method, "
-                "session_ref, via_credential_id, discovered_by, notes) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "session_ref, via_credential_id, via_access_id, discovered_by, notes) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     target_id,
                     access_type,
@@ -1202,6 +1208,7 @@ def create_server() -> FastMCP:
                     method,
                     session_ref,
                     via_credential_id,
+                    via_access_id,
                     discovered_by,
                     notes,
                 ),

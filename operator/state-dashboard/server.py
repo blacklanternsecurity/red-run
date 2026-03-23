@@ -831,13 +831,39 @@ function renderGraph() {
   function buildCardContent(host, target) {
     let sections = [];
 
-    // ACCESS section
+    // ACCESS section — chain-ordered by via_access_id (privesc path)
     const accesses = accessByHost[host] || [];
     if (accesses.length) {
-      const items = accesses.map(a => {
-        const icon = a.active ? '\u2713' : '\u2717';
+      // Build chain: roots first, then escalations in order
+      const byId = Object.fromEntries(accesses.map(a => [a.id, a]));
+      const childOf = {};  // parent_id -> [child_ids]
+      const roots = [];
+      for (const a of accesses) {
+        if (a.via_access_id && byId[a.via_access_id]) {
+          if (!childOf[a.via_access_id]) childOf[a.via_access_id] = [];
+          childOf[a.via_access_id].push(a.id);
+        } else {
+          roots.push(a.id);
+        }
+      }
+      // DFS to flatten chain with depth
+      const ordered = [];
+      function walkAccess(id, depth) {
+        const a = byId[id];
+        if (!a) return;
+        ordered.push({ ...a, _depth: depth });
+        for (const cid of (childOf[id] || [])) walkAccess(cid, depth + 1);
+      }
+      for (const rid of roots) walkAccess(rid, 0);
+      // Add any unchained items
+      const seen = new Set(ordered.map(a => a.id));
+      for (const a of accesses) { if (!seen.has(a.id)) ordered.push({ ...a, _depth: 0 }); }
+
+      const items = ordered.map(a => {
+        const icon = a._depth > 0 ? '\u2192' : (a.active ? '\u2713' : '\u2717');
         const cls = a.active ? 'card-item-active' : 'card-item-blocked';
-        const text = `${a.username} (${a.access_type}, ${a.privilege})`;
+        const prefix = a._depth > 0 ? '\u00A0'.repeat(a._depth * 2) : '';
+        const text = `${prefix}${a.username} (${a.access_type}, ${a.privilege})`;
         const detail = `${a.access_type} | ${a.privilege}\n${a.method}`;
         return { icon, text, cls, detail };
       });
