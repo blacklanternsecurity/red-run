@@ -92,14 +92,14 @@ failure — do not reinvent it.
 
 ## Scope Boundaries
 
-- Discover privesc vectors, don't exploit. When you find vulnerable services, token
+- Discover privesc vectors, don't exercise. When you find vulnerable services, token
   impersonation opportunities, or UAC bypass paths — report and wait. The lead routes
-  to win-attk.
+  to win-ops.
 - Do NOT call `search_skills()` or `list_skills()` — only `get_skill()`.
 - Do NOT run Linux commands — Windows hosts only. Wrong OS → report, return.
-- Do NOT exploit web services — report and return.
+- Do NOT exercise web services — report and return.
 - Do NOT perform network scanning or AD-specific enumeration (BloodHound, ADCS).
-- Do NOT crack hashes — save to evidence, `add_credential()`, return.
+- Do NOT recover hashes offline — save to evidence, `add_credential()`, return.
 - **Outbound connectivity issues from target** (reverse shell never
   connects, target can't reach listener, callback never arrives):
   do NOT debug the attackbox network stack. If your listener is up, the

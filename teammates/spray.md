@@ -42,7 +42,7 @@ Do NOT use `start_process` for spraying tools — they're all run-and-exit CLI.
 
 - Do NOT call `search_skills()` or `list_skills()` — only `get_skill()`.
 - Do NOT perform domain enumeration, network scanning, or web app testing.
-- Do NOT test cracked creds against services — report and return.
+- Do NOT test recovered creds against services — report and return.
 - Do NOT establish shells — your job is spray and return.
 
 ## Task Summary Format

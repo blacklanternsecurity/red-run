@@ -85,13 +85,13 @@ one-shot scripts) — `dangerouslyDisableSandbox: true` for network commands.
 
 ## Scope Boundaries
 
-Discover AD attack surface — don't exploit. When you find Kerberoastable
+Discover AD assessment surface — don't exercise. When you find Kerberoastable
 accounts, delegation paths, ADCS misconfigurations, or ACL chains — report
-findings and wait. The lead routes exploitation to ad-attk.
+findings and wait. The lead routes technique execution to ad-ops.
 
 - Do NOT call `search_skills()` or `list_skills()` — only `get_skill()`.
 - Do NOT perform network scanning, web app testing, or host-level privesc.
-- Do NOT crack hashes — save to evidence, `add_credential()`, continue skill.
+- Do NOT recover hashes offline — save to evidence, `add_credential()`, continue skill.
 - Do NOT enumerate hosts after gaining shell — report access, return.
 - If you get blocked by Anthropic's content filter (AUP error), STOP
   immediately. Do not retry. Return what you have.
@@ -137,9 +137,9 @@ repo root.
 - <user>:<password/hash/ticket> (works on: <services>)
 
 ### Routing Recommendations
-- Kerberoastable accounts → ad-attk
-- Delegation paths → ad-attk
-- ACL chains → ad-attk
+- Kerberoastable accounts → ad-ops
+- Delegation paths → ad-ops
+- ACL chains → ad-ops
 - <etc.>
 
 ### Evidence

@@ -75,14 +75,14 @@ The orchestrator spawns domain-specific subagents for each skill invocation:
 | `network-recon-agent` | Network | skill-router, nmap-server, shell-server, rdp-server, state | network-recon, smb-enumeration, database-enumeration, remote-access-enumeration, infrastructure-enumeration, smb-exploitation (haiku) |
 | `pivoting-agent` | Pivoting | skill-router, shell-server, rdp-server, state | pivoting-tunneling (sonnet) |
 | `web-discovery-agent` | Web discovery | skill-router, shell-server, browser-server, rdp-server, state | web-discovery |
-| `web-exploit-agent` | Web exploitation | skill-router, shell-server, browser-server, rdp-server, state | All web technique skills |
+| `web-exploit-agent` | Web operations | skill-router, shell-server, browser-server, rdp-server, state | All web technique skills |
 | `ad-discovery-agent` | AD discovery | skill-router, shell-server, rdp-server, state | ad-discovery |
-| `ad-exploit-agent` | AD exploitation | skill-router, shell-server, rdp-server, state | All AD technique skills |
+| `ad-exploit-agent` | AD operations | skill-router, shell-server, rdp-server, state | All AD technique skills |
 | `password-spray-agent` | Credential spraying | skill-router, shell-server, rdp-server, state | password-spraying (haiku) |
 | `linux-privesc-agent` | Linux privesc | skill-router, shell-server, state | Linux discovery + privesc + container escapes |
 | `windows-privesc-agent` | Windows privesc | skill-router, shell-server, rdp-server, state | Windows discovery + privesc |
-| `evasion-agent` | AV/EDR evasion | skill-router, shell-server, rdp-server, state | av-edr-evasion |
-| `credential-cracking-agent` | Credential cracking | skill-router, state | credential-cracking (haiku, local-only) |
+| `evasion-agent` | AV/EDR bypass | skill-router, shell-server, rdp-server, state | av-edr-evasion |
+| `credential-cracking-agent` | Credential recovery | skill-router, state | credential-cracking (haiku, local-only) |
 | `research-agent` | Deep analysis | skill-router, shell-server, state | unknown-vector-analysis (opus) |
 
 Each invocation: agent loads one skill via `get_skill()`, executes methodology, saves evidence, and returns findings. The orchestrator parses the return summary and makes the next routing decision. All agents and the orchestrator share the same state MCP server with full read/write access. Deduplication is handled at the database level.
@@ -110,7 +110,7 @@ The state server runs as a single instance with full read/write access for all a
 - **Recon** (`skills/network/network-recon/`): Host discovery, port scanning, OS fingerprinting — produces a port/service map
 - **Enumeration** (`skills/network/*-enumeration/`): Per-service deep enumeration (SMB, databases, remote access, infrastructure)
 - **Discovery** (`skills/<category>/*-discovery/`): Identifies vulnerabilities, reports findings generically (orchestrator routes to technique skills via `search_skills()`)
-- **Technique** (`skills/<category>/<technique>/`): Exploits a specific vulnerability class
+- **Technique** (`skills/<category>/<technique>/`): Exercises a specific vulnerability class
 
 ### Inter-Skill Routing
 
@@ -194,23 +194,27 @@ red-run/
     pivoting-agent.md
   teammates/              # Spawn prompt templates for /red-run-ctf (agent teams)
     README.md              # Template format and usage docs
-    recon.md               # Network recon + enumeration (haiku)
-    web.md                 # Web discovery + exploitation (sonnet)
-    ad.md                  # AD discovery + exploitation (sonnet)
-    linux.md               # Linux discovery + privesc (sonnet)
-    windows.md             # Windows discovery + privesc (sonnet)
-    pivoting.md            # Tunneling (sonnet, on-demand)
-    evasion.md             # AV/EDR bypass (sonnet, on-demand)
+    net-enum.md            # Network recon + service enumeration (sonnet)
+    web-enum.md            # Web app discovery (sonnet)
+    web-ops.md             # Web technique execution (sonnet)
+    ad-enum.md             # AD discovery (sonnet)
+    ad-ops.md              # AD technique execution (sonnet)
+    lin-enum.md            # Linux host discovery (sonnet)
+    lin-ops.md             # Linux privesc techniques (sonnet)
+    win-enum.md            # Windows host discovery (sonnet)
+    win-ops.md             # Windows privesc techniques (sonnet)
+    pivot.md               # Tunneling (sonnet, on-demand)
+    bypass.md              # AV/EDR bypass (sonnet, on-demand)
     spray.md               # Password spraying (haiku, on-demand)
-    cracking.md            # Offline hash cracking (haiku, on-demand)
+    recover.md             # Offline hash recovery (haiku, on-demand)
     research.md            # Deep analysis (opus, on-demand)
   skills/
     _template/SKILL.md    # Canonical template
     ctf/SKILL.md          # /red-run-ctf (agent teams, default)
     legacy/SKILL.md       # /red-run-legacy (subagent-based, manual invoke only)
-    web/                  # Web application attacks
+    web/                  # Web application techniques
     ad/                   # Active Directory
-    credential/           # Credential attacks (password spraying)
+    credential/           # Credential techniques (password spraying)
     privesc/              # Privilege escalation
     network/              # Recon, protocols, pivoting
     evasion/              # AV/EDR bypass

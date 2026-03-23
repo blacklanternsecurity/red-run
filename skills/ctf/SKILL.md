@@ -11,15 +11,15 @@ description: >
   "next steps", "where were we", "resuming", "advise next steps",
   "what should we do next", "engagement status".
   This is the entry point for all multi-phase penetration tests — handles
-  recon, attack surface mapping, vulnerability chaining, and routes to
-  technique skills for exploitation. Do NOT use when the user names a specific
+  recon, assessment surface mapping, vulnerability chaining, and routes to
+  technique skills for execution. Do NOT use when the user names a specific
   single technique (e.g., "run kerberoasting against X").
 keywords:
   - pentest this target
   - start an engagement
   - scan this host
   - assess this network
-  - attack this target
+  - test this target
   - full pentest
   - start testing
   - engagement against
@@ -47,7 +47,7 @@ This orchestrator uses agent teams instead of subagents. Teammates are persisten
 Claude Code sessions that accumulate domain context, communicate with each other,
 and are visible to the operator via tmux split panes or in-process mode.
 
-> **OPERATOR APPROVAL REQUIRED.** Before assigning any exploitation task to a
+> **OPERATOR APPROVAL REQUIRED.** Before assigning any technique task to a
 > teammate, use `AskUserQuestion` to present the routing decision and block until
 > the operator responds. State: what skill, which teammate, what target, and why.
 > Discovery tasks (recon, enumeration) can be assigned after initial approval.
@@ -57,7 +57,7 @@ and are visible to the operator via tmux split panes or in-process mode.
 > Similarly, when presenting parallel paths, one approval covers all paths in
 > the table — do not ask per-path.
 
-> **DO NOT RUN ATTACK TOOLS.** You are a router. If you're about to type `nmap`,
+> **DO NOT RUN TOOLS DIRECTLY.** You are a router. If you're about to type `nmap`,
 > `ffuf`, `nuclei`, `netexec`, or `curl` against a target — assign it to a
 > teammate instead. See "Commands the Lead May Execute" below.
 
@@ -125,23 +125,23 @@ Read spawn templates from `teammates/` at runtime via the Read tool.
 | `teammates/lin-enum.md` | lin-enum | Linux host discovery | sonnet | linux-discovery |
 | `teammates/win-enum.md` | win-enum | Windows host discovery | sonnet | windows-discovery |
 
-**Attack teammates** (spawn when technique skill is needed, persist):
+**Operations teammates** (spawn when technique skill is needed, persist):
 
 | Template | Name | Domain | Model | Skills |
 |----------|------|--------|-------|--------|
-| `teammates/web-attk.md` | web-attk | Web exploitation | sonnet | All web technique skills |
-| `teammates/ad-attk.md` | ad-attk | AD exploitation | sonnet | All AD technique skills |
-| `teammates/lin-attk.md` | lin-attk | Linux privesc | sonnet | All linux privesc skills, container-escapes |
-| `teammates/win-attk.md` | win-attk | Windows privesc | sonnet | All windows privesc skills |
+| `teammates/web-ops.md` | web-ops | Web techniques | sonnet | All web technique skills |
+| `teammates/ad-ops.md` | ad-ops | AD techniques | sonnet | All AD technique skills |
+| `teammates/lin-ops.md` | lin-ops | Linux privesc | sonnet | All linux privesc skills, container-escapes |
+| `teammates/win-ops.md` | win-ops | Windows privesc | sonnet | All windows privesc skills |
 
 **On-demand teammates** (spawn for task, dismiss after):
 
 | Template | Name | Domain | Model | Skills |
 |----------|------|--------|-------|--------|
 | `teammates/pivot.md` | pivot | Tunneling | sonnet | pivoting-tunneling |
-| `teammates/evade.md` | evade | AV/EDR bypass | sonnet | av-edr-evasion |
+| `teammates/bypass.md` | bypass | AV/EDR bypass | sonnet | av-edr-evasion |
 | `teammates/spray.md` | spray | Password spraying | haiku | password-spraying |
-| `teammates/crack.md` | crack | Offline cracking | haiku | credential-cracking |
+| `teammates/recover.md` | recover | Offline recovery | haiku | credential-cracking |
 | `teammates/research.md` | research | Deep analysis | opus | unknown-vector-analysis |
 
 ### Spawning a Teammate
@@ -282,7 +282,7 @@ When a teammate messages that a task is complete:
 4. UPDATE VULN STATUS based on technique outcome:
    - Technique succeeded (access gained, creds extracted) → update_vuln(status="exploited")
    - Technique exhausted methodology and failed → update_vuln(status="blocked")
-   - This is critical for the kill-chain graph — vulns stuck at status="found"
+   - This is critical for the access chain graph — vulns stuck at status="found"
      show as actionable forever. Close the loop.
 6. Retry policy for blocked:
    - Discovery agent blocked → retry: "with_context" (technique skill has deeper methodology)
@@ -364,7 +364,7 @@ If Cancel → stop immediately.
 Q1 — Scan type: Quick (recommended) | Full | Ask each time
 Q2 — Web proxy: Burp 127.0.0.1:8080 (recommended) | Custom IP:PORT | No proxy | Ask when needed
 Q3 — Spray intensity: Light ~30 (recommended) | Medium ~10k | Heavy ~100k | Skip | Ask each time
-Q4 — Cracking method: Local (recommended) | Export | Skip | Ask each time
+Q4 — Recovery method: Local (recommended) | Export | Skip | Ask each time
 ```
 
 Write `engagement/config.yaml` from `operator/templates/config.yaml`.
@@ -389,8 +389,8 @@ After initialization, remind the operator to start the state dashboard:
 Tip: For real-time engagement visualization, start the state dashboard
 in a separate terminal:
   bash operator/state-dashboard/start.sh
-Then open http://127.0.0.1:8099 to see the kill-chain graph, targets,
-credentials, and attack progress update live as teammates work.
+Then open http://127.0.0.1:8099 to see the access chain graph, targets,
+credentials, and assessment progress update live as teammates work.
 ```
 
 ## Step 2: Reconnaissance
@@ -456,7 +456,7 @@ elif config.web_proxy omitted:
 Persistence files: `engagement/web-proxy.json`, `engagement/web-proxy.sh`, append to `scope.md`.
 Include in every web task: `Web proxy: <url>` or `Web proxy: disabled by operator`.
 
-## Step 3: Vulnerability Discovery & Exploitation
+## Step 3: Vulnerability Discovery & Technique Execution
 
 Route to discovery skills via teammates. Pass: target, creds, tech stack.
 
@@ -496,12 +496,12 @@ When state shows a pivot (additional NIC, new subnet) AND you have access to the
     Transparent: <yes|no>. SOCKS: <endpoint if proxychains needed>."
 
 Do NOT wait for other decision logic items to complete before acting on pivots.
-A new subnet is a high-value expansion of the attack surface.
+A new subnet is a high-value expansion of the assessment surface.
 ```
 
 **Shell access gained → stabilize → host discovery (mandatory):**
 ```
-1. Stabilize: start_listener → reverse shell payload → stabilize_shell
+1. Stabilize: start_listener → reverse shell callback → stabilize_shell
    OR: start_process(evil-winrm/psexec/ssh) for credential-based access
 2. Route to host discovery:
    Linux → lin-enum: linux-discovery
@@ -517,12 +517,12 @@ whoami /priv, net user). Assign to the appropriate teammate.
 Walk ALL items, collect every actionable finding, present to operator:
 
 ```
-1. Unexploited vulns → assign technique skill to attk teammate
+1. Unexercised vulns → assign technique skill to ops teammate
    CVE VERIFICATION GATE (mandatory):
      Step 1: version check (instant) — if patched, add_blocked, skip
      Step 2: if vulnerable/unknown → spawn research teammate for class verification
-     After gate passes → route to {domain}-attk via search_skills()
-   Routing: web vulns → web-attk, AD vulns → ad-attk, privesc → lin-attk/win-attk
+     After gate passes → route to {domain}-ops via search_skills()
+   Routing: web vulns → web-ops, AD vulns → ad-ops, privesc → lin-ops/win-ops
 
 2. Shell access without root/SYSTEM → assign discovery skill to enum teammate
    Host discovery mandatory on every host:
@@ -540,7 +540,7 @@ Walk ALL items, collect every actionable finding, present to operator:
      d. Authenticated AD enumeration (BloodHound, ADCS, ACLs)
      e. Complex chains (coercion relay, delegation) — last resort
 
-5. Uncracked hashes → trigger Hashes Found hard stop
+5. Unrecovered hashes → trigger Hashes Found hard stop
 
 6. Pivot map — HIGH PRIORITY, act before items 7-9:
    for each pivot with status "identified" or "Additional NIC":
@@ -591,16 +591,16 @@ Walk ALL items, collect every actionable finding, present to operator:
 4. If spray: spawn spray teammate in background. Continue engagement loop.
 ```
 
-**Hashes Found** (never auto-crack):
+**Hashes Found** (never auto-recover):
 ```
 1. Collect hash details: type, source, account, file path
 2. AskUserQuestion:
-   Method: Crack locally | Export for external rig | Skip
+   Method: Recover locally | Export for external rig | Skip
    (pre-select config.cracking.default_method if set)
-3. Crack locally → spawn cracking teammate in background
+3. Recover locally → spawn recover teammate in background
    Export → print hash file + hashcat command, wait for plaintext
    Skip → continue other paths
-4. When plaintext arrives (from cracking teammate OR operator):
+4. When plaintext arrives (from recover teammate OR operator):
    update_credential(id=<hash_id>, cracked=True, secret="<plaintext>")
    Then trigger "Untested credentials" routing (item 4 in Decision Logic)
 ```
@@ -619,15 +619,15 @@ Walk ALL items, collect every actionable finding, present to operator:
 7. Clean up: rm temp_clock-sync.sh
 ```
 
-**AV Evasion** (teammate returns AV/EDR Blocked):
+**AV Bypass** (teammate returns AV/EDR Blocked):
 ```
 1. add_blocked(retry="with_context")
-2. Spawn evasion teammate with detection context
+2. Spawn bypass teammate with detection context
 3. On return with bypass artifact:
-   Reassign original skill to original teammate + evasion context:
-   "Use AV-safe payload at <path>. Method: <bypass>. Prerequisites: <if any>.
-    Do NOT generate a new payload."
-4. Evasion failed → add_blocked(retry="no"), move on
+   Reassign original skill to original teammate + bypass context:
+   "Use AV-safe artifact at <path>. Method: <bypass>. Prerequisites: <if any>.
+    Do NOT generate a new artifact."
+4. Bypass failed → add_blocked(retry="no"), move on
 ```
 
 **Unknown Vector** (technique teammate says standard patterns don't match):
@@ -636,14 +636,14 @@ Walk ALL items, collect every actionable finding, present to operator:
 2. Spawn research teammate with artifact path + prior analysis summary
 3. Research teammate writes findings to engagement/evidence/research/<name>.md
    and messages with just the file path + one-line summary
-4. Read the findings file to get full details (CVEs, exploit methods, privesc angles)
+4. Read the findings file to get full details (CVEs, technique methods, privesc angles)
 5. Route based on findings:
-   Exploitation succeeded → record findings
+   Technique succeeded → record findings
    Known vuln class identified → assign to technique teammate
    No vector → add_blocked(retry="no"), move on
 ```
 
-## Step 5: Post-Exploitation
+## Step 5: Post-Access
 
 When significant access gained (shell, DA, database):
 1. Collect evidence → `engagement/evidence/`
@@ -657,7 +657,7 @@ When significant access gained (shell, DA, database):
 
 ```
 Phase 1: Recon all targets (recon teammate handles sequentially or lead spawns per-target)
-Phase 2: Triage by exploitability (CVEs > default access > web > cred attacks)
+Phase 2: Triage by impact (CVEs > default access > web > cred techniques)
 Phase 3: Work highest-value target through discovery → technique
 Phase 4: Cross-pollinate (new creds → test all targets, new access → check others)
 Phase 5: Cycle back to blocked targets with new context
@@ -670,9 +670,9 @@ Do NOT go deep on one target ignoring others — cycle when stuck.
 
 ```
 1. get_state_summary() + get_vulns()
-2. Attack narrative (chronological)
+2. Assessment narrative (chronological)
 3. Findings by severity with impact, evidence, repro steps
-4. Attack chains diagram
+4. Access chains diagram
 5. Recommendations
 6. Offer retrospective: get_skill("retrospective")
 ```

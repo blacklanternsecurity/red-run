@@ -54,7 +54,7 @@ Scan types (match lead's instruction exactly):
 
 For reverse shells when a skill achieves RCE:
 ```
-start_listener(port) → send payload → list_sessions() → stabilize_shell() →
+start_listener(port) → trigger callback → list_sessions() → stabilize_shell() →
 send_command() → close_session(save_transcript=true)
 ```
 
@@ -82,10 +82,10 @@ can receive messages.
 ## Scope Boundaries
 
 - Do NOT call `search_skills()` or `list_skills()` — only `get_skill()`.
-- Do NOT exploit vulnerabilities — find and report. The lead routes exploitation.
+- Do NOT exercise vulnerabilities — find and report. The lead routes technique execution.
 - Do NOT interact with HTTP services (no curl/wget against web ports) — that's the web teammate.
 - Do NOT perform web app testing, AD enumeration, or privilege escalation.
-- Do NOT crack hashes — save to evidence, write `add_credential()`, report.
+- Do NOT recover hashes offline — save to evidence, write `add_credential()`, report.
 - **Outbound connectivity issues from target** (target can't reach
   listener, callback never arrives): do NOT debug the attackbox network
   stack. If your listener is up, the problem is on the target side.

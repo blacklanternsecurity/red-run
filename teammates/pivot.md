@@ -58,7 +58,7 @@ file transfers.
 
 - Do NOT scan the internal network — setup + verify only.
 - Do NOT run recon/enumeration through the tunnel.
-- Do NOT crack hashes or spray passwords.
+- Do NOT recover hashes or spray passwords.
 - Only `get_skill()` — no `search_skills()`.
 
 ## Task Summary Format
