@@ -838,7 +838,8 @@ function renderGraph() {
     const actionable = getActionable(host);
     if (actionable.length) {
       sections.push({ title: 'ACTIONABLE', items: actionable.map(a => ({
-        icon: a.icon, text: a.text, cls: 'card-item-pending', detail: a.detail
+        icon: a.icon, text: a.text, cls: 'card-item-pending', detail: a.detail,
+        color: a.color
       })), glow: true });
     }
 
