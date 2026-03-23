@@ -9,7 +9,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 13
+SCHEMA_VERSION = 14
 
 SCHEMA_SQL = """\
 PRAGMA journal_mode=WAL;
@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS credentials (
     cracked       INTEGER NOT NULL DEFAULT 0,
     via_access_id INTEGER REFERENCES access(id) ON DELETE SET NULL,
     in_report     INTEGER NOT NULL DEFAULT 1,
+    chain_order   INTEGER NOT NULL DEFAULT 0,
     notes         TEXT NOT NULL DEFAULT '',
     discovered_by TEXT NOT NULL DEFAULT '',
     created_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
@@ -97,6 +98,7 @@ CREATE TABLE IF NOT EXISTS access (
     via_access_id INTEGER REFERENCES access(id) ON DELETE SET NULL,
     technique_id  TEXT NOT NULL DEFAULT '',
     in_report     INTEGER NOT NULL DEFAULT 1,
+    chain_order   INTEGER NOT NULL DEFAULT 0,
     active        INTEGER NOT NULL DEFAULT 1,
     notes         TEXT NOT NULL DEFAULT '',
     discovered_by TEXT NOT NULL DEFAULT '',
@@ -118,6 +120,7 @@ CREATE TABLE IF NOT EXISTS vulns (
     via_access_id INTEGER REFERENCES access(id) ON DELETE SET NULL,
     technique_id  TEXT NOT NULL DEFAULT '',
     in_report     INTEGER NOT NULL DEFAULT 1,
+    chain_order   INTEGER NOT NULL DEFAULT 0,
     discovered_by TEXT NOT NULL DEFAULT '',
     created_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
     updated_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
@@ -378,6 +381,17 @@ def _migrate_v3_to_v4(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def _migrate_v13_to_v14(conn: sqlite3.Connection) -> None:
+    """Migrate schema from v13 to v14: add chain_order for flow graph ordering."""
+    for table in ("access", "vulns", "credentials"):
+        cols = [r[1] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()]
+        if "chain_order" not in cols:
+            conn.execute(
+                f"ALTER TABLE {table} ADD COLUMN chain_order INTEGER NOT NULL DEFAULT 0"
+            )
+    conn.commit()
+
+
 def _migrate_v12_to_v13(conn: sqlite3.Connection) -> None:
     """Migrate schema from v12 to v13: add technique_id and in_report columns."""
     for table in ("access", "vulns"):
@@ -508,6 +522,8 @@ def init_db(db_path: str | Path) -> sqlite3.Connection:
             _migrate_v11_to_v12(conn)
         if current_version <= 12:
             _migrate_v12_to_v13(conn)
+        if current_version <= 13:
+            _migrate_v13_to_v14(conn)
 
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()
