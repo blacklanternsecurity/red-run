@@ -4,11 +4,8 @@ Claude Code skill library for penetration testing and CTF work.
 
 ## Engagement Workflow
 
-**MANDATORY (team lead only — teammates ignore this):** When the user mentions
-targets, attacking, scanning, pentesting, or references an existing engagement
-(resuming, continuing, next steps, status), invoke the `red-run-ctf` skill via
-the Skill tool IMMEDIATELY — before reading state, running tools, or generating
-any analysis. The orchestrator skill contains all routing logic, approval gates,
+The orchestrator is invoked via `/red-run-ctf` slash command only — not by
+natural language triggers. It contains all routing logic, approval gates,
 and state management rules. **If you are an agent teams teammate** (you were
 spawned by a team lead and received a task assignment), **do NOT invoke the
 orchestrator skill.** Load technique skills via
@@ -39,7 +36,7 @@ and technique skills. Each variant uses a different execution model.
 
 | Variant | Invoke | Status | Execution Model |
 |---------|--------|--------|-----------------|
-| `/red-run-ctf` | Keywords ("attack X") + slash command | **Active** (default) | Agent teams (persistent teammates, peer messaging) |
+| `/red-run-ctf` | Slash command only | **Active** (default) | Agent teams (persistent teammates, peer messaging) |
 | `/red-run-legacy` | Slash command only | **Legacy** | Subagents (ephemeral, one skill per invocation) |
 | `/red-run-notouch` | Slash command only | **Planned** | DLP-safe — operator runs commands, reports sanitized output |
 | `/red-run-train` | Slash command only | **Planned** | Training mode — guided walkthrough with explanations |

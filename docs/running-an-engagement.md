@@ -19,12 +19,12 @@ For split-pane teammate visibility, start Claude Code inside a tmux session.
 Trigger the orchestrator with a target:
 
 ```
-attack 10.10.10.5
-pentest 192.168.1.0/24
-hack school.flight.htb
+/red-run-ctf 10.10.10.5
+/red-run-ctf 192.168.1.0/24
+/red-run-ctf school.flight.htb
 ```
 
-Any of these trigger phrases work: `pwn`, `attack`, `pentest`, `hack`, `scan`, `assess`, `test`, `pop`, `engage`, or `CTF target`.
+Use the `/red-run-ctf` slash command followed by your target(s). Natural language triggers have been removed to reduce AUP filter sensitivity.
 
 ### Scope Gathering
 

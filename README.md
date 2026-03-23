@@ -1,14 +1,14 @@
 # red-run
 
-Offensive security toolkit for Claude Code.
+Security assessment toolkit for Claude Code.
 
 <p align="center">
   <img src="docs/dashboard.jpg" width="700" alt="Agent dashboard showing live multi-pane output from parallel agents">
 </p>
 
-red-run combines skills, MCP servers, and [Claude Code agent teams](https://code.claude.com/docs/en/agent-teams) with routing logic that guides Claude and the operator through the phases of an infrastructure-focused attack — recon, initial access, lateral movement, privilege escalation, and post-exploitation. It tracks engagement state in a SQLite database that persists across context compactions, routes to skills via semantic search (RAG), and delegates execution to persistent domain teammates that accumulate context across tasks and communicate with each other directly.
+red-run combines skills, MCP servers, and [Claude Code agent teams](https://code.claude.com/docs/en/agent-teams) with routing logic that guides Claude and the operator through the phases of a security assessment — recon, initial access, lateral movement, privilege escalation, and post-access. It tracks engagement state in a SQLite database that persists across context compactions, routes to skills via semantic search (RAG), and delegates execution to persistent domain teammates that accumulate context across tasks and communicate with each other directly.
 
-The orchestrator (team lead) presents the attack surface, chain analysis, and available paths — you choose what to hit next. Teammates work in their own tmux panes where you can watch them, press Escape to interrupt, and type directly to redirect. See the [Architecture docs](https://blacklanternsecurity.github.io/red-run/architecture/) for diagrams and data flow.
+The orchestrator (team lead) presents the assessment surface, chain analysis, and available paths — you choose what to test next. Teammates work in their own tmux panes where you can watch them, press Escape to interrupt, and type directly to redirect. See the [Architecture docs](https://blacklanternsecurity.github.io/red-run/architecture/) for diagrams and data flow.
 
 ## Orchestrators
 
@@ -16,7 +16,7 @@ red-run supports multiple orchestrator variants that share the same skills, MCP 
 
 | Orchestrator | Trigger | Status | Purpose |
 |---|---|---|---|
-| `/red-run-ctf` | Auto (natural language) + `/red-run-ctf` | **Active** | CTF and lab environments. Agent teams with persistent teammates, full autonomy, aggressive exploitation. |
+| `/red-run-ctf` | `/red-run-ctf` | **Active** | CTF and lab environments. Agent teams with persistent teammates, full autonomy. |
 | `/red-run-legacy` | `/red-run-legacy` only | **Legacy** | Original subagent-based orchestrator. Ephemeral agents, one skill per invocation. |
 | `/red-run-notouch` | `/red-run-notouch` only | **Planned** | DLP-safe mode. The operator executes commands in separate tmux panes and reports sanitized output back to the orchestrator. No client data touches Anthropic servers. |
 | `/red-run-train` | `/red-run-train` only | **Planned** | Training mode. Guided walkthrough with explanations at each step. Designed for learning offensive methodology with AI assistance. |
