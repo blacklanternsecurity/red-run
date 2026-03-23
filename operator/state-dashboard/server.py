@@ -501,8 +501,12 @@ function renderTables() {
     const ss = sortState[def.id];
     if (ss) {
       const col = ss.col;
+      const orderedCols = { severity: {critical:0,high:1,medium:2,low:3,info:4},
+        status: {exploited:0,found:1,blocked:2}, retry: {with_context:0,later:1,no:2} };
       rows = [...rows].sort((a,b) => {
         let va = getCellValue(a, col, def), vb = getCellValue(b, col, def);
+        const ord = orderedCols[col];
+        if (ord) { va = ord[va] ?? 99; vb = ord[vb] ?? 99; }
         if (va < vb) return ss.asc ? -1 : 1;
         if (va > vb) return ss.asc ? 1 : -1;
         return 0;
