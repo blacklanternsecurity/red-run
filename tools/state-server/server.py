@@ -834,6 +834,9 @@ def create_server() -> FastMCP:
             discovered_by: Skill that found this credential.
         """
         with _get_db() as conn:
+            if not secret:
+                return "ERROR: secret is required. Use targets.notes for username-only lists."
+
             existing = conn.execute(
                 "SELECT id FROM credentials "
                 "WHERE username = ? AND secret_type = ? AND secret = ?",
