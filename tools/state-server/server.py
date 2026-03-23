@@ -898,7 +898,8 @@ def create_server() -> FastMCP:
 
             existing = conn.execute(
                 "SELECT id FROM credentials "
-                "WHERE username = ? AND secret_type = ? AND secret = ?",
+                "WHERE LOWER(username) = LOWER(?) AND secret_type = ? "
+                "AND LOWER(secret) = LOWER(?)",
                 (username, secret_type, secret),
             ).fetchone()
             if existing:
@@ -1043,6 +1044,7 @@ def create_server() -> FastMCP:
         privilege: str = "user",
         method: str = "",
         session_ref: str = "",
+        via_credential_id: int | None = None,
         discovered_by: str = "",
         notes: str = "",
     ) -> str:
@@ -1057,6 +1059,9 @@ def create_server() -> FastMCP:
                       domain_admin, other.
             method: How access was gained (e.g., "XXE -> webshell -> rev shell").
             session_ref: Reference to shell-server session ID if applicable.
+            via_credential_id: Credential ID used to gain this access
+                              (for chain provenance). None = no credential used
+                              (e.g., unauthenticated RCE, privesc).
             discovered_by: Skill that gained access.
             notes: Additional notes.
         """
@@ -1074,8 +1079,8 @@ def create_server() -> FastMCP:
             cursor = conn.execute(
                 "INSERT INTO access "
                 "(target_id, access_type, username, privilege, method, "
-                "session_ref, discovered_by, notes) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                "session_ref, via_credential_id, discovered_by, notes) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     target_id,
                     access_type,
@@ -1083,6 +1088,7 @@ def create_server() -> FastMCP:
                     privilege,
                     method,
                     session_ref,
+                    via_credential_id,
                     discovered_by,
                     notes,
                 ),

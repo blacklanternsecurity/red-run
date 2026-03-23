@@ -9,7 +9,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 9
+SCHEMA_VERSION = 10
 
 SCHEMA_SQL = """\
 PRAGMA journal_mode=WAL;
@@ -92,6 +92,7 @@ CREATE TABLE IF NOT EXISTS access (
                          'service', 'domain_admin', 'other')),
     method        TEXT NOT NULL DEFAULT '',
     session_ref   TEXT NOT NULL DEFAULT '',
+    via_credential_id INTEGER REFERENCES credentials(id) ON DELETE SET NULL,
     active        INTEGER NOT NULL DEFAULT 1,
     notes         TEXT NOT NULL DEFAULT '',
     discovered_by TEXT NOT NULL DEFAULT '',
@@ -371,6 +372,17 @@ def _migrate_v3_to_v4(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def _migrate_v9_to_v10(conn: sqlite3.Connection) -> None:
+    """Migrate schema from v9 to v10: add via_credential_id to access."""
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(access)").fetchall()]
+    if "via_credential_id" not in cols:
+        conn.execute(
+            "ALTER TABLE access ADD COLUMN via_credential_id INTEGER "
+            "REFERENCES credentials(id) ON DELETE SET NULL"
+        )
+    conn.commit()
+
+
 def _migrate_v8_to_v9(conn: sqlite3.Connection) -> None:
     """Migrate schema from v8 to v9: add hostname column, rename host to ip."""
     cols = [r[1] for r in conn.execute("PRAGMA table_info(targets)").fetchall()]
@@ -413,6 +425,8 @@ def init_db(db_path: str | Path) -> sqlite3.Connection:
             _migrate_v7_to_v8(conn)
         if current_version <= 8:
             _migrate_v8_to_v9(conn)
+        if current_version <= 9:
+            _migrate_v9_to_v10(conn)
 
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()
