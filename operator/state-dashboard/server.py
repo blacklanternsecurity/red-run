@@ -590,7 +590,8 @@ function toggleGraphFullscreen() {
   const btn = document.getElementById('graph-expand-btn');
   c.classList.toggle('fullscreen');
   btn.textContent = c.classList.contains('fullscreen') ? '\u2716' : '\u26F6';
-  // Double-rAF: first frame applies the layout change, second frame reads correct dimensions
+  // Reset persisted viewBox so graph re-fits to new container size
+  _graphVB = null;
   requestAnimationFrame(() => requestAnimationFrame(() => renderGraph()));
 }
 document.addEventListener('keydown', e => {
