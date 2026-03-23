@@ -19,24 +19,24 @@ or agent definitions — they're prompt templates.
 |------|------|--------|-------|
 | `state-mgr.md` | state-mgr | Centralized state writer, dedup, graph coherence | sonnet |
 
-**Enumeration** — spawn when domain becomes relevant, persist across tasks:
+**Enumeration** — one per target surface, multiple instances from same template:
 
-| File | Name | Domain | Model |
-|------|------|--------|-------|
-| `net-enum.md` | net-enum | Network recon + service enumeration | sonnet |
-| `web-enum.md` | web-enum | Web app discovery | sonnet |
+| File | Naming | Domain | Model |
+|------|--------|--------|-------|
+| `net-enum.md` | net-enum, net-enum-\<target\> | Network recon + service enumeration | sonnet |
+| `web-enum.md` | web-enum-\<site\> | Web app discovery | sonnet |
 | `ad-enum.md` | ad-enum | AD discovery (BloodHound, LDAP, ADCS) | sonnet |
-| `lin-enum.md` | lin-enum | Linux host discovery | sonnet |
-| `win-enum.md` | win-enum | Windows host discovery | sonnet |
+| `lin-enum.md` | lin-enum-\<host\> | Linux host discovery | sonnet |
+| `win-enum.md` | win-enum-\<host\> | Windows host discovery | sonnet |
 
-**Operations** — spawn when technique skill is needed, persist across tasks:
+**Operations** — one per target surface when parallel paths exist:
 
-| File | Name | Domain | Model |
-|------|------|--------|-------|
-| `web-ops.md` | web-ops | Web technique execution | sonnet |
+| File | Naming | Domain | Model |
+|------|--------|--------|-------|
+| `web-ops.md` | web-ops, web-ops-\<target\> | Web technique execution | sonnet |
 | `ad-ops.md` | ad-ops | AD technique execution | sonnet |
-| `lin-ops.md` | lin-ops | Linux privesc techniques | sonnet |
-| `win-ops.md` | win-ops | Windows privesc techniques | sonnet |
+| `lin-ops.md` | lin-ops-\<host\> | Linux privesc techniques | sonnet |
+| `win-ops.md` | win-ops-\<host\> | Windows privesc techniques | sonnet |
 
 **On-demand** — spawn for specific tasks, dismiss when done:
 

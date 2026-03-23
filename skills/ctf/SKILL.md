@@ -99,24 +99,24 @@ Read spawn templates from `teammates/` at runtime via the Read tool.
 |----------|------|--------|-------|------|
 | `teammates/state-mgr.md` | state-mgr | State management | sonnet | Sole writer to state.db. All teammates message state-mgr for writes. Handles dedup, graph coherence, provenance linking. |
 
-**Enumeration teammates** (spawn when domain becomes relevant, persist):
+**Enumeration teammates** (one per target surface — spawn multiple from same template):
 
-| Template | Name | Domain | Model | Skills |
-|----------|------|--------|-------|--------|
-| `teammates/net-enum.md` | net-enum | Network recon + service enum | sonnet | network-recon, smb-enumeration, db-enumeration, remote-access-enumeration, infrastructure-enumeration |
-| `teammates/web-enum.md` | web-enum | Web app discovery | sonnet | web-discovery |
+| Template | Naming | Domain | Model | Skills |
+|----------|--------|--------|-------|--------|
+| `teammates/net-enum.md` | net-enum, net-enum-\<target\> | Network recon + service enum | sonnet | network-recon, smb-enumeration, db-enumeration, remote-access-enumeration, infrastructure-enumeration |
+| `teammates/web-enum.md` | web-enum-\<site\> | Web app discovery | sonnet | web-discovery |
 | `teammates/ad-enum.md` | ad-enum | AD discovery | sonnet | ad-discovery |
-| `teammates/lin-enum.md` | lin-enum | Linux host discovery | sonnet | linux-discovery |
-| `teammates/win-enum.md` | win-enum | Windows host discovery | sonnet | windows-discovery |
+| `teammates/lin-enum.md` | lin-enum-\<host\> | Linux host discovery | sonnet | linux-discovery |
+| `teammates/win-enum.md` | win-enum-\<host\> | Windows host discovery | sonnet | windows-discovery |
 
-**Operations teammates** (spawn when technique skill is needed, persist):
+**Operations teammates** (one per target surface when parallel paths exist):
 
-| Template | Name | Domain | Model | Skills |
-|----------|------|--------|-------|--------|
-| `teammates/web-ops.md` | web-ops | Web techniques | sonnet | All web technique skills |
+| Template | Naming | Domain | Model | Skills |
+|----------|--------|--------|-------|--------|
+| `teammates/web-ops.md` | web-ops, web-ops-\<target\> | Web techniques | sonnet | All web technique skills |
 | `teammates/ad-ops.md` | ad-ops | AD techniques | sonnet | All AD technique skills |
-| `teammates/lin-ops.md` | lin-ops | Linux privesc | sonnet | All linux privesc skills, container-escapes |
-| `teammates/win-ops.md` | win-ops | Windows privesc | sonnet | All windows privesc skills |
+| `teammates/lin-ops.md` | lin-ops-\<host\> | Linux privesc | sonnet | All linux privesc skills, container-escapes |
+| `teammates/win-ops.md` | win-ops-\<host\> | Windows privesc | sonnet | All windows privesc skills |
 
 **On-demand teammates** (spawn for task, dismiss after):
 
@@ -153,20 +153,28 @@ When spawning, include engagement context:
 
 ### Assigning Tasks
 
+**One teammate per target surface.** Each distinct target surface (vhost, web
+port, host shell, subnet) gets its own teammate instance. Don't queue work on a
+busy teammate — spawn a new one from the same template.
+
 ```
-if teammate exists and is idle:
+if teammate exists for THIS target surface and is idle:
     message teammate: "Load skill '<name>'. Target: <target>. Context: <details>"
-elif teammate exists and is busy:
-    spawn additional teammate from same template (e.g., "web-enum-2" from teammates/web-enum.md)
-else:
+elif teammate exists but is working a DIFFERENT target surface:
+    spawn new teammate from same template with target-specific name
+elif no teammate for this domain:
     spawn teammate, then assign task
 ```
 
-**Multiple teammates per domain:** When parallel work is needed in the same
-domain (e.g., two websites discovered simultaneously), spawn multiple teammates
-from the same template with distinct names: "web-portal", "web-api". Each gets
-its own tmux pane and works independently. They can message each other if they
-find cross-relevant information (shared auth, same backend).
+**Naming: `{role}-{target}`** — use descriptive names tied to what the
+teammate is working on:
+- `web-enum-portal`, `web-enum-api`, `web-enum-8443` (per vhost/port)
+- `lin-enum-dc01`, `lin-enum-web01` (per host)
+- `win-enum-dc01`, `win-ops-dc01` (per host)
+- `web-ops-sqli-portal`, `web-ops-lfi-api` (per exploit path)
+
+Teammates from the same template can message each other when they find
+cross-relevant information (shared auth, same backend, reused creds).
 
 **Task list coordination:**
 - Lead creates all tasks — teammates never self-claim
@@ -299,14 +307,22 @@ When a teammate messages that a task is complete:
 
 ## Parallel Execution
 
-With agent teams, parallelization is natural — assign tasks to multiple teammates.
+With agent teams, parallelization is natural — spawn teammates per target surface.
 
+**Automatic parallelism** (no approval needed beyond initial scope approval):
+- New vhost discovered → spawn `web-enum-<vhost>` immediately
+- New host shell → spawn `lin-enum-<host>` or `win-enum-<host>` immediately
+- New web port on known target → spawn `web-enum-<port>` immediately
+These are discovery tasks on new surfaces — don't serialize them.
+
+**Technique parallelism** (present to operator for approval):
 ```
-if 2+ viable independent paths:
+if 2+ viable independent exploit paths:
     present Parallel Path table to operator
     if approved:
         for path in paths:
-            assign_task(resolve_teammate(path.domain), path.skill, path.target)
+            spawn target-specific teammate if needed
+            assign_task(teammate, path.skill, path.target)
         # teammates work in parallel, visible in separate tmux panes
         # first to succeed → record findings, potentially dismiss others
         # no winner yet → let others continue
@@ -426,16 +442,21 @@ spawn/message recon teammate:
 
 ### Service Enumeration (after recon returns)
 
-Route by discovered ports — can run in parallel:
+Route by discovered ports — run in parallel across teammates:
 
 ```
-ports 139,445        → recon teammate: smb-enumeration
-ports 1433,3306,...  → recon teammate: database-enumeration
-ports 21,22,3389,... → recon teammate: remote-access-enumeration
-ports 53,25,161,...  → recon teammate: infrastructure-enumeration
-ports 80,443,...     → web teammate: web-discovery (after proxy setup)
-ports 88+389+445     → ad teammate: ad-discovery
+ports 139,445        → net-enum: smb-enumeration
+ports 1433,3306,...  → net-enum: database-enumeration
+ports 21,22,3389,... → net-enum: remote-access-enumeration
+ports 53,25,161,...  → net-enum: infrastructure-enumeration
+ports 80,443,...     → web-enum-<target>: web-discovery (after proxy setup)
+ports 88+389+445     → ad-enum: ad-discovery
 ```
+
+**Multiple web services:** If a target has web on multiple ports (80, 443, 8080,
+8443) or multiple targets each have web services, spawn a web-enum per distinct
+site: `web-enum-80`, `web-enum-8443`, `web-enum-target2`. Don't serialize web
+discovery behind one teammate.
 
 ### Hostname Resolution Check
 
@@ -455,7 +476,11 @@ When web teammate reports vhosts:
 1. Collect vhost names
 2. Check resolution (getent hosts)
 3. If unresolvable → Hosts File Update hard stop
-4. After resolution → assign new web-discovery task per vhost to web teammate
+4. After resolution → spawn a NEW web-enum per vhost:
+   web-enum-<vhost> from teammates/web-enum.md
+   (e.g., web-enum-portal, web-enum-api, web-enum-dev)
+   Do NOT queue vhost work on the original web-enum — it's busy.
+   Each vhost is a separate target surface that should be enumerated in parallel.
 ```
 
 ### Web Proxy Setup
@@ -522,9 +547,11 @@ A new subnet is a high-value expansion of the assessment surface.
 ```
 1. Stabilize: start_listener → reverse shell callback → stabilize_shell
    OR: start_process(evil-winrm/psexec/ssh) for credential-based access
-2. Route to host discovery:
-   Linux → lin-enum: linux-discovery
-   Windows → win-enum: windows-discovery
+2. Spawn host-specific discovery teammate:
+   Linux → lin-enum-<host> from teammates/lin-enum.md
+   Windows → win-enum-<host> from teammates/win-enum.md
+   (e.g., lin-enum-web01, win-enum-dc01)
+   Each host gets its own enum teammate — don't queue behind another host.
 3. On DCs (ports 88+389+3268): ALSO route ad-enum: ad-discovery
 ```
 
@@ -543,10 +570,10 @@ Walk ALL items, collect every actionable finding, present to operator:
      After gate passes → route to {domain}-ops via search_skills()
    Routing: web vulns → web-ops, AD vulns → ad-ops, privesc → lin-ops/win-ops
 
-2. Shell access without root/SYSTEM → assign discovery skill to enum teammate
-   Host discovery mandatory on every host:
-     Windows → win-enum: windows-discovery
-     Linux → lin-enum: linux-discovery
+2. Shell access without root/SYSTEM → spawn per-host enum teammate
+   Host discovery mandatory on every host (one teammate per host):
+     Windows → win-enum-<host>: windows-discovery
+     Linux → lin-enum-<host>: linux-discovery
    DC (88+389+3268) → ALSO ad-enum: ad-discovery (after host discovery)
 
 3. Unchained access → can existing access reach new targets?
@@ -674,15 +701,16 @@ When significant access gained (shell, DA, database):
 ### Phase-Based Cycling
 
 ```
-Phase 1: Recon all targets (recon teammate handles sequentially or lead spawns per-target)
+Phase 1: Recon all targets (net-enum-<target> per target for parallel recon)
 Phase 2: Triage by impact (CVEs > default access > web > cred techniques)
-Phase 3: Work highest-value target through discovery → technique
+Phase 3: Per-target teammates work in parallel (web-enum-<site>, lin-enum-<host>, etc.)
 Phase 4: Cross-pollinate (new creds → test all targets, new access → check others)
 Phase 5: Cycle back to blocked targets with new context
 ```
 
 Do NOT use built-in Task sub-agents (Explore, Plan) for target work — no MCP access.
 Do NOT go deep on one target ignoring others — cycle when stuck.
+Do NOT serialize independent target surfaces behind one teammate — spawn parallel instances.
 
 ## Step 7: Reporting
 

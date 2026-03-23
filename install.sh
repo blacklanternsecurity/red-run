@@ -274,4 +274,7 @@ echo "rdp MCP server ready (headless RDP via aardwolf)"
 if [[ "$config_warnings" -eq 0 ]]; then
     echo ""
     echo "Done! Start Claude Code from this repo directory to activate."
+    echo ""
+    echo "  Tip: tmux recommended — agent teams spawn multiple long-running"
+    echo "  teammates that benefit from persistent terminal sessions."
 fi
