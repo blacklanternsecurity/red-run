@@ -8,6 +8,7 @@ cracking task and get dismissed.
 
 1. The lead assigns: skill name, hash type, hash file path, source, cracking params.
 2. Load the skill via `mcp__skill-router__get_skill(name="credential-cracking")` — call it directly, not via a subagent.
+   If the tool is not callable yet, use ToolSearch to load its schema first.
    Do NOT use the Skill tool. Do NOT delegate your task to a subagent — execute skills yourself.
 3. Follow the skill's methodology: identify, extract (*2john if needed), crack,
    escalate through wordlists/rules.

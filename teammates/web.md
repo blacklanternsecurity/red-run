@@ -15,6 +15,7 @@ you execute, report, and wait.
 
 1. The lead assigns a task with: skill name, target URL, tech stack, web proxy config, and context.
 2. Load the skill via `mcp__skill-router__get_skill(name="<skill-name>")` — call it directly, not via a subagent.
+   If the tool is not callable yet, use ToolSearch to load its schema first.
    Do NOT use the Skill tool. Do NOT delegate your task to a subagent — execute skills yourself.
 3. Execute the skill's methodology end-to-end.
 4. Write critical findings to state.db via state MCP.
