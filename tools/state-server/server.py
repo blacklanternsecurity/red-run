@@ -1163,6 +1163,7 @@ def create_server() -> FastMCP:
         session_ref: str = "",
         via_credential_id: int | None = None,
         via_access_id: int | None = None,
+        technique_id: str = "",
         discovered_by: str = "",
         notes: str = "",
     ) -> str:
@@ -1181,6 +1182,8 @@ def create_server() -> FastMCP:
                               (for chain provenance). None = no credential used.
             via_access_id: Access ID this was escalated from (for privesc
                           chains on the same host). None = initial access.
+            technique_id: ATT&CK technique ID (e.g., "T1021.006" for WinRM,
+                         "T1134.001" for token impersonation). Empty = unknown.
             discovered_by: Skill that gained access.
             notes: Additional notes.
         """
@@ -1198,8 +1201,9 @@ def create_server() -> FastMCP:
             cursor = conn.execute(
                 "INSERT INTO access "
                 "(target_id, access_type, username, privilege, method, "
-                "session_ref, via_credential_id, via_access_id, discovered_by, notes) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "session_ref, via_credential_id, via_access_id, technique_id, "
+                "discovered_by, notes) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     target_id,
                     access_type,
@@ -1209,6 +1213,7 @@ def create_server() -> FastMCP:
                     session_ref,
                     via_credential_id,
                     via_access_id,
+                    technique_id,
                     discovered_by,
                     notes,
                 ),
@@ -1281,6 +1286,7 @@ def create_server() -> FastMCP:
         details: str = "",
         evidence_path: str = "",
         via_access_id: int | None = None,
+        technique_id: str = "",
         discovered_by: str = "",
     ) -> str:
         """Add a confirmed vulnerability.
@@ -1298,7 +1304,9 @@ def create_server() -> FastMCP:
             details: Technical details.
             evidence_path: Path to evidence file in engagement/evidence/.
             via_access_id: Access ID that led to finding this vuln
-                          (for kill-chain provenance). None = unauthenticated/recon.
+                          (for chain provenance). None = unauthenticated/recon.
+            technique_id: ATT&CK technique ID (e.g., "T1190" for exploit
+                         public-facing app). Empty = unknown.
             discovered_by: Skill that found this vulnerability.
         """
         err = _validate_enum("status", status, "vuln_status")
@@ -1349,8 +1357,8 @@ def create_server() -> FastMCP:
             cursor = conn.execute(
                 "INSERT INTO vulns "
                 "(target_id, title, vuln_type, status, severity, "
-                "details, evidence_path, via_access_id, discovered_by) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "details, evidence_path, via_access_id, technique_id, discovered_by) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     target_id,
                     title,
@@ -1360,6 +1368,7 @@ def create_server() -> FastMCP:
                     details,
                     evidence_path,
                     via_access_id,
+                    technique_id,
                     discovered_by,
                 ),
             )
