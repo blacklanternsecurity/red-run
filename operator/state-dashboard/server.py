@@ -312,10 +312,17 @@ tr:hover td { background: var(--bg2); }
 .conn-status { font-size: 11px; padding: 2px 8px; border-radius: 3px; float: right; }
 .conn-ok { background: var(--green); color: #000; }
 .conn-err { background: var(--red); color: #fff; }
-/* Kill-chain graph — Host Card Topology */
+/* Access chain graph — Host Card Topology */
 #graph-container { background: var(--bg2); border: 1px solid var(--border);
   border-radius: 6px; overflow: hidden; min-height: 200px; margin: 12px 0; position: relative;
-  cursor: grab; }
+  cursor: grab; transition: all 0.2s ease; }
+#graph-container.fullscreen { position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 100; margin: 0; border-radius: 0; border: none; min-height: unset; }
+.graph-expand-btn { position: absolute; top: 6px; right: 6px; z-index: 6;
+  background: var(--bg3); color: var(--dim); border: 1px solid var(--border);
+  border-radius: 4px; padding: 3px 8px; font-family: inherit; font-size: 11px;
+  cursor: pointer; }
+.graph-expand-btn:hover { color: var(--accent); border-color: var(--accent); }
 #graph-container.panning { cursor: grabbing; }
 #graph-container svg { display: block; user-select: none; -webkit-user-select: none; }
 .host-card { cursor: default; }
@@ -363,9 +370,9 @@ tr:hover td { background: var(--bg2); }
 <div class="cards" id="summary-cards"></div>
 
 <div class="section">
-  <h2 onclick="toggleSection('graph')">Kill-Chain Graph <button class="refresh-btn" onclick="event.stopPropagation(); refreshAll()">Refresh</button></h2>
+  <h2 onclick="toggleSection('graph')">Access Chain <button class="refresh-btn" onclick="event.stopPropagation(); refreshAll()">Refresh</button></h2>
   <div id="graph-body" class="section-body">
-    <div id="graph-container"><svg id="graph"></svg><div class="graph-legend" id="graph-legend"></div></div>
+    <div id="graph-container"><button class="graph-expand-btn" onclick="toggleGraphFullscreen()" id="graph-expand-btn" title="Toggle fullscreen">&#x26F6;</button><svg id="graph"></svg><div class="graph-legend" id="graph-legend"></div></div>
     <div class="tooltip" id="tooltip"></div>
   </div>
 </div>
@@ -578,7 +585,21 @@ function toggleSection(id) {
 
 function applyFilter() { renderTables(); }
 
-// --- Kill-Chain Graph (Host Card Topology) ---
+function toggleGraphFullscreen() {
+  const c = document.getElementById('graph-container');
+  const btn = document.getElementById('graph-expand-btn');
+  c.classList.toggle('fullscreen');
+  btn.textContent = c.classList.contains('fullscreen') ? '\u2716' : '\u26F6';
+  renderGraph();
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    const c = document.getElementById('graph-container');
+    if (c && c.classList.contains('fullscreen')) { toggleGraphFullscreen(); }
+  }
+});
+
+// --- Access Chain Graph (Host Card Topology) ---
 function renderGraph() {
   const svg = document.getElementById('graph');
   const container = document.getElementById('graph-container');
