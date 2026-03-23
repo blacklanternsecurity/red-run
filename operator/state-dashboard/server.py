@@ -815,25 +815,55 @@ function renderFlowGraph() {
   // --- Render SVG ---
   let svgHtml = '<defs></defs>';
 
-  // Draw edges first (behind nodes) — left-to-right bezier curves
+  // Draw edges — attach to closest edge of source/dest nodes
   for (const e of edges) {
     const src = nodeById[e.from];
     const dst = nodeById[e.to];
     if (!src || !dst) continue;
-    const sx = src.x + NODE_W;
-    const sy = src.y + NODE_H / 2;
-    const dx = dst.x;
-    const dy = dst.y + NODE_H / 2;
-    const mx = sx + (dx - sx) * 0.5;
-    const path = `M${sx},${sy} C${mx},${sy} ${mx},${dy} ${dx},${dy}`;
-    // Build meaningful tooltip
+
+    // Node center points
+    const scx = src.x + NODE_W / 2, scy = src.y + NODE_H / 2;
+    const dcx = dst.x + NODE_W / 2, dcy = dst.y + NODE_H / 2;
+
+    // Pick attachment points based on relative position
+    let sx, sy, dx, dy, arrowPts;
+    const sameCol = Math.abs(src.x - dst.x) < NODE_W / 2;
+    const as = 6;
+
+    if (sameCol) {
+      // Vertical: connect bottom→top or top→bottom
+      if (scy < dcy) {
+        sx = scx; sy = src.y + NODE_H;  // bottom of src
+        dx = dcx; dy = dst.y;            // top of dst
+        arrowPts = `${dx},${dy} ${dx-as/2},${dy-as} ${dx+as/2},${dy-as}`;
+      } else {
+        sx = scx; sy = src.y;            // top of src
+        dx = dcx; dy = dst.y + NODE_H;  // bottom of dst
+        arrowPts = `${dx},${dy} ${dx-as/2},${dy+as} ${dx+as/2},${dy+as}`;
+      }
+      const my = sy + (dy - sy) * 0.5;
+      var path = `M${sx},${sy} C${sx},${my} ${dx},${my} ${dx},${dy}`;
+    } else if (scx < dcx) {
+      // Left-to-right
+      sx = src.x + NODE_W; sy = scy;    // right of src
+      dx = dst.x;          dy = dcy;    // left of dst
+      arrowPts = `${dx},${dy} ${dx-as},${dy-as/2} ${dx-as},${dy+as/2}`;
+      const mx = sx + (dx - sx) * 0.5;
+      var path = `M${sx},${sy} C${mx},${sy} ${mx},${dy} ${dx},${dy}`;
+    } else {
+      // Right-to-left (backward edge)
+      sx = src.x;          sy = scy;    // left of src
+      dx = dst.x + NODE_W; dy = dcy;    // right of dst
+      arrowPts = `${dx},${dy} ${dx+as},${dy-as/2} ${dx+as},${dy+as/2}`;
+      const mx = sx + (dx - sx) * 0.5;
+      var path = `M${sx},${sy} C${mx},${sy} ${mx},${dy} ${dx},${dy}`;
+    }
+
     const srcLabel = src.label || src.id;
     const dstLabel = dst.label || dst.id;
     const detailAttr = escAttr(`${srcLabel} \u2192 ${dstLabel}`);
     svgHtml += `<path class="flow-edge" d="${path}" stroke="${e.color}" data-detail="${detailAttr}" onmouseenter="showTip(event)" onmouseleave="hideTip()"/>`;
-    // Arrowhead pointing right
-    const as = 6;
-    svgHtml += `<polygon points="${dx},${dy} ${dx-as},${dy-as/2} ${dx-as},${dy+as/2}" fill="${e.color}"/>`;
+    svgHtml += `<polygon points="${arrowPts}" fill="${e.color}"/>`;
   }
 
   // Draw nodes
