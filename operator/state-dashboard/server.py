@@ -113,21 +113,24 @@ def _rows(conn: sqlite3.Connection, sql: str, params: tuple = ()) -> list[dict]:
     return [dict(r) for r in conn.execute(sql, params).fetchall()]
 
 
+_EMPTY_STATE = {
+    "engagement": None,
+    "targets": [],
+    "credentials": [],
+    "access": [],
+    "vulns": [],
+    "pivot_map": [],
+    "tunnels": [],
+    "blocked": [],
+    "events": [],
+}
+
+
 def _build_state(db_path: Path) -> dict:
     """Build full state JSON from all tables."""
     conn = _get_db(db_path)
     if conn is None:
-        return {
-            "engagement": None,
-            "targets": [],
-            "credentials": [],
-            "access": [],
-            "vulns": [],
-            "pivot_map": [],
-            "tunnels": [],
-            "blocked": [],
-            "events": [],
-        }
+        return _EMPTY_STATE
     try:
         eng = _rows(conn, "SELECT * FROM engagement LIMIT 1")
         engagement = eng[0] if eng else None
@@ -183,6 +186,8 @@ def _build_state(db_path: Path) -> dict:
             "blocked": blocked,
             "events": events,
         }
+    except sqlite3.OperationalError:
+        return _EMPTY_STATE
     finally:
         conn.close()
 
@@ -197,6 +202,8 @@ def _get_events_since(db_path: Path, since: int) -> list[dict]:
             "SELECT * FROM state_events WHERE id > ? ORDER BY id",
             (since,),
         )
+    except sqlite3.OperationalError:
+        return []
     finally:
         conn.close()
 
@@ -1503,6 +1510,7 @@ def main():
         bind_addr = "127.0.0.1"
         print("auth: no token file — binding to localhost only (no auth required)")
 
+    ThreadingHTTPServer.allow_reuse_address = True
     server = ThreadingHTTPServer((bind_addr, args.port), Handler)
     print(f"state-dashboard: http://{bind_addr}:{args.port}")
     if bind_addr == "0.0.0.0":
