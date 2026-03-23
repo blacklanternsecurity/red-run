@@ -699,27 +699,25 @@ function renderFlowGraph() {
     }
   }
 
-  // --- Assign rows ---
-  // Use chain_order if set, else BFS depth
+  // --- Assign columns (left-to-right flow) ---
+  // Use chain_order if set, else BFS depth from roots
   const hasOrder = nodes.some(n => n.chain_order > 0);
   if (hasOrder) {
-    // Group by chain_order
     for (const n of nodes) {
-      n.row = n.chain_order || 999; // unordered go to bottom
+      n.col = n.chain_order || 999;
     }
   } else {
-    // BFS from roots (nodes with no incoming edges)
     const incoming = new Set();
     for (const e of edges) incoming.add(e.to);
     const roots = nodes.filter(n => !incoming.has(n.id));
     const visited = new Set();
     const queue = roots.map(n => ({ id: n.id, depth: 0 }));
-    for (const n of nodes) n.row = 999;
+    for (const n of nodes) n.col = 999;
     while (queue.length) {
       const { id, depth } = queue.shift();
       if (visited.has(id)) continue;
       visited.add(id);
-      if (nodeById[id]) nodeById[id].row = depth;
+      if (nodeById[id]) nodeById[id].col = depth;
       for (const e of edges) {
         if (e.from === id && !visited.has(e.to)) {
           queue.push({ id: e.to, depth: depth + 1 });
@@ -728,69 +726,69 @@ function renderFlowGraph() {
     }
   }
 
-  // --- Layout ---
-  const NODE_W = 220;
+  // --- Layout: left-to-right, parallel nodes stack vertically ---
+  const NODE_W = 200;
   const NODE_H = 56;
-  const H_GAP = 24;
-  const V_GAP = 50;
+  const H_GAP = 60;
+  const V_GAP = 20;
   const PAD = 30;
 
-  // Group nodes by row
-  const rowMap = {};
+  // Group nodes by column
+  const colMap = {};
   for (const n of nodes) {
-    if (!rowMap[n.row]) rowMap[n.row] = [];
-    rowMap[n.row].push(n);
+    if (!colMap[n.col]) colMap[n.col] = [];
+    colMap[n.col].push(n);
   }
-  const rowKeys = Object.keys(rowMap).map(Number).sort((a, b) => a - b);
+  const colKeys = Object.keys(colMap).map(Number).sort((a, b) => a - b);
 
-  // Assign x, y positions
-  let totalW = 0;
-  let y = PAD;
-  for (const rk of rowKeys) {
-    const rowNodes = rowMap[rk];
-    const rowW = rowNodes.length * NODE_W + (rowNodes.length - 1) * H_GAP;
-    if (rowW > totalW) totalW = rowW;
-    let x = PAD;
-    for (const n of rowNodes) {
+  // Assign x, y positions — columns go left-to-right, nodes stack vertically
+  let totalH = 0;
+  let x = PAD;
+  for (const ck of colKeys) {
+    const colNodes = colMap[ck];
+    const colH = colNodes.length * NODE_H + (colNodes.length - 1) * V_GAP;
+    if (colH > totalH) totalH = colH;
+    let y = PAD;
+    for (const n of colNodes) {
       n.x = x;
       n.y = y;
-      x += NODE_W + H_GAP;
+      y += NODE_H + V_GAP;
     }
-    y += NODE_H + V_GAP;
+    x += NODE_W + H_GAP;
   }
-  totalW += PAD * 2;
-  const totalH = y + PAD;
+  const totalW = x + PAD;
+  totalH += PAD * 2;
 
-  // Center each row horizontally
-  for (const rk of rowKeys) {
-    const rowNodes = rowMap[rk];
-    const rowW = rowNodes.length * NODE_W + (rowNodes.length - 1) * H_GAP;
-    const offset = (totalW - rowW) / 2 - PAD;
-    for (const n of rowNodes) n.x += offset;
+  // Center each column vertically
+  for (const ck of colKeys) {
+    const colNodes = colMap[ck];
+    const colH = colNodes.length * NODE_H + (colNodes.length - 1) * V_GAP;
+    const offset = (totalH - colH) / 2 - PAD;
+    for (const n of colNodes) n.y += offset;
   }
 
   // --- Render SVG ---
-  let svgHtml = `<defs>
-    <marker id="flow-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8b949e"/>
-    </marker>
-  </defs>`;
+  let svgHtml = '<defs></defs>';
 
-  // Draw edges first (behind nodes)
+  // Draw edges first (behind nodes) — left-to-right bezier curves
   for (const e of edges) {
     const src = nodeById[e.from];
     const dst = nodeById[e.to];
     if (!src || !dst) continue;
-    const sx = src.x + NODE_W / 2;
-    const sy = src.y + NODE_H;
-    const dx = dst.x + NODE_W / 2;
-    const dy = dst.y;
-    const my = sy + (dy - sy) * 0.5;
-    const path = `M${sx},${sy} C${sx},${my} ${dx},${my} ${dx},${dy}`;
-    const detailAttr = escAttr(e.from + ' \u2192 ' + e.to);
+    const sx = src.x + NODE_W;
+    const sy = src.y + NODE_H / 2;
+    const dx = dst.x;
+    const dy = dst.y + NODE_H / 2;
+    const mx = sx + (dx - sx) * 0.5;
+    const path = `M${sx},${sy} C${mx},${sy} ${mx},${dy} ${dx},${dy}`;
+    // Build meaningful tooltip
+    const srcLabel = src.label || src.id;
+    const dstLabel = dst.label || dst.id;
+    const detailAttr = escAttr(`${srcLabel} \u2192 ${dstLabel}`);
     svgHtml += `<path class="flow-edge" d="${path}" stroke="${e.color}" data-detail="${detailAttr}" onmouseenter="showTip(event)" onmouseleave="hideTip()"/>`;
-    // Arrowhead
-    svgHtml += `<polygon points="${dx},${dy} ${dx-5},${dy-7} ${dx+5},${dy-7}" fill="${e.color}"/>`;
+    // Arrowhead pointing right
+    const as = 6;
+    svgHtml += `<polygon points="${dx},${dy} ${dx-as},${dy-as/2} ${dx-as},${dy+as/2}" fill="${e.color}"/>`;
   }
 
   // Draw nodes
@@ -826,7 +824,7 @@ function renderFlowGraph() {
     '<span class="legend-item"><svg width="20" height="12"><line x1="0" y1="6" x2="20" y2="6" stroke="#e3b341" stroke-width="2"/></svg>Vuln found</span>',
   ].join('');
 
-  svg.setAttribute('width', '100%');
+  svg.setAttribute('width', totalW);
   svg.setAttribute('height', totalH);
   svg.setAttribute('viewBox', `0 0 ${totalW} ${totalH}`);
   svg.innerHTML = svgHtml;
