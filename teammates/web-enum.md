@@ -103,6 +103,8 @@ evidence:       save to engagement/evidence/ with descriptive filenames
   `net_ntlm`, `aes_key`, `kerberos_tgt`, `kerberos_tgs`, `dcc2`, `ssh_key`,
   `token`, `certificate`, `webapp_hash`, `dpapi`, `other`
 - `add_credential(secret=)` — required, no empty secrets
+- `add_vuln(status=)` — valid: `found`, `exploited`, `blocked`
+- `add_vuln(severity=)` — valid: `info`, `low`, `medium`, `high`, `critical`
 
 **Tool output files:** Tools like ffuf and nuclei dump files to cwd.
 Use `-o engagement/evidence/` or equivalent output flag. If a tool has no output

@@ -107,6 +107,9 @@ evidence:       save to engagement/evidence/ with descriptive filenames
   `net_ntlm`, `aes_key`, `kerberos_tgt`, `kerberos_tgs`, `dcc2`, `ssh_key`,
   `token`, `certificate`, `webapp_hash`, `dpapi`, `other`
 - `add_credential(secret=)` — required, no empty secrets
+- `add_vuln(status=)` — valid: `found`, `exploited`, `blocked`
+- `add_vuln(severity=)` — valid: `info`, `low`, `medium`, `high`, `critical`
+- `add_blocked(host=)` — must match an existing target if provided
 
 **Tool output files:** If a tool dumps files to cwd, use its output flag to
 write to `engagement/evidence/`, or `mv` artifacts after. Never leave files

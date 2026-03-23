@@ -22,6 +22,33 @@ from mcp.server.fastmcp import FastMCP
 
 from schema import init_db
 
+# ---------------------------------------------------------------------------
+# Enum validation — catch bad values before they hit SQLite CHECK constraints
+# ---------------------------------------------------------------------------
+_VALID_ENUMS: dict[str, tuple[str, ...]] = {
+    "secret_type": (
+        "password", "ntlm_hash", "net_ntlm", "aes_key", "kerberos_tgt",
+        "kerberos_tgs", "dcc2", "ssh_key", "token", "certificate",
+        "webapp_hash", "dpapi", "other",
+    ),
+    "access_type": ("shell", "ssh", "winrm", "rdp", "web_shell", "db", "token", "vpn", "other"),
+    "privilege": ("user", "admin", "root", "system", "service", "domain_admin", "other"),
+    "vuln_status": ("found", "exploited", "blocked"),
+    "severity": ("info", "low", "medium", "high", "critical"),
+    "pivot_status": ("identified", "exploited", "blocked"),
+    "retry": ("no", "later", "with_context"),
+    "tunnel_status": ("active", "down", "closed"),
+}
+
+
+def _validate_enum(field: str, value: str, enum_key: str) -> str | None:
+    """Return an ERROR string if value is not in the allowed set, else None."""
+    valid = _VALID_ENUMS[enum_key]
+    if value not in valid:
+        return f"ERROR: Invalid {field}={value!r}. Valid values: {', '.join(valid)}"
+    return None
+
+
 # Resolve engagement directory relative to the project root, not the server's
 # own directory.  uv run --directory changes cwd to tools/state-server/, so
 # bare Path("engagement/...") would land artifacts inside the tools tree.
@@ -845,6 +872,9 @@ def create_server() -> FastMCP:
                           (for kill-chain provenance). None = provided/external.
             discovered_by: Skill that found this credential.
         """
+        err = _validate_enum("secret_type", secret_type, "secret_type")
+        if err:
+            return err
         with _get_db() as conn:
             if not secret:
                 return "ERROR: secret is required. Use targets.notes for username-only lists."
@@ -1013,6 +1043,12 @@ def create_server() -> FastMCP:
             discovered_by: Skill that gained access.
             notes: Additional notes.
         """
+        err = _validate_enum("access_type", access_type, "access_type")
+        if err:
+            return err
+        err = _validate_enum("privilege", privilege, "privilege")
+        if err:
+            return err
         with _get_db() as conn:
             target_id = _resolve_target_id(conn, host)
             if target_id is None:
@@ -1122,6 +1158,12 @@ def create_server() -> FastMCP:
                           (for kill-chain provenance). None = unauthenticated/recon.
             discovered_by: Skill that found this vulnerability.
         """
+        err = _validate_enum("status", status, "vuln_status")
+        if err:
+            return err
+        err = _validate_enum("severity", severity, "severity")
+        if err:
+            return err
         with _get_db() as conn:
             if not host:
                 return "ERROR: host is required. Every vuln must be associated with a target."
@@ -1196,6 +1238,14 @@ def create_server() -> FastMCP:
             severity: Updated severity.
             details: Updated details.
         """
+        if status:
+            err = _validate_enum("status", status, "vuln_status")
+            if err:
+                return err
+        if severity:
+            err = _validate_enum("severity", severity, "severity")
+            if err:
+                return err
         with _get_db() as conn:
             updates = []
             params: list = []
@@ -1244,6 +1294,9 @@ def create_server() -> FastMCP:
             discovered_by: Skill that identified this path.
             notes: Additional notes.
         """
+        err = _validate_enum("status", status, "pivot_status")
+        if err:
+            return err
         with _get_db() as conn:
             cursor = conn.execute(
                 "INSERT INTO pivot_map "
@@ -1283,6 +1336,10 @@ def create_server() -> FastMCP:
             status: Updated status (identified/exploited/blocked).
             notes: Updated notes.
         """
+        if status:
+            err = _validate_enum("status", status, "pivot_status")
+            if err:
+                return err
         with _get_db() as conn:
             updates = []
             params: list = []
@@ -1324,6 +1381,9 @@ def create_server() -> FastMCP:
             notes: Additional notes.
             blocked_by: Skill that was blocked.
         """
+        err = _validate_enum("retry", retry, "retry")
+        if err:
+            return err
         with _get_db() as conn:
             target_id = None
             if host:
@@ -1425,6 +1485,10 @@ def create_server() -> FastMCP:
             status: Updated status (active/down/closed).
             notes: Updated notes.
         """
+        if status:
+            err = _validate_enum("status", status, "tunnel_status")
+            if err:
+                return err
         with _get_db() as conn:
             updates = []
             params: list = []

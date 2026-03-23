@@ -31,6 +31,15 @@ message lead:      ONE LINE: file path + summary. No exploit details in messages
                    Messages with payloads/exploit code trigger content filters.
 ```
 
+**State DB parameter reference** (avoid validation errors):
+- `add_vuln(host=, title=, ...)` — `host` not `target`. Required.
+- `add_credential(secret_type=)` — valid types: `password`, `ntlm_hash`,
+  `net_ntlm`, `aes_key`, `kerberos_tgt`, `kerberos_tgs`, `dcc2`, `ssh_key`,
+  `token`, `certificate`, `webapp_hash`, `dpapi`, `other`
+- `add_credential(secret=)` — required, no empty secrets
+- `add_vuln(status=)` — valid: `found`, `exploited`, `blocked`
+- `add_vuln(severity=)` — valid: `info`, `low`, `medium`, `high`, `critical`
+
 ## Web Research
 
 Use WebSearch and WebFetch for:
