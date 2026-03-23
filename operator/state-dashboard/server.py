@@ -832,40 +832,57 @@ function renderGraph() {
   function buildCardContent(host, target) {
     let sections = [];
 
-    // ACCESS section — chain-ordered by via_access_id (privesc path)
+    // ACCESS section — chain-ordered by via_access_id + credential-mediated links
     const accesses = accessByHost[host] || [];
     if (accesses.length) {
-      // Build chain: roots first, then escalations in order
       const byId = Object.fromEntries(accesses.map(a => [a.id, a]));
-      const childOf = {};  // parent_id -> [child_ids]
-      const roots = [];
+      const childOf = {};  // parent_access_id -> [child_access_ids]
+
+      // Build parent-child links from:
+      // 1. via_access_id (direct privesc: access → access)
+      // 2. via_credential_id → credential.via_access_id (cred-mediated: access → found cred → used for access)
       for (const a of accesses) {
+        let parentId = null;
         if (a.via_access_id && byId[a.via_access_id]) {
-          if (!childOf[a.via_access_id]) childOf[a.via_access_id] = [];
-          childOf[a.via_access_id].push(a.id);
-        } else {
-          roots.push(a.id);
+          parentId = a.via_access_id;
+        } else if (a.via_credential_id) {
+          const cred = state.credentials.find(c => c.id === a.via_credential_id);
+          if (cred && cred.via_access_id && byId[cred.via_access_id]) {
+            parentId = cred.via_access_id;
+          }
+        }
+        if (parentId) {
+          if (!childOf[parentId]) childOf[parentId] = [];
+          childOf[parentId].push(a.id);
         }
       }
+
+      // Find roots (no parent link on this host)
+      const hasParent = new Set();
+      for (const kids of Object.values(childOf)) kids.forEach(id => hasParent.add(id));
+      const roots = accesses.filter(a => !hasParent.has(a.id)).map(a => a.id);
+
       // DFS to flatten chain with depth
       const ordered = [];
+      const visited = new Set();
       function walkAccess(id, depth) {
+        if (visited.has(id)) return;
+        visited.add(id);
         const a = byId[id];
         if (!a) return;
         ordered.push({ ...a, _depth: depth });
         for (const cid of (childOf[id] || [])) walkAccess(cid, depth + 1);
       }
       for (const rid of roots) walkAccess(rid, 0);
-      // Add any unchained items
-      const seen = new Set(ordered.map(a => a.id));
-      for (const a of accesses) { if (!seen.has(a.id)) ordered.push({ ...a, _depth: 0 }); }
+      for (const a of accesses) { if (!visited.has(a.id)) ordered.push({ ...a, _depth: 0 }); }
 
       const items = ordered.map(a => {
         const icon = a._depth > 0 ? '\u2192' : (a.active ? '\u2713' : '\u2717');
         const cls = a.active ? 'card-item-active' : 'card-item-blocked';
         const prefix = a._depth > 0 ? '\u00A0'.repeat(a._depth * 2) : '';
-        const text = `${prefix}${a.username} (${a.access_type}, ${a.privilege})`;
-        const detail = `${a.access_type} | ${a.privilege}\n${a.method}`;
+        const methodBrief = trunc(a.method || '', 25);
+        const text = `${prefix}${a.username} (${a.privilege})${methodBrief ? ' \u2190 ' + methodBrief : ''}`;
+        const detail = `${a.username} [${a.access_type}, ${a.privilege}]\n${a.method}`;
         return { icon, text, cls, detail };
       });
       sections.push({ title: 'ACCESS', items });

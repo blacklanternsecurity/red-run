@@ -31,7 +31,7 @@ _VALID_ENUMS: dict[str, tuple[str, ...]] = {
         "kerberos_tgs", "dcc2", "ssh_key", "token", "certificate",
         "webapp_hash", "dpapi", "other",
     ),
-    "access_type": ("shell", "ssh", "winrm", "rdp", "web_shell", "db", "token", "vpn", "other"),
+    "access_type": ("shell", "ssh", "winrm", "rdp", "web_shell", "smb", "db", "token", "vpn", "other"),
     "privilege": ("user", "admin", "root", "system", "service", "domain_admin", "other"),
     "vuln_status": ("found", "exploited", "blocked"),
     "severity": ("info", "low", "medium", "high", "critical"),
@@ -1170,7 +1170,7 @@ def create_server() -> FastMCP:
 
         Args:
             ip: Target IP (must exist in targets table).
-            access_type: Type of access: shell, ssh, winrm, rdp, web_shell,
+            access_type: Type of access: shell, ssh, winrm, rdp, web_shell, smb,
                         db, token, vpn, other.
             username: User/account that has access.
             privilege: Privilege level: user, admin, root, system, service,

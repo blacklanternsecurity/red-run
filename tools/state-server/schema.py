@@ -9,7 +9,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 11
+SCHEMA_VERSION = 12
 
 SCHEMA_SQL = """\
 PRAGMA journal_mode=WAL;
@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS access (
     target_id     INTEGER NOT NULL REFERENCES targets(id) ON DELETE CASCADE,
     access_type   TEXT NOT NULL DEFAULT 'shell'
                   CHECK (access_type IN ('shell', 'ssh', 'winrm', 'rdp',
-                         'web_shell', 'db', 'token', 'vpn', 'other')),
+                         'web_shell', 'smb', 'db', 'token', 'vpn', 'other')),
     username      TEXT NOT NULL DEFAULT '',
     privilege     TEXT NOT NULL DEFAULT 'user'
                   CHECK (privilege IN ('user', 'admin', 'root', 'system',
@@ -373,6 +373,49 @@ def _migrate_v3_to_v4(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def _migrate_v11_to_v12(conn: sqlite3.Connection) -> None:
+    """Migrate schema from v11 to v12: add smb to access_type CHECK constraint.
+
+    SQLite can't ALTER CHECK, so recreate the access table.
+    """
+    conn.executescript("""
+        ALTER TABLE access RENAME TO _access_old;
+
+        CREATE TABLE access (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            target_id     INTEGER NOT NULL REFERENCES targets(id) ON DELETE CASCADE,
+            access_type   TEXT NOT NULL DEFAULT 'shell'
+                          CHECK (access_type IN ('shell', 'ssh', 'winrm', 'rdp',
+                                 'web_shell', 'smb', 'db', 'token', 'vpn', 'other')),
+            username      TEXT NOT NULL DEFAULT '',
+            privilege     TEXT NOT NULL DEFAULT 'user'
+                          CHECK (privilege IN ('user', 'admin', 'root', 'system',
+                                 'service', 'domain_admin', 'other')),
+            method        TEXT NOT NULL DEFAULT '',
+            session_ref   TEXT NOT NULL DEFAULT '',
+            via_credential_id INTEGER REFERENCES credentials(id) ON DELETE SET NULL,
+            via_access_id INTEGER REFERENCES access(id) ON DELETE SET NULL,
+            active        INTEGER NOT NULL DEFAULT 1,
+            notes         TEXT NOT NULL DEFAULT '',
+            discovered_by TEXT NOT NULL DEFAULT '',
+            created_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+            updated_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+        );
+
+        INSERT INTO access (id, target_id, access_type, username, privilege,
+                           method, session_ref, via_credential_id, via_access_id,
+                           active, notes, discovered_by, created_at, updated_at)
+            SELECT id, target_id, access_type, username, privilege,
+                   method, session_ref, via_credential_id, via_access_id,
+                   active, notes, discovered_by,
+                   COALESCE(created_at, strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+                   COALESCE(updated_at, strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+            FROM _access_old;
+        DROP TABLE _access_old;
+    """)
+    conn.commit()
+
+
 def _migrate_v10_to_v11(conn: sqlite3.Connection) -> None:
     """Migrate schema from v10 to v11: add via_access_id to access for privesc chains."""
     cols = [r[1] for r in conn.execute("PRAGMA table_info(access)").fetchall()]
@@ -441,6 +484,8 @@ def init_db(db_path: str | Path) -> sqlite3.Connection:
             _migrate_v9_to_v10(conn)
         if current_version <= 10:
             _migrate_v10_to_v11(conn)
+        if current_version <= 11:
+            _migrate_v11_to_v12(conn)
 
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()
