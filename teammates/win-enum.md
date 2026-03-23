@@ -58,10 +58,12 @@ network commands.
 
 **Stay responsive — run long commands in background.** Any command over ~30
 seconds (winPEAS, Seatbelt, large file searches, proxychains operations):
-redirect output to `engagement/evidence/`, use `run_in_background: true`, and
-process results when notified. Blocking your turn means the lead CANNOT message
-you to redirect, provide context, or abort. Stay idle between background jobs
-so you can receive messages.
+redirect stdout/stderr to a file in `engagement/evidence/` (e.g., `cmd > engagement/evidence/winpeas-output.txt 2>&1`),
+use `run_in_background: true`, and when notified of completion use the **Read
+tool** on the output file to process results. Do NOT use TaskOutput — it
+cannot read background Bash results. Blocking your turn means the lead
+CANNOT message you to redirect, provide context, or abort. Stay idle between
+background jobs so you can receive messages.
 
 **`start_process` via shell-server MCP** for interactive sessions:
 - Docker tools (evil-winrm, Impacket interactive shells): `privileged=True`

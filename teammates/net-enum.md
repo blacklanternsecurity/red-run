@@ -73,11 +73,13 @@ rpcclient, snmpwalk, etc.) — use `dangerouslyDisableSandbox: true` for network
 Don't run `which` for Docker-only tools — they're only in the container.
 
 **Stay responsive — run long commands in background.** Any command over ~30
-seconds (manspider, enum4linux-ng, large nmap scans): redirect output to
-`engagement/evidence/`, use `run_in_background: true`, and process results
-when notified. Blocking your turn means the lead CANNOT message you to
-redirect, provide context, or abort. Stay idle between background jobs so you
-can receive messages.
+seconds (manspider, enum4linux-ng, large nmap scans): redirect stdout/stderr
+to a file in `engagement/evidence/` (e.g., `cmd > engagement/evidence/smb-enum.txt 2>&1`),
+use `run_in_background: true`, and when notified of completion use the **Read
+tool** on the output file to process results. Do NOT use TaskOutput — it
+cannot read background Bash results. Blocking your turn means the lead
+CANNOT message you to redirect, provide context, or abort. Stay idle between
+background jobs so you can receive messages.
 
 ## Scope Boundaries
 

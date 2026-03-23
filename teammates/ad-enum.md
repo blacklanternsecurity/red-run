@@ -75,10 +75,12 @@ Assessment: retry-later (skill works after clock sync)
 
 **Stay responsive — run long commands in background.** Any command over ~30
 seconds (BloodHound collection, large LDAP queries, proxychains operations):
-redirect output to `engagement/evidence/`, use `run_in_background: true`, and
-process results when notified. Blocking your turn means the lead CANNOT message
-you to redirect, provide context, or abort. Stay idle between background jobs
-so you can receive messages.
+redirect stdout/stderr to a file in `engagement/evidence/` (e.g., `cmd > engagement/evidence/bloodhound-output.txt 2>&1`),
+use `run_in_background: true`, and when notified of completion use the **Read
+tool** on the output file to process results. Do NOT use TaskOutput — it
+cannot read background Bash results. Blocking your turn means the lead
+CANNOT message you to redirect, provide context, or abort. Stay idle between
+background jobs so you can receive messages.
 
 **Bash is the default** (nxc, certipy, bloodyAD, ldapsearch, all Impacket
 one-shot scripts) — `dangerouslyDisableSandbox: true` for network commands.
