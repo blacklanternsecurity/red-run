@@ -254,10 +254,6 @@ red-run/
       server.py           # Stdlib HTTP server — inline HTML dashboard, SSE live updates
       start.sh            # Wrapper script
       generate-token.sh   # Auth token generator for remote access
-    firewall/             # Engagement network firewall (nftables)
-      README.md            # Tool documentation
-      firewall.sh         # Activate firewall with scope targets
-      teardown.sh         # Remove firewall rules
 ```
 
 ## Skill File Format
@@ -310,12 +306,6 @@ All skills delegate to autonomous agents with `mode: "bypassPermissions"`. Run
 `claude --dangerously-skip-permissions` for full autonomous operation. The
 orchestrator's approval gates (operator confirms every routing decision before
 agent spawn) provide human-in-the-loop control.
-
-## Engagement Firewall (Optional)
-
-An nftables firewall is available in `operator/engagement-firewall/` for
-operators who want OS-level network isolation restricting outbound traffic to
-Anthropic API + scope targets. See `operator/engagement-firewall/README.md`.
 
 ## Installation
 

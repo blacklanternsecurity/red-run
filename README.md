@@ -6,9 +6,9 @@ Security assessment toolkit for Claude Code.
   <img src="docs/dashboard.jpg" width="700" alt="Agent dashboard showing live multi-pane output from parallel agents">
 </p>
 
-red-run combines skills, MCP servers, and [Claude Code agent teams](https://code.claude.com/docs/en/agent-teams) with routing logic that guides Claude and the operator through the phases of a security assessment — recon, initial access, lateral movement, privilege escalation, and post-access. It tracks engagement state in a SQLite database that persists across context compactions, routes to skills via semantic search (RAG), and delegates execution to persistent domain teammates that accumulate context across tasks and communicate with each other directly.
+red-run combines skills, MCP servers, and [Claude Code agent teams](https://code.claude.com/docs/en/agent-teams) with routing logic that guides Claude and the operator through the phases of a security assessment — recon, initial access, lateral movement, privilege escalation, and post-access. It tracks engagement state in a SQLite database that persists across context compactions, routes to skills via semantic search (RAG), and delegates execution to persistent domain teammates that accumulate context across tasks.
 
-The orchestrator (team lead) presents the assessment surface, chain analysis, and available paths — you choose what to test next. Teammates work in their own tmux panes where you can watch them, press Escape to interrupt, and type directly to redirect. See the [Architecture docs](https://blacklanternsecurity.github.io/red-run/architecture/) for diagrams and data flow.
+The orchestrator (team lead) presents the assessment surface, chain analysis, and available paths — you choose what to test next. Teammates work in their own tmux panes where you can watch them, press Escape to interrupt, and type directly to redirect (requires the experimental [Claude Code agent teams](https://code.claude.com/docs/en/agent-teams) feature — see [Agent Teams](#agent-teams) below). See the [Architecture docs](https://blacklanternsecurity.github.io/red-run/architecture/) for data flow.
 
 ## Orchestrators
 
@@ -33,7 +33,7 @@ Full documentation is available at the [docs site](https://blacklanternsecurity.
 - [MCP Servers](https://blacklanternsecurity.github.io/red-run/mcp-servers/) — nmap, shell, browser, state, skill-router
 - [Writing Skills](https://blacklanternsecurity.github.io/red-run/writing-skills/) — contributor guide for new skills
 
-See also: [ARCHITECTURE.md](ARCHITECTURE.md) for Mermaid diagrams, [Skills Inventory](docs/skills-inventory.md) for the full skill inventory.
+See also: [Skills Inventory](docs/skills-inventory.md) for the full skill inventory.
 
 ## Installation
 
@@ -53,14 +53,14 @@ After installing, run the preflight check to verify attackbox dependencies (nmap
 bash preflight.sh
 ```
 
-See [dependencies](docs/dependencies.md) for the full list of required tools and [Installation docs](https://blacklanternsecurity.github.io/red-run/installation/) for firewall setup and troubleshooting.
+See [dependencies](docs/dependencies.md) for the full list of required tools and [Installation docs](https://blacklanternsecurity.github.io/red-run/installation/) for troubleshooting.
 
 ## Agent Teams
 
 red-run uses [Claude Code agent teams](https://code.claude.com/docs/en/agent-teams) to coordinate multiple Claude Code sessions working together. The orchestrator runs as the team lead, spawning persistent domain teammates that each get their own tmux pane. Teammates are split into enumeration (net-enum, web-enum, ad-enum, lin-enum, win-enum) and operations (web-ops, ad-ops, lin-ops, win-ops) pairs for parallel discovery and technique execution, plus on-demand specialists (pivot, bypass, spray, recover, research). Benefits over the legacy subagent model:
 
 - **Persistent context** — teammates accumulate knowledge across tasks instead of starting fresh each time
-- **Peer-to-peer messaging** — teammates notify each other directly (e.g., web teammate finds domain creds → messages AD teammate)
+- **Teammate messaging** — teammates report findings to the lead who routes to the right specialist (e.g., web teammate finds domain creds → lead routes to AD teammate)
 - **Operator visibility** — watch all teammates working in split tmux panes, press Escape to interrupt any teammate, type directly to redirect
 - **Shared task list** — coordinated parallel work with the lead assigning all tasks
 
@@ -83,7 +83,7 @@ No manual setup needed — cloning the repo and running `./install.sh` is suffic
 Browser-based read-only dashboard for `engagement/state.db` with an access chain graph and live SSE updates:
 
 ```bash
-python3 operator/state-dashboard/server.py [--port 8099] [--db engagement/state.db]
+bash operator/state-dashboard/start.sh
 ```
 
 Open `http://127.0.0.1:8099` to see targets, credentials, access, vulns, pivots, tunnels, blocked techniques, and an event timeline — all updating in real-time as teammates work. The access chain graph supports fullscreen mode for detailed review.
@@ -104,9 +104,7 @@ Agent teams requires `--dangerously-skip-permissions` due to a stability issue w
 claude --dangerously-skip-permissions
 ```
 
-The orchestrator presents routing decisions for operator approval before assigning technique tasks. An optional nftables firewall is available in `operator/engagement-firewall/` for operators who want OS-level network isolation.
-
-Run from an isolated VM or dedicated pentesting machine. You are responsible for containing Claude on your systems and for any legal consequences under the CFAA or equivalent legislation.
+The orchestrator presents routing decisions for operator approval before assigning technique tasks. Run from an isolated VM or dedicated pentesting machine. You are responsible for containing Claude on your systems and for any legal consequences under the CFAA or equivalent legislation.
 
 ## Disclaimer
 
