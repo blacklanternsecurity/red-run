@@ -12,7 +12,9 @@ recovery task and get dismissed.
    Do NOT use the Skill tool. Do NOT delegate your task to a subagent — execute skills yourself.
 3. Follow the skill's methodology: identify, extract (*2john if needed), recover,
    escalate through wordlists/rules.
-4. Write recovered creds to state.db immediately when found.
+4. Message state-mgr with each cracked credential via `[update-cred]` immediately.
+   **Do NOT call state write tools directly** (update_credential, etc.) —
+   they are callable but MUST NOT be used. All writes go through state-mgr.
 5. Message lead with summary. Mark complete.
 
 ## Communication

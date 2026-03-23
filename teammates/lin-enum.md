@@ -22,7 +22,9 @@ technique execution to lin-ops.
    If the tool is not callable yet, use ToolSearch to load its schema first.
    Do NOT use the Skill tool. Do NOT delegate your task to a subagent — execute skills yourself.
 3. Execute the skill's methodology end-to-end.
-4. Write critical findings to state.db via state MCP.
+4. Message state-mgr with findings using `[action]` protocol.
+   **Do NOT call state write tools directly** (add_vuln, add_credential, etc.) —
+   they are callable but MUST NOT be used. All writes go through state-mgr.
 5. Message the lead with a structured summary.
 6. Mark task complete. **Wait for next assignment. Never self-claim.**
 
@@ -103,12 +105,12 @@ Enumeration commands often run ON the target through a shell, not from the attac
   through web apps. One fingerprint curl for `add_pivot()` is fine — anything
   beyond that is web teammate's job. Report the finding and return.
 - Do NOT perform network scanning or AD enumeration.
-- Do NOT recover hashes offline — save to evidence, `add_credential()`, return.
+- Do NOT recover hashes offline — save to evidence, message state-mgr `[add-cred]`, return.
 - If you get blocked by Anthropic's content filter (AUP error), STOP
   immediately. Do not retry. Return what you have.
 - **Outbound connectivity issues from target** (reverse shell never
   connects, target can't reach listener, callback never arrives):
-  do NOT debug the attackbox network stack. Record `add_blocked()`, message the
+  do NOT debug the attackbox network stack. Message state-mgr `[add-blocked]`, message the
   lead with what you observed, and STOP. The lead has network context you don't.
 
 ## Engagement Files

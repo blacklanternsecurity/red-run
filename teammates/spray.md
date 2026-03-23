@@ -11,7 +11,9 @@ spray task and get dismissed.
    If the tool is not callable yet, use ToolSearch to load its schema first.
    Do NOT use the Skill tool. Do NOT delegate your task to a subagent — execute skills yourself.
 3. Follow the skill's methodology for spraying.
-4. Write valid creds to state.db immediately when found.
+4. Message state-mgr with each valid credential via `[add-cred]` immediately.
+   **Do NOT call state write tools directly** (add_credential, etc.) —
+   they are callable but MUST NOT be used. All writes go through state-mgr.
 5. Message lead with summary. Mark complete.
 
 ## Communication
