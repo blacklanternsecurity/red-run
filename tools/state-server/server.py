@@ -986,6 +986,7 @@ def create_server() -> FastMCP:
         domain: str = "",
         source: str = "",
         via_access_id: int | None = None,
+        via_vuln_id: int | None = None,
         chain_order: int = 0,
         discovered_by: str = "",
     ) -> str:
@@ -1005,6 +1006,9 @@ def create_server() -> FastMCP:
             source: Where this credential was found.
             via_access_id: Access ID that led to finding this credential
                           (for chain provenance). None = provided/external.
+            via_vuln_id: Vuln ID that led to capturing this credential
+                        (e.g., LFI coercion → hash capture). None if not
+                        from a vuln.
             chain_order: Flow graph level (0 = auto-order from provenance).
             discovered_by: Skill that found this credential.
         """
@@ -1035,8 +1039,8 @@ def create_server() -> FastMCP:
             cursor = conn.execute(
                 "INSERT INTO credentials "
                 "(username, secret, secret_type, domain, source, via_access_id, "
-                "chain_order, discovered_by) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                "via_vuln_id, chain_order, discovered_by) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     username,
                     secret,
@@ -1044,6 +1048,7 @@ def create_server() -> FastMCP:
                     domain,
                     source,
                     via_access_id,
+                    via_vuln_id,
                     chain_order,
                     discovered_by,
                 ),

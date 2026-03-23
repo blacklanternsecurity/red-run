@@ -676,26 +676,46 @@ function renderFlowGraph() {
   }
 
   // --- Build edges from provenance ---
+  // access ← credential (used cred to gain access)
   for (const a of state.access) {
     if (a.in_graph === 0) continue;
     if (a.via_credential_id && nodeById[`cred:${a.via_credential_id}`]) {
-      edges.push({ from: `cred:${a.via_credential_id}`, to: `access:${a.id}`, color: '#3fb950' });
+      edges.push({ from: `cred:${a.via_credential_id}`, to: `access:${a.id}`,
+        color: '#3fb950', label: a.access_type });
     }
     if (a.via_access_id && nodeById[`access:${a.via_access_id}`]) {
-      edges.push({ from: `access:${a.via_access_id}`, to: `access:${a.id}`, color: '#3fb950' });
+      edges.push({ from: `access:${a.via_access_id}`, to: `access:${a.id}`,
+        color: '#3fb950', label: trunc(a.method, 20) || 'escalation' });
     }
   }
+  // credential ← access (found cred during access)
   for (const c of state.credentials) {
     if (c.in_graph === 0) continue;
-    if (c.via_access_id && nodeById[`access:${c.via_access_id}`] && nodeById[`cred:${c.id}`]) {
-      edges.push({ from: `access:${c.via_access_id}`, to: `cred:${c.id}`, color: '#58a6ff' });
+    if (!nodeById[`cred:${c.id}`]) continue;
+    if (c.via_access_id && nodeById[`access:${c.via_access_id}`]) {
+      // Derive action label from source field
+      const src = (c.source || '').toLowerCase();
+      let label = 'found';
+      if (/spray|reuse/.test(src)) label = 'spray';
+      else if (/crack/.test(src)) label = 'cracked';
+      else if (/runas|config|file|enum/.test(src)) label = 'discovery';
+      else if (/dump|extract|secret/.test(src)) label = 'extracted';
+      edges.push({ from: `access:${c.via_access_id}`, to: `cred:${c.id}`,
+        color: '#58a6ff', label });
+    }
+    // credential ← vuln (vuln exploitation produced credential)
+    if (c.via_vuln_id && nodeById[`vuln:${c.via_vuln_id}`]) {
+      edges.push({ from: `vuln:${c.via_vuln_id}`, to: `cred:${c.id}`,
+        color: '#58a6ff', label: 'captured' });
     }
   }
+  // vuln ← access (found/exploited vuln during access)
   for (const v of state.vulns) {
     if (v.in_graph === 0) continue;
     if (v.severity === 'info') continue;
     if (v.via_access_id && nodeById[`access:${v.via_access_id}`] && nodeById[`vuln:${v.id}`]) {
-      edges.push({ from: `access:${v.via_access_id}`, to: `vuln:${v.id}`, color: '#e3b341' });
+      edges.push({ from: `access:${v.via_access_id}`, to: `vuln:${v.id}`,
+        color: '#e3b341', label: v.vuln_type || 'vuln' });
     }
   }
 
@@ -784,11 +804,17 @@ function renderFlowGraph() {
     // Build meaningful tooltip
     const srcLabel = src.label || src.id;
     const dstLabel = dst.label || dst.id;
-    const detailAttr = escAttr(`${srcLabel} \u2192 ${dstLabel}`);
+    const detailAttr = escAttr(`${srcLabel} \u2192 ${dstLabel}${e.label ? '\nAction: ' + e.label : ''}`);
     svgHtml += `<path class="flow-edge" d="${path}" stroke="${e.color}" data-detail="${detailAttr}" onmouseenter="showTip(event)" onmouseleave="hideTip()"/>`;
     // Arrowhead pointing right
     const as = 6;
     svgHtml += `<polygon points="${dx},${dy} ${dx-as},${dy-as/2} ${dx-as},${dy+as/2}" fill="${e.color}"/>`;
+    // Edge label
+    if (e.label) {
+      const lx = (sx + dx) / 2;
+      const ly = (sy + dy) / 2 - 8;
+      svgHtml += `<text x="${lx}" y="${ly}" text-anchor="middle" fill="${e.color}" font-size="9" font-weight="600" style="pointer-events:none">${esc(e.label)}</text>`;
+    }
   }
 
   // Draw nodes

@@ -9,7 +9,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 15
+SCHEMA_VERSION = 16
 
 SCHEMA_SQL = """\
 PRAGMA journal_mode=WAL;
@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS credentials (
     source        TEXT NOT NULL DEFAULT '',
     cracked       INTEGER NOT NULL DEFAULT 0,
     via_access_id INTEGER REFERENCES access(id) ON DELETE SET NULL,
+    via_vuln_id   INTEGER REFERENCES vulns(id) ON DELETE SET NULL,
     in_graph     INTEGER NOT NULL DEFAULT 1,
     chain_order   INTEGER NOT NULL DEFAULT 0,
     notes         TEXT NOT NULL DEFAULT '',
@@ -381,6 +382,17 @@ def _migrate_v3_to_v4(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def _migrate_v15_to_v16(conn: sqlite3.Connection) -> None:
+    """Migrate schema from v15 to v16: add via_vuln_id to credentials."""
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(credentials)").fetchall()]
+    if "via_vuln_id" not in cols:
+        conn.execute(
+            "ALTER TABLE credentials ADD COLUMN via_vuln_id INTEGER "
+            "REFERENCES vulns(id) ON DELETE SET NULL"
+        )
+    conn.commit()
+
+
 def _migrate_v14_to_v15(conn: sqlite3.Connection) -> None:
     """Migrate schema from v14 to v15: rename in_report to in_graph."""
     for table in ("access", "vulns", "credentials"):
@@ -535,6 +547,8 @@ def init_db(db_path: str | Path) -> sqlite3.Connection:
             _migrate_v13_to_v14(conn)
         if current_version <= 14:
             _migrate_v14_to_v15(conn)
+        if current_version <= 15:
+            _migrate_v15_to_v16(conn)
 
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()
