@@ -9,7 +9,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 14
+SCHEMA_VERSION = 15
 
 SCHEMA_SQL = """\
 PRAGMA journal_mode=WAL;
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS credentials (
     source        TEXT NOT NULL DEFAULT '',
     cracked       INTEGER NOT NULL DEFAULT 0,
     via_access_id INTEGER REFERENCES access(id) ON DELETE SET NULL,
-    in_report     INTEGER NOT NULL DEFAULT 1,
+    in_graph     INTEGER NOT NULL DEFAULT 1,
     chain_order   INTEGER NOT NULL DEFAULT 0,
     notes         TEXT NOT NULL DEFAULT '',
     discovered_by TEXT NOT NULL DEFAULT '',
@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS access (
     via_credential_id INTEGER REFERENCES credentials(id) ON DELETE SET NULL,
     via_access_id INTEGER REFERENCES access(id) ON DELETE SET NULL,
     technique_id  TEXT NOT NULL DEFAULT '',
-    in_report     INTEGER NOT NULL DEFAULT 1,
+    in_graph     INTEGER NOT NULL DEFAULT 1,
     chain_order   INTEGER NOT NULL DEFAULT 0,
     active        INTEGER NOT NULL DEFAULT 1,
     notes         TEXT NOT NULL DEFAULT '',
@@ -119,7 +119,7 @@ CREATE TABLE IF NOT EXISTS vulns (
     evidence_path TEXT NOT NULL DEFAULT '',
     via_access_id INTEGER REFERENCES access(id) ON DELETE SET NULL,
     technique_id  TEXT NOT NULL DEFAULT '',
-    in_report     INTEGER NOT NULL DEFAULT 1,
+    in_graph     INTEGER NOT NULL DEFAULT 1,
     chain_order   INTEGER NOT NULL DEFAULT 0,
     discovered_by TEXT NOT NULL DEFAULT '',
     created_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
@@ -381,6 +381,15 @@ def _migrate_v3_to_v4(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def _migrate_v14_to_v15(conn: sqlite3.Connection) -> None:
+    """Migrate schema from v14 to v15: rename in_report to in_graph."""
+    for table in ("access", "vulns", "credentials"):
+        cols = [r[1] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()]
+        if "in_report" in cols and "in_graph" not in cols:
+            conn.execute(f"ALTER TABLE {table} RENAME COLUMN in_report TO in_graph")
+    conn.commit()
+
+
 def _migrate_v13_to_v14(conn: sqlite3.Connection) -> None:
     """Migrate schema from v13 to v14: add chain_order for flow graph ordering."""
     for table in ("access", "vulns", "credentials"):
@@ -393,17 +402,17 @@ def _migrate_v13_to_v14(conn: sqlite3.Connection) -> None:
 
 
 def _migrate_v12_to_v13(conn: sqlite3.Connection) -> None:
-    """Migrate schema from v12 to v13: add technique_id and in_report columns."""
+    """Migrate schema from v12 to v13: add technique_id and in_graph columns."""
     for table in ("access", "vulns"):
         cols = [r[1] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()]
         if "technique_id" not in cols:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN technique_id TEXT NOT NULL DEFAULT ''")
-        if "in_report" not in cols:
-            conn.execute(f"ALTER TABLE {table} ADD COLUMN in_report INTEGER NOT NULL DEFAULT 1")
-    # credentials gets in_report only (no technique_id — creds are assets, not actions)
+        if "in_graph" not in cols:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN in_graph INTEGER NOT NULL DEFAULT 1")
+    # credentials gets in_graph only (no technique_id — creds are assets, not actions)
     cols = [r[1] for r in conn.execute("PRAGMA table_info(credentials)").fetchall()]
-    if "in_report" not in cols:
-        conn.execute("ALTER TABLE credentials ADD COLUMN in_report INTEGER NOT NULL DEFAULT 1")
+    if "in_graph" not in cols:
+        conn.execute("ALTER TABLE credentials ADD COLUMN in_graph INTEGER NOT NULL DEFAULT 1")
     conn.commit()
 
 
@@ -524,6 +533,8 @@ def init_db(db_path: str | Path) -> sqlite3.Connection:
             _migrate_v12_to_v13(conn)
         if current_version <= 13:
             _migrate_v13_to_v14(conn)
+        if current_version <= 14:
+            _migrate_v14_to_v15(conn)
 
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()
