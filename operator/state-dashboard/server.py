@@ -678,11 +678,12 @@ function renderFlowGraph() {
   // --- Build edges from provenance, synthesize action nodes for transitions ---
   let actionSeq = 0;
 
-  // Helper: create a synthetic action node between src and dst
+  // Helper: create a synthetic action node paired with its output asset
+  // Action goes at the SAME column as the destination (ATT&CK Flow convention:
+  // action and its produced asset appear at the same level)
   function insertAction(fromId, toId, actionLabel, color, srcCol, dstCol) {
     actionSeq++;
     const aid = `action:${actionSeq}`;
-    const midCol = (srcCol + dstCol) / 2;
     const node = {
       id: aid, type: 'action',
       label: actionLabel, sublabel: '', hostLabel: '',
@@ -690,7 +691,7 @@ function renderFlowGraph() {
       borderColor: color,
       headerColor: color === '#3fb950' ? '#238636' : color === '#58a6ff' ? '#1f6feb' : '#d29922',
       headerText: 'ACTION',
-      chain_order: midCol,
+      chain_order: dstCol,  // same column as the asset it produces
     };
     nodes.push(node);
     nodeById[aid] = node;
