@@ -173,12 +173,20 @@ RIGHT:  "Discovery found: basic PHP content blocked by content inspection.
          The skill's full bypass methodology has not been tested yet."
 ```
 
-When assigning a task that uses a specific credential, include the credential
-ID so the teammate can link the chain:
+**Chain provenance — include in EVERY task assignment:**
+- `credential_id: <N>` — when the task uses a specific credential. Teammate
+  passes as `via_credential_id=N` to `add_access()`.
+- `access_id: <N>` — when the task escalates from a specific access session.
+  Teammate passes as `via_access_id=N` to `add_access()`.
+
+Example task context:
 ```
-"Use credential #3 (S.Moon, password). Pass via_credential_id=3 to add_access()
- when access is gained."
+"Exercise LFI on school.flight.htb ?view= parameter.
+ access_id: 1 (svc_apache SMB session)"
 ```
+
+The flow graph orders by timestamp automatically. `chain_order` is an
+operator override for report presentation — teammates don't need to set it.
 
 ### Dismissing Teammates
 

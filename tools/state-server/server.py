@@ -986,6 +986,7 @@ def create_server() -> FastMCP:
         domain: str = "",
         source: str = "",
         via_access_id: int | None = None,
+        chain_order: int = 0,
         discovered_by: str = "",
     ) -> str:
         """Add a credential (password, hash, key, token, etc.).
@@ -1003,7 +1004,8 @@ def create_server() -> FastMCP:
             domain: Domain (for AD credentials).
             source: Where this credential was found.
             via_access_id: Access ID that led to finding this credential
-                          (for kill-chain provenance). None = provided/external.
+                          (for chain provenance). None = provided/external.
+            chain_order: Flow graph level (0 = auto-order from provenance).
             discovered_by: Skill that found this credential.
         """
         err = _validate_enum("secret_type", secret_type, "secret_type")
@@ -1032,8 +1034,9 @@ def create_server() -> FastMCP:
                 )
             cursor = conn.execute(
                 "INSERT INTO credentials "
-                "(username, secret, secret_type, domain, source, via_access_id, discovered_by) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                "(username, secret, secret_type, domain, source, via_access_id, "
+                "chain_order, discovered_by) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     username,
                     secret,
@@ -1041,6 +1044,7 @@ def create_server() -> FastMCP:
                     domain,
                     source,
                     via_access_id,
+                    chain_order,
                     discovered_by,
                 ),
             )
@@ -1164,6 +1168,7 @@ def create_server() -> FastMCP:
         via_credential_id: int | None = None,
         via_access_id: int | None = None,
         technique_id: str = "",
+        chain_order: int = 0,
         discovered_by: str = "",
         notes: str = "",
     ) -> str:
@@ -1182,8 +1187,9 @@ def create_server() -> FastMCP:
                               (for chain provenance). None = no credential used.
             via_access_id: Access ID this was escalated from (for privesc
                           chains on the same host). None = initial access.
-            technique_id: ATT&CK technique ID (e.g., "T1021.006" for WinRM,
-                         "T1134.001" for token impersonation). Empty = unknown.
+            technique_id: ATT&CK technique ID (e.g., "T1021.006" for WinRM).
+                         Empty = fill in later during reporting.
+            chain_order: Flow graph level (0 = auto-order from provenance).
             discovered_by: Skill that gained access.
             notes: Additional notes.
         """
@@ -1202,8 +1208,8 @@ def create_server() -> FastMCP:
                 "INSERT INTO access "
                 "(target_id, access_type, username, privilege, method, "
                 "session_ref, via_credential_id, via_access_id, technique_id, "
-                "discovered_by, notes) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "chain_order, discovered_by, notes) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     target_id,
                     access_type,
@@ -1214,6 +1220,7 @@ def create_server() -> FastMCP:
                     via_credential_id,
                     via_access_id,
                     technique_id,
+                    chain_order,
                     discovered_by,
                     notes,
                 ),
@@ -1287,6 +1294,7 @@ def create_server() -> FastMCP:
         evidence_path: str = "",
         via_access_id: int | None = None,
         technique_id: str = "",
+        chain_order: int = 0,
         discovered_by: str = "",
     ) -> str:
         """Add a confirmed vulnerability.
@@ -1357,8 +1365,9 @@ def create_server() -> FastMCP:
             cursor = conn.execute(
                 "INSERT INTO vulns "
                 "(target_id, title, vuln_type, status, severity, "
-                "details, evidence_path, via_access_id, technique_id, discovered_by) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "details, evidence_path, via_access_id, technique_id, "
+                "chain_order, discovered_by) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     target_id,
                     title,
@@ -1369,6 +1378,7 @@ def create_server() -> FastMCP:
                     evidence_path,
                     via_access_id,
                     technique_id,
+                    chain_order,
                     discovered_by,
                 ),
             )
