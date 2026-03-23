@@ -105,6 +105,9 @@ start_process(command="msfconsole -q")
 - `close_session()` runs `docker kill` on the named container before killing the
   process — ensures the container is cleaned up even if SIGTERM to the docker CLI
   doesn't propagate
+- **Orphan cleanup:** On startup, the server finds and kills any running
+  `red-run-*` containers left over from previous MCP sessions (crash, restart,
+  etc.). `list_sessions()` also detects orphans at runtime and warns about them
 
 **Tools in the Docker image:**
 - evil-winrm (Ruby gem)

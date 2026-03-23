@@ -34,6 +34,7 @@ import signal
 import socket
 import struct
 import subprocess
+import sys
 import termios
 import threading
 import time
@@ -120,6 +121,42 @@ def _check_docker_shell() -> str | None:
         return "docker image inspect timed out."
 
     return None
+
+
+def _find_orphan_containers() -> list[str]:
+    """Find running red-run-* Docker containers not tracked by this process."""
+    try:
+        result = subprocess.run(
+            ["docker", "ps", "--filter", "name=red-run-", "--format", "{{.Names}}"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode != 0:
+            return []
+        return [name.strip() for name in result.stdout.strip().split("\n") if name.strip()]
+    except Exception:
+        return []
+
+
+def _kill_orphan_containers() -> list[str]:
+    """Kill orphaned red-run-* containers from previous MCP sessions.
+
+    Returns list of container names that were killed.
+    """
+    orphans = _find_orphan_containers()
+    killed = []
+    for name in orphans:
+        try:
+            subprocess.run(
+                ["docker", "kill", name],
+                capture_output=True,
+                timeout=10,
+            )
+            killed.append(name)
+        except Exception:
+            pass
+    return killed
 
 
 @dataclass
@@ -244,6 +281,17 @@ def create_server() -> FastMCP:
     docker_err = _check_docker_shell()
     _docker_shell_available = docker_err is None
 
+    # Kill orphaned containers from previous MCP sessions (crashed, restarted,
+    # etc.) — these hold ports and are invisible to list_sessions().
+    if _docker_shell_available:
+        killed = _kill_orphan_containers()
+        if killed:
+            print(
+                f"[shell-server] Killed {len(killed)} orphaned container(s): "
+                f"{', '.join(killed)}",
+                file=sys.stderr,
+            )
+
     mcp = FastMCP(
         "red-run-shell-server",
         instructions=(
@@ -260,10 +308,21 @@ def create_server() -> FastMCP:
     sessions: dict[str, Session] = {}
 
     def _cleanup() -> None:
-        """Close all sockets and processes on exit."""
+        """Close all sockets, processes, and Docker containers on exit."""
         for session in sessions.values():
             try:
                 if session.session_type == "local" and session.process:
+                    # Kill Docker container first — SIGTERM to docker CLI
+                    # doesn't reliably propagate to the container process
+                    if session.container_name:
+                        try:
+                            subprocess.run(
+                                ["docker", "kill", session.container_name],
+                                capture_output=True,
+                                timeout=5,
+                            )
+                        except Exception:
+                            pass
                     try:
                         os.killpg(os.getpgid(session.process.pid), signal.SIGTERM)
                         session.process.wait(timeout=5)
@@ -862,6 +921,7 @@ def create_server() -> FastMCP:
                 }
             )
 
+        tracked_containers: set[str] = set()
         for sid, session in sessions.items():
             if session.session_type == "local":
                 addr = f"local (PID {session.remote_addr[1]})"
@@ -880,13 +940,30 @@ def create_server() -> FastMCP:
             if session.session_type == "local":
                 entry["command"] = session.command
                 entry["privileged"] = session.privileged
+                if session.container_name:
+                    entry["container_name"] = session.container_name
+                    tracked_containers.add(session.container_name)
             else:
                 entry["port"] = session.port
             if session.live_log:
                 entry["live_log"] = str(session.live_log)
             result["sessions"].append(entry)
 
+        # Detect orphaned Docker containers not tracked by this MCP instance
+        if _docker_shell_available:
+            running = _find_orphan_containers()
+            orphans = [c for c in running if c not in tracked_containers]
+            if orphans:
+                result["orphan_containers"] = orphans
+                result["orphan_warning"] = (
+                    f"{len(orphans)} red-run container(s) running outside this "
+                    f"session — likely from a previous MCP instance. These may "
+                    f"be holding ports. Kill with: docker kill <name>"
+                )
+
         if not result["listeners"] and not result["sessions"]:
+            if result.get("orphan_containers"):
+                return json.dumps(result, indent=2)
             return "No listeners or sessions. Use start_listener() to begin."
 
         return json.dumps(result, indent=2)
