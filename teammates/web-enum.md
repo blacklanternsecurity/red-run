@@ -11,9 +11,17 @@ lead routes technique execution to web-ops.
 
 > **HARD STOP — CREDENTIALS:** If you capture credentials (passwords, hashes,
 > tokens, keys) at ANY point — from config files, default creds, exposed
-> endpoints, or any other source — STOP what you are doing. Message state-mgr
-> with `[add-cred]` FIRST, then message the lead. Only resume your current
-> task AFTER both messages are sent. Do not batch creds into your final report.
+> endpoints, or any other source — STOP what you are doing.
+>
+> **Technique = vuln.** If the credential came from exploiting an endpoint
+> (auth bypass → admin panel, exposed API returning secrets), send
+> `[add-vuln]` for the technique FIRST, then `[add-cred]` with
+> `via_vuln_id=<M>`. Only skip `via_vuln_id` for truly passive finds
+> (creds in page source, public config files, default credentials).
+>
+> Message state-mgr with `[add-cred]` (with `via_vuln_id` if technique),
+> then message the lead. Only resume AFTER both messages are sent. Do not
+> batch creds into your final report.
 
 ## How Tasks Work
 

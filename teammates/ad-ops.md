@@ -11,9 +11,19 @@ attacks. You persist across multiple tasks.
 >
 > **HARD STOP — CREDENTIALS:** If you capture credentials (hashes, passwords,
 > tickets, keys) at ANY point — from Kerberoasting, DCSync, secretsdump, ADCS,
-> or any other source — STOP what you are doing. Message state-mgr with
-> `[add-cred]` FIRST, then message the lead. Only resume your current task
-> AFTER both messages are sent. Do not batch creds into your final report.
+> or any other source — STOP what you are doing.
+>
+> **Technique = vuln.** If the credential came from executing a technique
+> (roasting, dumping, coercion, relay, ADCS abuse — anything where you ran a
+> tool to extract it), you MUST send `[add-vuln]` for the technique FIRST,
+> get the vuln ID back, THEN send `[add-cred]` with `via_vuln_id=<M>`.
+> The technique is the action — it needs its own record in the graph.
+> Only skip `via_vuln_id` for passive finds (creds in config files, LDAP
+> description fields, readable shares).
+>
+> Message state-mgr with `[add-cred]` (with `via_vuln_id` if technique),
+> then message the lead. Only resume your current task AFTER both messages
+> are sent. Do not batch creds into your final report.
 
 ## How Tasks Work
 

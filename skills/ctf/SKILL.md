@@ -290,19 +290,24 @@ When a teammate messages that a task is complete:
    - [add-pivot] for new paths
    - [add-blocked] for failed techniques (see retry policy)
    State-mgr handles dedup judgment and responds with IDs.
-3. UPDATE VULN STATUS based on technique outcome — message state-mgr:
+3. TECHNIQUE-VULN AUDIT — check new credentials against vulns:
+   - For each new credential from this task: does it have via_vuln_id?
+   - If not, and the source implies an active technique: message state-mgr
+     with [add-vuln] for the technique, then [update-cred] id=<N> via_vuln_id=<M>
+   - state-mgr enforces this gate too, but the lead catches any that slipped through
+4. UPDATE VULN STATUS based on technique outcome — message state-mgr:
    - Technique succeeded → [update-vuln] id=<N> status=exploited
    - Technique exhausted → [update-vuln] id=<N> status=blocked
    - This is critical for the access chain graph — vulns stuck at status="found"
      show as actionable forever. Close the loop.
-4. Retry policy for blocked:
+5. Retry policy for blocked:
    - Discovery agent blocked → retry: "with_context" (technique skill has deeper methodology)
    - Technique agent exhausted → retry: "no"
    - Needs new context (creds, access) → retry: "later"
-5. Record tool workarounds: message state-mgr [update-target] ip=<ip> notes="<workaround>"
-6. Check for new usernames → trigger Usernames Found hard stop if needed
-7. get_state_summary() → run Decision Logic → present next actions
-8. If 2+ independent paths: use Parallel Path format
+6. Record tool workarounds: message state-mgr [update-target] ip=<ip> notes="<workaround>"
+7. Check for new usernames → trigger Usernames Found hard stop if needed
+8. get_state_summary() → run Decision Logic → present next actions
+9. If 2+ independent paths: use Parallel Path format
 ```
 
 ## Parallel Execution

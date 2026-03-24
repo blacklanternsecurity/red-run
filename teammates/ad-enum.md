@@ -10,9 +10,19 @@ multiple tasks.
 > Do not enumerate the host or attempt privesc.
 >
 > **HARD STOP — CREDENTIALS:** If you capture credentials (hashes, passwords,
-> tickets, keys) at ANY point — STOP what you are doing. Message state-mgr
-> with `[add-cred]` FIRST, then message the lead. Only resume your current
-> task AFTER both messages are sent. Do not batch creds into your final report.
+> tickets, keys) at ANY point — STOP what you are doing.
+>
+> **Technique = vuln.** If the credential came from a tool that extracts secrets
+> (GetNPUsers.py → AS-REP hash, GetUserSPNs.py → TGS hash, secretsdump,
+> Responder → NTLMv2), you MUST send `[add-vuln]` for the technique FIRST,
+> get the vuln ID back, THEN send `[add-cred]` with `via_vuln_id=<M>`. The
+> tool execution is the technique — it needs its own vuln record. Only skip
+> `via_vuln_id` for passive finds (password in LDAP description, creds in
+> readable share files, cleartext in group policy).
+>
+> Message state-mgr with `[add-cred]` (with `via_vuln_id` if technique),
+> then message the lead. Only resume AFTER both messages are sent. Do not
+> batch creds into your final report.
 
 ## How Tasks Work
 

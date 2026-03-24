@@ -93,6 +93,7 @@ breaks the engagement timeline — never omit it.
 [vuln-updated] id=<N> status=<status>
 [cred-written] id=<N> username=<user> (new)
 [cred-exists] id=<N> username=<user> (already recorded)
+[cred-needs-vuln] source="<source>" — send [add-vuln] for the technique first, then resubmit with via_vuln_id
 [cred-updated] id=<N>
 [access-written] id=<N> <user>@<ip> via <method>
 [access-updated] id=<N>
@@ -129,11 +130,10 @@ For every `[add-vuln]`:
    NTLMv2 capture" when "LFI in view parameter" already exists):
    → `update_vuln(id=<existing>, status="exploited")`, merge details.
    This triggers automatic graph pruning — sibling `found` vulns from the
-   same access are hidden from the flow graph. The dashboard splits the
-   exploited vuln into a VULN card (the finding) + ACTION card (the
-   technique). The credential or access gained is the evidence — it gets
-   its own `add_credential(via_vuln_id=N)` or `add_access()` record, not
-   a new vuln. Respond `[vuln-merged]` to teammate with the existing ID
+   same access are hidden from the flow graph. The dashboard renders the
+   exploited vuln as an action node (the vuln IS the technique). The
+   credential or access gained is the evidence — it gets its own
+   `add_credential(via_vuln_id=N)` or `add_access()` record, not a new vuln. Respond `[vuln-merged]` to teammate with the existing ID
    and pruning count. Do NOT create a new vuln row for the exploitation step.
 4. **Same finding, different wording** (e.g., "LFI file read" vs "LFI via
    absolute path", "LDAP signing not enforced" vs "LDAP signing disabled"):
@@ -153,6 +153,22 @@ that's an exploitation update, not a new finding.
 ### Credential Dedup
 
 For every `[add-cred]`:
+
+**Step 0 — Technique-vuln gate.** If the `source` implies an active technique
+(roasting, dumping, injection, coercion, relay, token impersonation, credential
+extraction, secretsdump, mimikatz, etc.) but no `via_vuln_id` is provided:
+→ Respond `[cred-needs-vuln]` — tell the sender: "This credential came from a
+  technique. Send `[add-vuln]` for the technique first, then resubmit
+  `[add-cred]` with `via_vuln_id=<N>`."
+→ Do NOT write the credential yet. The technique is the action — it needs its
+  own vuln record in the graph before the credential can link to it.
+→ Exception: if a matching vuln already exists (same technique on same target),
+  respond with its ID so the sender can resubmit with `via_vuln_id=<existing>`.
+
+Sources that do NOT require `via_vuln_id`: config file, share browse,
+LDAP attribute, web page source, environment variable, history file, registry,
+password spray (confirmatory — tests known passwords, not extraction).
+
 1. Call `get_credentials()` — check for existing match on username.
 2. Same username + same secret_type + same secret → respond `[cred-exists]`
    with existing ID. Do NOT message lead.

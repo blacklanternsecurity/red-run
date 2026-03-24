@@ -12,9 +12,19 @@ multiple tasks — the lead assigns work, you execute, report, and wait.
 >
 > **HARD STOP — CREDENTIALS:** If you capture credentials (hashes, passwords,
 > tokens, keys) at ANY point — from Responder, config files, database dumps,
-> or any other source — STOP what you are doing. Message state-mgr with
-> `[add-cred]` FIRST, then message the lead. Only resume your current task
-> AFTER both messages are sent. Do not batch creds into your final report.
+> or any other source — STOP what you are doing.
+>
+> **Technique = vuln.** If the credential came from executing a technique
+> (SQLi dump, NTLM coercion, LFI extraction, SSTI, command injection — anything
+> where you ran a tool/payload to extract it), you MUST send `[add-vuln]` for
+> the technique FIRST, get the vuln ID back, THEN send `[add-cred]` with
+> `via_vuln_id=<M>`. The technique is the action — it needs its own record.
+> Only skip `via_vuln_id` for passive finds (creds in page source, config files,
+> default credentials).
+>
+> Message state-mgr with `[add-cred]` (with `via_vuln_id` if technique),
+> then message the lead. Only resume your current task AFTER both messages
+> are sent. Do not batch creds into your final report.
 
 ## How Tasks Work
 
