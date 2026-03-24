@@ -638,7 +638,9 @@ function renderFlowGraph() {
   }
 
   // Credentials → ASSET nodes (collapsed by username+domain)
-  const credGroupKey = c => `${(c.domain||'').toLowerCase()}\\${(c.username||'').toLowerCase()}`;
+  // Normalize domain for grouping: strip common suffixes so "flight" and "flight.htb" collapse
+  function normDomain(d) { return (d||'').toLowerCase().replace(/\.(htb|local|internal|corp|lan|ad)$/i, ''); }
+  const credGroupKey = c => `${normDomain(c.domain)}\\${(c.username||'').toLowerCase()}`;
   const credGroups = {};  // key → [cred, ...]
   const credNodeMap = {};  // cred.id → canonical node id (for edge redirection)
   for (const c of state.credentials) {

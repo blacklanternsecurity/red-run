@@ -111,7 +111,7 @@ writer, contention is minimal.
 | `update_target` | `ip` (required), `hostname`, `os`, `role`, `notes` | Update fields on an existing target |
 | `add_port` | `ip` (required), `port` (required), `protocol`, `service`, `banner` | Add port to target (upserts on target+port+protocol) |
 | `add_credential` | `username`, `secret`, `secret_type`, `domain`, `source` | Record a credential (deduplicates on username+type+secret) |
-| `update_credential` | `id` (required), `cracked`, `secret`, `notes`, `via_vuln_id` | Update credential (e.g., mark hash as cracked, add provenance) |
+| `update_credential` | `id` (required), `cracked`, `secret`, `notes`, `via_vuln_id`, `in_graph` | Update credential (e.g., mark hash as cracked, hide superseded hash from graph) |
 | `test_credential` | `credential_id`, `ip`, `service`, `works` (all required) | Record whether a credential works against a target/service |
 | `add_access` | `ip` (required), `access_type`, `username`, `privilege`, `method`, `via_credential_id` | Record a new foothold on a target (chain provenance via credential) |
 | `update_access` | `id` (required), `active`, `privilege`, `notes` | Update access record (e.g., revoke). Restores pruned sibling vulns on revocation |

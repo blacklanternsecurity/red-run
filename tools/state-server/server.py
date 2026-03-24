@@ -1078,6 +1078,7 @@ def create_server() -> FastMCP:
         secret: str = "",
         notes: str = "",
         via_vuln_id: int | None = None,
+        in_graph: int | None = None,
     ) -> str:
         """Update a credential (e.g., mark as cracked, add provenance).
 
@@ -1088,6 +1089,8 @@ def create_server() -> FastMCP:
             notes: Additional notes.
             via_vuln_id: Link credential to the vuln that produced it
                         (settable post-creation for provenance fixes).
+            in_graph: Override graph visibility (1=show, 0=hide). Use to
+                     suppress hash rows when a cracked plaintext exists.
         """
         with _get_db() as conn:
             updates = []
@@ -1104,6 +1107,9 @@ def create_server() -> FastMCP:
             if via_vuln_id is not None:
                 updates.append("via_vuln_id = ?")
                 params.append(via_vuln_id)
+            if in_graph is not None:
+                updates.append("in_graph = ?")
+                params.append(in_graph)
 
             if not updates:
                 return "No fields to update."
