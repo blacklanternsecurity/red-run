@@ -543,10 +543,14 @@ Do NOT wait for other decision logic items to complete before acting on pivots.
 A new subnet is a high-value expansion of the assessment surface.
 ```
 
-**Shell access gained → stabilize → host discovery (mandatory):**
+**Execution achieved → shell upgrade → host discovery (mandatory):**
 ```
-1. Stabilize: start_listener → reverse shell callback → stabilize_shell
-   OR: start_process(evil-winrm/psexec/ssh) for credential-based access
+1. SHELL UPGRADE FIRST. When any RCE/command injection is confirmed, the
+   IMMEDIATE next step is establishing an interactive shell:
+   - start_listener → reverse shell callback → stabilize_shell
+   - OR: start_process(evil-winrm/psexec/ssh) for credential-based access
+   Do NOT enumerate through curl, web APIs, or command injection one-liners.
+   A proper shell is faster, richer, and cheaper on tokens.
 2. Spawn host-specific discovery teammate:
    Linux → lin-enum-<host> from teammates/lin-enum.md
    Windows → win-enum-<host> from teammates/win-enum.md

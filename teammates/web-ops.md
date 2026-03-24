@@ -86,11 +86,15 @@ Use curl/Bash for: raw HTTP with precise headers, injection tests.
 
 ## Shell-Server MCP
 
-When technique achieves RCE → catch a reverse shell:
+When technique achieves RCE → **shell upgrade is the immediate priority**:
 ```
 start_listener(port) → send callback through vuln → list_sessions() →
 stabilize_shell() → verify with whoami → close_session(save_transcript=true)
 ```
+
+Do NOT enumerate the host through curl, web APIs, or command injection
+one-liners. A proper shell is faster and richer — the lead will route host
+discovery to lin-enum/win-enum after you report.
 
 **Once shell is caught → HARD STOP (see top of this file).**
 
