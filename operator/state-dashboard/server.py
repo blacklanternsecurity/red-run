@@ -583,9 +583,10 @@ function toggleGraphFullscreen() {
   const btn = document.getElementById('graph-expand-btn');
   c.classList.toggle('fullscreen');
   btn.textContent = c.classList.contains('fullscreen') ? '\u2716' : '\u26F6';
-  // Reset persisted viewBox so graph re-fits to new container size
+  // Force layout reflow before re-rendering so container has correct dimensions
+  void c.offsetHeight;
   _graphVB = null;
-  requestAnimationFrame(() => requestAnimationFrame(() => renderFlowGraph()));
+  renderFlowGraph();
 }
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
@@ -805,12 +806,19 @@ function renderFlowGraph() {
     }
   }
 
-  // access → vuln (found/exploited vuln during access) — direct edge (vuln IS the finding)
+  // access/credential → vuln (found/exploited vuln) — direct edge (vuln IS the finding)
   for (const v of state.vulns) {
     if (v.in_graph === 0) continue;
     if (v.severity === 'info') continue;
     if (v.via_access_id && nodeById[`access:${v.via_access_id}`] && nodeById[`vuln:${v.id}`]) {
       edges.push({ from: `access:${v.via_access_id}`, to: `vuln:${v.id}`, color: '#e3b341' });
+    }
+    // credential → vuln (credential-sourced finding, e.g., password reuse)
+    if (v.via_credential_id) {
+      const credDst = credNodeMap[v.via_credential_id];
+      if (credDst && nodeById[credDst] && nodeById[`vuln:${v.id}`]) {
+        edges.push({ from: credDst, to: `vuln:${v.id}`, color: '#e3b341' });
+      }
     }
   }
 
@@ -1011,9 +1019,9 @@ function renderFlowGraph() {
   ].join('');
 
   svg.setAttribute('width', '100%');
-  // Height: at least the content, but fill available container space
-  const containerH = container.clientHeight || 200;
-  const svgH = Math.max(totalH, containerH);
+  // Height: fill container in fullscreen, otherwise fit content
+  const isFullscreen = container.classList.contains('fullscreen');
+  const svgH = isFullscreen ? Math.max(totalH, container.clientHeight || 200) : totalH;
   svg.setAttribute('height', svgH);
   svg.setAttribute('viewBox', `0 0 ${totalW} ${totalH}`);
   svg.innerHTML = svgHtml;
