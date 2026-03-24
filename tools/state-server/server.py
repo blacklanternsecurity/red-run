@@ -1265,8 +1265,12 @@ def create_server() -> FastMCP:
         active: bool | None = None,
         privilege: str = "",
         notes: str = "",
+        via_credential_id: int | None = None,
+        via_access_id: int | None = None,
+        technique_id: str = "",
+        in_graph: int | None = None,
     ) -> str:
-        """Update access record (e.g., revoke, update privilege level).
+        """Update access record (e.g., revoke, fix provenance, toggle graph).
 
         When access is revoked (active=false), sibling vulns that were pruned
         from the flow graph when this access's exploited vulns succeeded are
@@ -1277,6 +1281,10 @@ def create_server() -> FastMCP:
             active: Set to false to mark access as revoked.
             privilege: Updated privilege level.
             notes: Additional notes.
+            via_credential_id: Fix credential provenance post-creation.
+            via_access_id: Fix access chain provenance post-creation.
+            technique_id: Set ATT&CK technique ID.
+            in_graph: Override graph visibility (1=show, 0=hide).
         """
         with _get_db() as conn:
             updates = []
@@ -1290,6 +1298,18 @@ def create_server() -> FastMCP:
             if notes:
                 updates.append("notes = ?")
                 params.append(notes)
+            if via_credential_id is not None:
+                updates.append("via_credential_id = ?")
+                params.append(via_credential_id)
+            if via_access_id is not None:
+                updates.append("via_access_id = ?")
+                params.append(via_access_id)
+            if technique_id:
+                updates.append("technique_id = ?")
+                params.append(technique_id)
+            if in_graph is not None:
+                updates.append("in_graph = ?")
+                params.append(in_graph)
 
             if not updates:
                 return "No fields to update."
@@ -1519,8 +1539,11 @@ def create_server() -> FastMCP:
         severity: str = "",
         details: str = "",
         in_graph: int | None = None,
+        via_access_id: int | None = None,
+        via_credential_id: int | None = None,
+        technique_id: str = "",
     ) -> str:
-        """Update vulnerability (e.g., change status after exploitation).
+        """Update vulnerability (e.g., change status, fix provenance, toggle graph).
 
         When status changes to 'exploited', sibling 'found' vulns from the
         same access point are automatically hidden from the flow graph
@@ -1534,6 +1557,9 @@ def create_server() -> FastMCP:
             details: Updated details.
             in_graph: Override graph visibility (1=show, 0=hide). Normally
                      managed automatically by the prune/restore logic.
+            via_access_id: Fix access provenance post-creation.
+            via_credential_id: Fix credential provenance post-creation.
+            technique_id: Set ATT&CK technique ID.
         """
         if status:
             err = _validate_enum("status", status, "vuln_status")
@@ -1558,6 +1584,15 @@ def create_server() -> FastMCP:
             if in_graph is not None:
                 updates.append("in_graph = ?")
                 params.append(in_graph)
+            if via_access_id is not None:
+                updates.append("via_access_id = ?")
+                params.append(via_access_id)
+            if via_credential_id is not None:
+                updates.append("via_credential_id = ?")
+                params.append(via_credential_id)
+            if technique_id:
+                updates.append("technique_id = ?")
+                params.append(technique_id)
 
             if not updates:
                 return "No fields to update."
