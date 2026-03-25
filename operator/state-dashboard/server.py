@@ -1052,6 +1052,9 @@ function _setupGraphZoomPan(svg, container, contentW, contentH) {
   if (!_graphVB) {
     _graphVB = { x: 0, y: 0, w: contentW, h: contentH };
   }
+  // Zoom limits relative to content size
+  const minW = contentW * 0.1, minH = contentH * 0.1;   // max zoom in
+  const maxW = contentW * 3,   maxH = contentH * 3;      // max zoom out
   function applyVB() {
     svg.setAttribute('viewBox', `${_graphVB.x} ${_graphVB.y} ${_graphVB.w} ${_graphVB.h}`);
   }
@@ -1067,8 +1070,10 @@ function _setupGraphZoomPan(svg, container, contentW, contentH) {
     const mx = (ev.clientX - rect.left) / rect.width;
     const my = (ev.clientY - rect.top) / rect.height;
     const scale = ev.deltaY > 0 ? 1.12 : 1 / 1.12;
-    const nw = _graphVB.w * scale;
-    const nh = _graphVB.h * scale;
+    let nw = _graphVB.w * scale;
+    let nh = _graphVB.h * scale;
+    // Clamp zoom
+    if (nw < minW || nh < minH || nw > maxW || nh > maxH) return;
     _graphVB.x += (_graphVB.w - nw) * mx;
     _graphVB.y += (_graphVB.h - nh) * my;
     _graphVB.w = nw;
