@@ -88,14 +88,14 @@ An nftables firewall is available in `operator/engagement-firewall/` for operato
 
 ## Running
 
-Start Claude Code from the red-run repo directory:
+Launch from the red-run repo directory:
 
 ```bash
 cd red-run
-claude --dangerously-skip-permissions
+./run.sh
 ```
 
-All skills delegate to autonomous agents. The orchestrator still presents routing decisions for operator approval before spawning each agent. MCP servers start automatically via `.mcp.json`. Give the orchestrator a target:
+Then type `/red-run-ctf` to start the orchestrator. The orchestrator presents routing decisions for operator approval before assigning any task. MCP servers start automatically via `.mcp.json` (shell-server starts via `run.sh`). Give the orchestrator a target:
 
 > "Scan and attack 10.10.10.5"
 

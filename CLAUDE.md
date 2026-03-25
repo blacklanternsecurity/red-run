@@ -305,10 +305,12 @@ The MCP indexer builds embedding documents from these structured fields. `descri
 
 ## Permission Mode
 
-All skills delegate to autonomous agents with `mode: "bypassPermissions"`. Run
-`claude --dangerously-skip-permissions` for full autonomous operation. The
-orchestrator's approval gates (operator confirms every routing decision before
-agent spawn) provide human-in-the-loop control.
+Agent teams works in standard permission mode. Teammate permission requests
+surface to the operator for approval. The orchestrator's approval gates
+(operator confirms every routing decision before task assignment) provide
+human-in-the-loop control. MCP server tools are pre-allowed in
+`.claude/settings.json` to reduce prompt noise for state/skill-router/
+shell-server/nmap/browser/rdp operations.
 
 ## Installation
 

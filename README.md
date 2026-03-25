@@ -84,7 +84,7 @@ Agent teams requires the Claude Code experimental feature flag. The repo's `.cla
 
 No manual setup needed — cloning the repo and running `./install.sh` is sufficient. For split-pane teammate visibility, start Claude Code inside a tmux session. Without tmux, teammates run in-process (cycle with Shift+Down - this is not recommended for optimal control).
 
-**Known limitation:** Agent teams is an experimental feature and currently requires `--dangerously-skip-permissions` mode. In standard mode, teammate permission requests don't always surface to the operator, causing teammates to hang. This is a stability issue with the experimental agent teams feature. The orchestrator's `AskUserQuestion` gates still provide human-in-the-loop control for technique decisions. This may improve as agent teams matures.
+Agent teams works in standard permission mode — teammate permission requests surface to the operator for approval. The orchestrator's `AskUserQuestion` gates provide human-in-the-loop control for all routing decisions.
 
 ## State Dashboard
 
@@ -106,13 +106,11 @@ See `operator/state-dashboard/README.md` for details.
 
 ## Running
 
-Agent teams requires `--dangerously-skip-permissions` due to a stability issue with the experimental feature (see [Agent Teams](#agent-teams) above). Run with:
-
 ```bash
-claude --dangerously-skip-permissions
+./run.sh
 ```
 
-The orchestrator presents routing decisions for operator approval before assigning technique tasks. Run from an isolated VM or dedicated pentesting machine. You are responsible for containing Claude on your systems and for any legal consequences under the CFAA or equivalent legislation.
+Then type `/red-run-ctf` to start the orchestrator. The orchestrator presents routing decisions for operator approval before assigning any task. Run from an isolated VM or dedicated pentesting machine. You are responsible for containing Claude on your systems and for any legal consequences under the CFAA or equivalent legislation.
 
 ## Disclaimer
 

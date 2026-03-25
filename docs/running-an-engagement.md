@@ -4,15 +4,7 @@ This page describes how the **CTF orchestrator** drives a penetration test from 
 
 ## Prerequisites
 
-Agent teams is an experimental feature and currently requires `--dangerously-skip-permissions` mode. In standard mode, teammate permission requests don't always surface to the operator, causing teammates to hang. This is a stability issue with the experimental agent teams feature. The orchestrator's `AskUserQuestion` gates still provide human-in-the-loop control for exploitation decisions.
-
-```bash
-claude --dangerously-skip-permissions
-```
-
-For split-pane teammate visibility, start Claude Code inside a tmux session.
-
-> **Note:** This is an experimental feature stability issue and may improve as agent teams matures.
+Launch with `./run.sh` from the repo directory (ensures shell-server is running). For split-pane teammate visibility, start inside a tmux session. Teammate permission requests surface to the operator for approval in standard mode.
 
 ## Starting a Test
 
