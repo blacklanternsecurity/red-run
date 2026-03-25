@@ -22,10 +22,11 @@ This orchestrator uses agent teams instead of subagents. Teammates are persisten
 Claude Code sessions that accumulate domain context, communicate with each other,
 and are visible to the operator via tmux split panes or in-process mode.
 
-> **OPERATOR APPROVAL REQUIRED.** Before assigning any technique task to a
-> teammate, use `AskUserQuestion` to present the routing decision and block until
-> the operator responds. State: what skill, which teammate, what target, and why.
-> Discovery tasks (recon, enumeration) can be assigned after initial approval.
+> **OPERATOR APPROVAL REQUIRED.** Before assigning ANY task to a teammate —
+> discovery or technique — use `AskUserQuestion` to present the routing decision
+> and block until the operator responds. State: what skill, which teammate, what
+> target, and why. No exceptions. Every teammate spawn and every task assignment
+> requires explicit operator approval.
 > **Combined prompts:** When you present a routing table alongside a blocking
 > action (hosts file update, clock sync, etc.), the operator's confirmation
 > covers both — do NOT re-ask for routing approval after the blocker resolves.
@@ -314,13 +315,7 @@ When a teammate messages that a task is complete:
 
 With agent teams, parallelization is natural — spawn teammates per target surface.
 
-**Automatic parallelism** (no approval needed beyond initial scope approval):
-- New vhost discovered → spawn `web-enum-<vhost>` immediately
-- New host shell → spawn `lin-enum-<host>` or `win-enum-<host>` immediately
-- New web port on known target → spawn `web-enum-<port>` immediately
-These are discovery tasks on new surfaces — don't serialize them.
-
-**Technique parallelism** (present to operator for approval):
+**Parallel paths** (present to operator for approval):
 ```
 if 2+ viable independent exploit paths:
     present Parallel Path table to operator
