@@ -585,11 +585,14 @@ Walk ALL items, collect every actionable finding, present to operator:
    if the credential is web-only). This teammate's sole job is to discover what this
    specific identity can access:
      a. SMB shares readable/writable by this user (`nxc smb <targets> -u <user> -p <pass> --shares`)
-     b. Services this user can authenticate to (WinRM, SSH, RDP, MSSQL, web apps)
-     c. Files and directories opened by this user's permissions
-     d. Web application roles/data accessible with this user's session
-     e. AD context: group memberships, ACLs, delegation rights, owned objects
+     b. Remote access — test ALL paths: WinRM, SSH, RDP, MSSQL, web app logins
+     c. Local access — if we have a shell on the same host, use RunasCs.exe to
+        execute as this user and enumerate their context (files, permissions, tokens)
+     d. Files and directories opened by this user's permissions
+     e. Web application roles/data accessible with this user's session
+     f. AD context: group memberships, ACLs, delegation rights, owned objects
    The credential unlocks something specific — the teammate finds WHAT.
+   Test EVERY access path — don't stop at the first one that works.
 
    **In parallel**, run password reuse and standard credential tests:
      f. Password reuse spray across all known users (single spray command)
