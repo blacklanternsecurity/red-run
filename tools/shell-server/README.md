@@ -38,7 +38,11 @@ ligolo-ng) and for daemons needing raw sockets (Responder, mitm6).
 The server runs as a persistent SSE service on `127.0.0.1:8022`. All teammates
 share the same instance — sessions created by one teammate are visible to all.
 
-**Start before launching Claude Code** (e.g., in a tmux pane):
+The server starts automatically via a `SessionStart` hook in
+`.claude/settings.json`. The start script is idempotent — if the server is
+already running, it exits silently.
+
+To start manually (e.g., for debugging):
 
 ```bash
 bash tools/shell-server/start.sh

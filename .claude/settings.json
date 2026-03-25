@@ -10,6 +10,19 @@
     ]
   },
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/tools/shell-server/start.sh",
+            "async": true,
+            "timeout": 30
+          }
+        ]
+      }
+    ],
     "SubagentStop": [
       {
         "matcher": "(network-recon|web-(discovery|exploit)|ad-(discovery|exploit)|password-spray|(linux|windows)-privesc|evasion|credential-cracking|pivoting|research)-agent",
