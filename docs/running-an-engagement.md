@@ -76,7 +76,7 @@ If `config.yaml` has a `scan_type` value, the orchestrator uses it directly — 
 
 Options: **Quick** (top 1000), **Full** (all 65535), **Custom** (operator-specified flags), or **Import XML** (existing nmap output).
 
-The orchestrator spawns the `network-recon-agent` with the `network-recon` skill, which runs nmap via the nmap-server MCP and enumerates discovered services.
+The lead spawns a `net-enum` teammate with the `network-recon` skill, which runs nmap via the nmap-server MCP and enumerates discovered services.
 
 ### Hostname Resolution
 
@@ -94,7 +94,7 @@ If HTTP/HTTPS ports are found, the orchestrator resolves the web proxy decision 
 
 If Burp proxying is enabled, `web-proxy.json` records the listener URL for browser-server defaults, and `web-proxy.sh` exports env vars for CLI tools. All subsequent web agents source `web-proxy.sh` and route attackbox HTTP(S) traffic through the configured proxy.
 
-Only after that decision is resolved does the orchestrator spawn the `web-discovery-agent` with the `web-discovery` skill. This performs content discovery, technology fingerprinting, parameter fuzzing, and vulnerability identification.
+Only after that decision is resolved does the lead spawn a `web-enum` teammate with the `web-discovery` skill. Multiple web services get parallel teammates (e.g., `web-enum-80`, `web-enum-8443`). Each performs content discovery, technology fingerprinting, parameter fuzzing, and vulnerability identification.
 
 ## Attack Surface Presentation
 
@@ -165,16 +165,29 @@ Hard stops prevent the orchestrator from making high-impact decisions autonomous
 
 ## Chaining Logic
 
-After each skill completes, the orchestrator runs a **chaining analysis** using `get_state_summary()`. It walks this decision tree:
+After each task completes, the lead runs a **post-task checkpoint** and decision logic using `get_state_summary()`:
 
-1. **Unexploited vulnerabilities?** → Route to the matching technique skill
-2. **Shell access without root/admin?** → Route to host discovery (Linux or Windows)
-3. **Untested credentials?** → Test against all known services
-4. **Uncracked hashes?** → Route to credential-cracking (inline)
-5. **Pivot paths available?** → Route to the skill that exploits the pivot
-6. **Objectives met?** → Post-exploitation and wrap-up
+1. **Unexercised vulns?** → Route technique skill to ops teammate
+2. **New access (shell/login)?** → **Execution Achieved** hard stop (see below)
+3. **Untested credentials?** → Spawn per-user credential context enum teammate + password reuse spray
+4. **Unrecovered hashes?** → Hashes Found hard stop
+5. **Pivot paths?** → Spawn pivoting teammate, then recon the new subnet
+6. **Blocked items?** → Retry with context, or move on
+7. **Objectives met?** → Post-access and wrap-up
 
-This loop continues until objectives are met or all paths are exhausted. The pivot map in state tracks "what leads where" — a SQL injection that yields database credentials, credentials that work on a different host, a privilege escalation that enables DCSync.
+### Hard Stops
+
+The orchestrator has mandatory pause points. Every task assignment requires operator approval — no auto-dispatch.
+
+| Hard Stop | Trigger | Action |
+|-----------|---------|--------|
+| **Execution Achieved** | New shell or login gained | Immediate: shell upgrade → spawn host enum teammate → AD enum if domain user. Highest priority — don't wait for other tasks. |
+| **Vuln Confirmed** | Enum teammate confirms a vuln | Enum teammate stops, writes to state-mgr, messages lead. Does NOT exercise. Lead routes to ops teammate. |
+| **Credential Context Enum** | New credential captured | Spawn dedicated `net-enum-<username>` to enumerate what that identity can access: shares, services, web roles, AD context. One teammate per user. |
+| **Technique-Vuln Linkage** | Credential from active technique | Teammate must create a vuln record for the technique before the credential. State-mgr rejects credentials without `via_vuln_id` when the source implies a technique. |
+| **Hostname Resolution** | Unresolvable hostname | Operator runs hosts-update script |
+| **Password Spray** | New usernames discovered | Operator chooses tier and services |
+| **Hash Recovery** | Hashes captured | Operator chooses local/external/skip |
 
 ## Recovery Paths
 
@@ -184,11 +197,13 @@ When agents hit obstacles, the orchestrator has structured recovery:
 
 When a payload is caught by antivirus:
 
-1. The technique agent stops and returns structured AV-blocked context
-2. The orchestrator spawns the `evasion-agent` with `av-edr-evasion`
-3. The evasion agent builds a bypass payload (custom compilation, AMSI bypass, LOLBins)
-4. The orchestrator re-invokes the original skill with the AV-safe payload
-5. If no bypass works, the technique is recorded as blocked and the orchestrator moves to the next vector
+1. The ops teammate stops and returns structured AV-blocked context
+2. The lead spawns a `bypass` teammate with `av-edr-evasion`
+3. The bypass teammate builds an artifact (custom compilation, AMSI bypass, LOLBins)
+4. The lead re-assigns the original skill to the ops teammate with the bypass artifact
+5. If no bypass works, the technique is recorded as blocked and the lead moves to the next vector
+
+Note: `start_listener` responses include Windows payloads with built-in AMSI bypass for CTF-level Defender evasion. The bypass teammate is only needed when default evasion fails.
 
 ### Clock Skew
 

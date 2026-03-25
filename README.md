@@ -107,10 +107,12 @@ See `operator/state-dashboard/README.md` for details.
 ## Running
 
 ```bash
-./run.sh
+./run.sh                # starts shell-server + Claude Code, loads /red-run-ctf
+./run.sh --lead=legacy  # loads /red-run-legacy instead
+./run.sh --yolo         # skip permission prompts
 ```
 
-Then type `/red-run-ctf` to start the orchestrator. The orchestrator presents routing decisions for operator approval before assigning any task. Run from an isolated VM or dedicated pentesting machine. You are responsible for containing Claude on your systems and for any legal consequences under the CFAA or equivalent legislation.
+Send any message (e.g., a target IP) to activate the orchestrator. The orchestrator presents routing decisions for operator approval before assigning any task. Run from an isolated VM or dedicated pentesting machine. You are responsible for containing Claude on your systems and for any legal consequences under the CFAA or equivalent legislation.
 
 ## Disclaimer
 

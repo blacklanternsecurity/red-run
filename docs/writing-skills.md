@@ -86,7 +86,9 @@ current engagement state.
 
 Skills read state to avoid re-testing confirmed vulnerabilities, leverage existing credentials, and check what's been tried.
 
-> **State access:** All agents use `state` with full read/write access. Skills should include write guidance for critical discoveries (credentials, vulns, pivots, blocked items).
+> **State access:** Teammates read state directly via `get_state_summary()`. All writes go through the **state-mgr teammate** via structured `[action]` messages — teammates never call state write tools directly.
+
+> **Technique-vuln linkage:** If a skill produces credentials through an active technique (roasting, dumping, injection, coercion), the teammate must create a vuln record for the technique before reporting the credential with `via_vuln_id`. State-mgr enforces this gate.
 
 #### 5. Tool Discovery
 
@@ -186,7 +188,7 @@ Skills reference other skills using **bold names** in their escalation sections:
 
 The orchestrator uses these bold references to pick the next skill and agent.
 
-> **Agents never self-route:** Skills must STOP and return when they hit a routing instruction. The agent must not load or execute another skill — the orchestrator decides what runs next.
+> **Teammates never self-route:** Skills must STOP and return when they hit a routing instruction. The teammate must not load or execute another skill — the lead decides what runs next.
 
 ### Discovery Skill Maintenance
 

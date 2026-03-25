@@ -26,9 +26,9 @@ The installer runs five steps:
 
 **1. Native skills** — Installs orchestrator skills to `~/.claude/skills/red-run-ctf/` (agent teams, default) and `~/.claude/skills/red-run-legacy/` (subagent-based). All other skills (67 discovery + technique skills) are served on-demand via the MCP skill-router.
 
-**2. Custom subagents** — Installs 10 domain-specific agent definitions to `~/.claude/agents/`. These are the `.md` files that define each agent's system prompt, available tools, and execution model.
+**2. Teammate templates** — Teammate spawn prompts live in `teammates/` in the repo (not installed globally). The legacy subagent definitions in `agents/` are only installed with `--legacy`.
 
-**3. MCP server dependencies** — Runs `uv sync` for all 5 MCP servers (skill-router, nmap-server, shell-server, state-server, browser-server) to install Python dependencies into isolated `.venv/` directories.
+**3. MCP server dependencies** — Runs `uv sync` for all 6 MCP servers (skill-router, nmap-server, shell-server, state-server, browser-server, rdp-server) to install Python dependencies into isolated `.venv/` directories.
 
 **4. Docker images** — Builds two Docker images:
 
@@ -95,7 +95,14 @@ cd red-run
 ./run.sh
 ```
 
-Then type `/red-run-ctf` to start the orchestrator. The orchestrator presents routing decisions for operator approval before assigning any task. MCP servers start automatically via `.mcp.json` (shell-server starts via `run.sh`). Give the orchestrator a target:
+`run.sh` starts shell-server (SSE on `127.0.0.1:8022`), launches Claude Code, and auto-triggers `/red-run-ctf`. Send any message (e.g., a target IP) to activate the orchestrator.
+
+```bash
+./run.sh --lead=legacy  # use /red-run-legacy instead
+./run.sh --yolo         # skip permission prompts
+```
+
+If shell-server has active sessions from a previous run, `run.sh` prompts to keep, clear, or restart them. Give the orchestrator a target:
 
 > "Scan and attack 10.10.10.5"
 
@@ -108,7 +115,7 @@ Then type `/red-run-ctf` to start the orchestrator. The orchestrator presents ro
 This removes:
 
 - Native skills from `~/.claude/skills/red-run-*/`
-- Custom subagents from `~/.claude/agents/`
+- Legacy subagents from `~/.claude/agents/` (if installed)
 - ChromaDB index (`tools/skill-router/.chromadb/`)
 - Python venvs (`tools/*/. venv/`)
 - Docker images (`red-run-nmap:latest`, `red-run-shell:latest`)
