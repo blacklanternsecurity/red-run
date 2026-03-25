@@ -46,7 +46,7 @@ for s in data.get('sessions', []):
     print(f\"  - {s['id']} ({s['label']}, {s['addr']}, {elapsed})\")
 " 2>/dev/null
         echo ""
-        read -rp "  [K]eep sessions / [C]lear all / [R]estart server? [K/c/r] " choice
+        read -rp "  [k]eep sessions / [c]lear all / [r]estart server? [k/c/r] " choice
         case "${choice,,}" in
             c)
                 curl -s -X POST "http://127.0.0.1:${PORT}/clear" >/dev/null 2>&1
