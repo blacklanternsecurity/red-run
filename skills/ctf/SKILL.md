@@ -630,9 +630,10 @@ decision logic items. Act on this THE MOMENT it arrives.
    Each host gets its own enum teammate — don't queue behind another host.
    Include access_id and credential_id in the task assignment.
 
-3. DC CHECK (ports 88+389+3268 on this target):
-   If DC → ALSO spawn ad-enum with authenticated enumeration task.
-   Domain user on a DC unlocks BloodHound, ADCS, ACL, delegation, GPO.
+3. AD CHECK: If the user is a domain account (DOMAIN\user or user@domain),
+   ALSO spawn ad-enum with authenticated enumeration task. Any domain user
+   on any domain-joined host unlocks BloodHound, ADCS, ACL, delegation.
+   DC access adds LDAP/replication queries but is not required.
 
 4. Continue other in-progress tasks in parallel — enum teammates work
    independently. Do NOT serialize behind web-ops, ad-ops, or any other
