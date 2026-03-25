@@ -45,13 +45,21 @@ See also: [Skills Inventory](docs/skills-inventory.md) for the full skill invent
 ./uninstall.sh        # Remove everything
 ```
 
-The installer sets up the orchestrator, teammate templates, and MCP servers, and indexes `skills/` into ChromaDB for semantic retrieval. The repo must stay in place — skill-router reads from `skills/` at runtime.
+The installer sets up the orchestrator, teammate templates, and MCP servers, indexes `skills/` into ChromaDB for semantic retrieval, and starts the shell-server. The repo must stay in place — skill-router reads from `skills/` at runtime.
 
 After installing, run the preflight check to verify attackbox dependencies (nmap, ffuf, sqlmap, hashcat, impacket, etc.):
 
 ```bash
 bash preflight.sh
 ```
+
+Then launch with:
+
+```bash
+./run.sh              # ensures shell-server is up, then starts Claude Code
+```
+
+The shell-server runs as a persistent SSE service (`127.0.0.1:8022`) shared across all teammates — sessions created by one teammate are visible to all others. `run.sh` starts it automatically and is idempotent (safe to re-run). A `SessionStart` hook also attempts auto-start as a fallback.
 
 See [dependencies](docs/dependencies.md) for the full list of required tools and [Installation docs](https://blacklanternsecurity.github.io/red-run/installation/) for troubleshooting.
 

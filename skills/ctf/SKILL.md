@@ -380,6 +380,18 @@ Options: Confirm | Cancel
 
 If Cancel → stop immediately.
 
+### Shell-Server Health Check
+
+**Immediately after CTF acknowledgement**, verify shell-server is reachable:
+```
+Call list_sessions() from shell-server MCP.
+If it returns a result → shell-server is running, continue.
+If it errors or tool is not available → HARD STOP:
+  "shell-server MCP is not connected. It must be running before Claude Code
+   starts. Kill this session, then relaunch with: ./run.sh"
+  Do NOT proceed — teammates cannot catch shells without it.
+```
+
 ### Engagement Configuration
 
 **You MUST call `AskUserQuestion` here — all 4 questions in one call:**

@@ -273,9 +273,18 @@ echo "browser MCP server ready (headless Chromium)"
 echo "rdp MCP server ready (headless RDP via aardwolf)"
 if [[ "$config_warnings" -eq 0 ]]; then
     echo ""
+    echo "Starting shell-server (SSE on 127.0.0.1:8022)..."
+    bash "${REPO_DIR}/tools/shell-server/start.sh"
+    if ss -tln 2>/dev/null | grep -q ":8022 "; then
+        echo "  shell-server: listening"
+    else
+        echo "  WARNING: shell-server failed to start — run manually:"
+        echo "    bash tools/shell-server/start.sh"
+    fi
+    echo ""
     echo "Done! Launch with:"
     echo ""
-    echo "  ./run.sh                # starts shell-server, then Claude Code"
+    echo "  ./run.sh                # ensures shell-server is up, then starts Claude Code"
     echo ""
     echo "  Tip: tmux recommended — agent teams spawn multiple long-running"
     echo "  teammates that benefit from persistent terminal sessions."
