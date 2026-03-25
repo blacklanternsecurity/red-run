@@ -265,6 +265,7 @@ while objectives_not_met:
                 run decision_logic on new state (especially pivots, creds, flags)
                 if actionable → assign follow-up to available teammate immediately
                 do NOT wait for the reporting teammate to finish its current task
+            if source_code_found → trigger Source Code Discovered hard stop
             if blocked → message state-mgr: [add-blocked], find alternative
             if flag → prominent callout to operator
 ```
@@ -604,20 +605,15 @@ Walk ALL items, collect every actionable finding, present to operator:
      else:
        note: need access to pivot host first — pursue via other chains
 
-7. Source code discovered (git dump, LFI reads, share access, backups):
-   → spawn research teammate with `source-code-review` skill
-   → pass: source path, framework hints, what access produced it
-   → research teammate uses subagents for parsing, opus for security judgment
-
-8. Blocked items:
+7. Blocked items:
    retry "with_context" → assign technique skill (deeper methodology)
    retry "later" → context changed, retry with new context
    retry "no" → only revisit with fundamentally new access
    retry "with_context" + custom/unknown → spawn research teammate
 
-9. Progress toward objectives — are we closer to scope.md goals?
+8. Progress toward objectives — are we closer to scope.md goals?
 
-10. No routing match → search_skills() → validate → assign to domain teammate
+9. No routing match → search_skills() → validate → assign to domain teammate
 ```
 
 ### Hard Stops
@@ -649,6 +645,24 @@ decision logic items. Act on this THE MOMENT it arrives.
 4. Continue other in-progress tasks in parallel — enum teammates work
    independently. Do NOT serialize behind web-ops, ad-ops, or any other
    teammate that's still working.
+```
+
+**Source Code Discovered** (act immediately, parallel with other paths):
+```
+Trigger: teammate reports git repo access, .git dump completed, LFI reads
+application source files, share contains code, backup archive with source.
+
+Source code is a force multiplier — it reveals vulns that discovery can't
+find (hardcoded creds, auth bypass, hidden endpoints, injection sinks).
+Act the moment it's reported, don't wait for other decision logic items.
+
+1. IMMEDIATELY spawn research teammate with `source-code-review` skill
+   Pass: source path on attackbox, framework hints, what access produced it
+   Research teammate uses Explore subagents for parsing, opus for judgment
+2. Run in PARALLEL with any technique execution already in progress
+   Source review informs all other paths — don't serialize behind it
+3. When findings arrive: route confirmed vulns to technique teammates,
+   add hardcoded creds to state, update attack surface
 ```
 
 **Hosts File Update:**
