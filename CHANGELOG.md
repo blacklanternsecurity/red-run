@@ -43,6 +43,15 @@ All notable changes to red-run will be documented in this file. Format follows [
   lead and stop if MCP unavailable.
 - **RunasCs.exe** added to preflight check and dependencies.
 - **All MCP servers** added to permission allow list in settings.json.
+- **1M context for sonnet teammates** — `ANTHROPIC_DEFAULT_SONNET_MODEL` set
+  to `claude-sonnet-4-6[1m]` in project settings so all sonnet teammates
+  spawn with extended context by default.
+- **Source-code-review skill** — security-focused static analysis for source
+  obtained during engagements (git dumps, LFI, shares). Research teammate
+  uses Explore subagents for bulk parsing, opus for security judgment.
+- **Killboard** — scorecard for tracking CTF results at `docs/killboard.md`.
+- **Auto-rebuild Docker images** — install.sh compares Dockerfile SHA-256
+  hash against image label, rebuilds automatically when Dockerfile changes.
 
 ### Changed
 
