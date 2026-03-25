@@ -121,7 +121,8 @@ start_process(command="msfconsole -q")
 
 **Tools in the Docker image:**
 - evil-winrm (Ruby gem)
-- impacket (psexec.py, wmiexec.py, smbexec.py, smbclient.py, mssqlclient.py, etc.)
+- impacket (psexec.py, wmiexec.py, smbexec.py, smbclient.py, mssqlclient.py, dpapi.py, etc.)
+- dpapick3 (DPAPI/CAPI/EFS decryption — handles key containers that impacket dpapi.py can't parse)
 - chisel (TCP/UDP tunnel for pivoting)
 - ligolo-ng proxy (TUN-based pivot proxy)
 - socat (port forwarding)
