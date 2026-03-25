@@ -50,6 +50,17 @@ run_uv_sync() {
     uv sync --directory "$uv_dir"
 }
 
+# Check if Docker image needs rebuild by comparing Dockerfile hash
+docker_needs_rebuild() {
+    local image=$1 dockerfile=$2
+    [[ "$REBUILD_DOCKER" == true ]] && return 0
+    ! docker image inspect "$image" &>/dev/null && return 0
+    local current_hash stored_hash
+    current_hash=$(sha256sum "$dockerfile" | cut -d' ' -f1)
+    stored_hash=$(docker inspect --format='{{index .Config.Labels "red-run.dockerfile-hash"}}' "$image" 2>/dev/null || echo "")
+    [[ "$current_hash" != "$stored_hash" ]]
+}
+
 SKILLS_SRC="${REPO_DIR}/skills"
 SKILLS_DST="${HOME}/.claude/skills"
 AGENTS_SRC="${REPO_DIR}/agents"
@@ -199,11 +210,13 @@ run_uv_sync "nmap-server" "${MCP_NMAP_SERVER}"
 
 # Build Docker image for nmap
 if command -v docker &>/dev/null && docker info &>/dev/null 2>&1; then
-    if [[ "$REBUILD_DOCKER" == true ]] || ! docker image inspect red-run-nmap:latest &>/dev/null; then
+    if docker_needs_rebuild red-run-nmap:latest "${MCP_NMAP_SERVER}/Dockerfile"; then
+        local hash
+        hash=$(sha256sum "${MCP_NMAP_SERVER}/Dockerfile" | cut -d' ' -f1)
         run_with_spin "nmap-server" "Building Docker image..." \
-            docker build -t red-run-nmap:latest "${MCP_NMAP_SERVER}" --quiet
+            docker build -t red-run-nmap:latest --label "red-run.dockerfile-hash=${hash}" "${MCP_NMAP_SERVER}" --quiet
     else
-        echo "  [nmap-server] Docker image: already exists (use --rebuild to force)"
+        echo "  [nmap-server] Docker image: up to date"
     fi
 else
     echo ""
@@ -217,11 +230,13 @@ run_uv_sync "shell-server" "${MCP_SHELL_SERVER}"
 
 # Build Docker image for shell-server (privileged mode)
 if command -v docker &>/dev/null && docker info &>/dev/null 2>&1; then
-    if [[ "$REBUILD_DOCKER" == true ]] || ! docker image inspect red-run-shell:latest &>/dev/null; then
+    if docker_needs_rebuild red-run-shell:latest "${MCP_SHELL_SERVER}/Dockerfile"; then
+        local hash
+        hash=$(sha256sum "${MCP_SHELL_SERVER}/Dockerfile" | cut -d' ' -f1)
         run_with_spin "shell-server" "Building Docker image..." \
-            docker build -t red-run-shell:latest "${MCP_SHELL_SERVER}" --quiet
+            docker build -t red-run-shell:latest --label "red-run.dockerfile-hash=${hash}" "${MCP_SHELL_SERVER}" --quiet
     else
-        echo "  [shell-server] Docker image: already exists (use --rebuild to force)"
+        echo "  [shell-server] Docker image: up to date"
     fi
 else
     echo ""
