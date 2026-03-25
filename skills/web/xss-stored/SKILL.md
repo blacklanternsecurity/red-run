@@ -1,8 +1,6 @@
 ---
 name: xss-stored
-description: >
-  Guide stored (persistent) and blind XSS exploitation during authorized
-  penetration testing.
+description: "Inject persistent JavaScript payloads into stored content (comments, profiles, user-generated content) and deploy blind XSS callbacks via XSS Hunter to capture admin sessions. Use when the application stores and renders user-supplied HTML or JavaScript in pages viewed by other users."
 keywords:
   - stored XSS
   - persistent XSS

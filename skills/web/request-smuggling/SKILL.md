@@ -1,8 +1,6 @@
 ---
 name: request-smuggling
-description: >
-  Guide HTTP request smuggling exploitation during authorized penetration
-  testing.
+description: "Exploit HTTP request smuggling via CL.TE, TE.CL, and H2 desync techniques to bypass security controls, poison caches, and hijack other users' requests. Use when the target sits behind a reverse proxy or load balancer with potential front-end/back-end parsing differences."
 keywords:
   - request smuggling
   - HTTP desync

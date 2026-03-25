@@ -1,9 +1,6 @@
 ---
 name: pass-the-hash
-description: >
-  Authenticates to AD services using NTLM hashes, AES keys, or Kerberos
-  tickets without cracking passwords. Covers Pass-the-Hash,
-  Over-Pass-the-Hash, Pass-the-Key, and Pass-the-Ticket for lateral movement.
+description: "Authenticates to AD services using NTLM hashes, AES keys, or Kerberos tickets without cracking passwords via Pass-the-Hash, Over-Pass-the-Hash, Pass-the-Key, and Pass-the-Ticket techniques. Use when you have harvested credential material and need to move laterally or access services without knowing the plaintext password."
 keywords:
   - pass the hash
   - PTH

@@ -1,12 +1,6 @@
 ---
 name: smb-share-webshell
-description: >
-  Deploy webshells to IIS, Apache, or Tomcat web roots via SMB share write
-  access. Use when a domain user has write access to a file share that maps
-  to a web server's document root — write a webshell via smbclient/net use,
-  then trigger it via HTTP for RCE. Covers PHP, ASPX, and JSP webshells,
-  .NET impersonation for same-host lateral movement, and internal site
-  discovery.
+description: "Deploy webshells to IIS, Apache, or Tomcat web roots via SMB share write access, then trigger them via HTTP for RCE. Use when a domain user has write access to a file share that maps to a web server's document root."
 keywords:
   - smb webshell
   - smb share write

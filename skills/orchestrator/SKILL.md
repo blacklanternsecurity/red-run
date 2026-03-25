@@ -1,19 +1,6 @@
 ---
 name: orchestrator
-description: >
-  USE THIS SKILL when the user provides a target or list of targets (IPs,
-  hostnames, URLs, subnets) and asks to attack, pentest, hack, scan, assess,
-  or test them. ALSO USE THIS SKILL when the user references an existing
-  engagement — resuming, continuing, picking up, checking status, or asking
-  about next steps. Trigger phrases: "attack X", "pentest X", "hack X",
-  "scan X", "start testing X", "pop X", "CTF target X", "engage X",
-  "these targets", "resume engagement", "pick it up", "continue testing",
-  "next steps", "where were we", "resuming", "advise next steps",
-  "what should we do next", "engagement status".
-  This is the entry point for all multi-phase penetration tests — handles
-  recon, attack surface mapping, vulnerability chaining, and routes to
-  technique skills for exploitation. Do NOT use when the user names a specific
-  single technique (e.g., "run kerberoasting against X").
+description: "Entry point for multi-phase penetration tests that handles recon, attack surface mapping, vulnerability chaining, and routes to technique-specific skills for exploitation. Use when the user provides targets (IPs, hostnames, URLs, subnets) and asks to attack, pentest, scan, or assess them, or when resuming an existing engagement."
 keywords:
   - pentest this target
   - start an engagement

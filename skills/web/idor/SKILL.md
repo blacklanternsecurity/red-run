@@ -1,8 +1,6 @@
 ---
 name: idor
-description: >
-  Exploit Insecure Direct Object Reference (IDOR) and broken access control
-  vulnerabilities during authorized penetration testing.
+description: "Enumerate and tamper with object references (numeric IDs, UUIDs, encoded values) in API parameters, URLs, and request bodies to access unauthorized resources. Use when endpoints expose direct object references without proper authorization checks."
 keywords:
   - idor
   - idor enumeration

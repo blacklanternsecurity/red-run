@@ -1,8 +1,6 @@
 ---
 name: oauth-attacks
-description: >
-  Exploit OAuth 2.0 and OpenID Connect vulnerabilities during authorized
-  penetration testing.
+description: "Exploit OAuth 2.0 and OpenID Connect flaws including redirect URI manipulation, authorization code theft, token leakage via referer, scope abuse, and CSRF on callback endpoints. Use when the application implements OAuth/OIDC-based authentication or social login."
 keywords:
   - oauth
   - oauth attack

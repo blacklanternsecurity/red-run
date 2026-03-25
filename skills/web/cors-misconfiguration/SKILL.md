@@ -1,8 +1,6 @@
 ---
 name: cors-misconfiguration
-description: >
-  Exploit CORS (Cross-Origin Resource Sharing) misconfigurations during
-  authorized penetration testing.
+description: "Exploit CORS misconfigurations including reflected origins, null origin trusts, wildcard with credentials, and subdomain-based bypasses to exfiltrate sensitive data cross-origin. Use when Access-Control-Allow-Origin headers reflect attacker-controlled origins or accept null."
 keywords:
   - cors
   - cors misconfiguration

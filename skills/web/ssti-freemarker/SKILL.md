@@ -1,8 +1,6 @@
 ---
 name: ssti-freemarker
-description: >
-  Guide Freemarker/Java server-side template injection exploitation during
-  authorized penetration testing.
+description: "Exploit Java template injection in FreeMarker, Velocity, Thymeleaf, Pebble, and Spring Expression Language (SpEL) to achieve remote code execution via class instantiation and runtime exec. Use when user input is rendered by a Java-based template engine and expression evaluation is confirmed."
 keywords:
   - Freemarker SSTI
   - Java template injection

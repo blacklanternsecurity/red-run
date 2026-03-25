@@ -1,9 +1,6 @@
 ---
 name: retrospective
-description: >
-  Post-engagement lessons-learned retrospective. Reads the engagement
-  directory, analyzes skill routing decisions, identifies knowledge gaps and
-  missing skills, and produces an actionable improvement report.
+description: "Reads the engagement directory, analyzes skill routing decisions, identifies knowledge gaps and missing skills, and produces an actionable improvement report. Use after an engagement completes to generate a lessons-learned retrospective."
 keywords:
   - what went wrong
   - what worked

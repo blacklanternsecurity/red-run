@@ -1,13 +1,6 @@
 ---
 name: ad-persistence
-description: >
-  Establishes persistent access in Active Directory environments after domain
-  compromise. Covers DCShadow (rogue DC attribute modification), Skeleton Key
-  (LSASS master password), custom SSP injection (credential logging via
-  mimilib/memssp), security descriptor backdoors (WMI/WinRM/ DCOM/registry ACL
-  modification), ADFS Golden SAML (DKM key extraction and forged SAML tokens),
-  SID history persistence (DA SID in regular user), and certificate-based
-  persistence (golden certificate, renewal, enrollment agent).
+description: "Establishes persistent access in Active Directory via DCShadow, Skeleton Key, custom SSP injection, security descriptor backdoors, ADFS Golden SAML, SID history manipulation, and certificate-based persistence. Use when you have domain admin or equivalent privileges and need to maintain long-term access after domain compromise."
 keywords:
   - AD persistence
   - domain persistence

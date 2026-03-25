@@ -1,8 +1,6 @@
 ---
 name: windows-uac-bypass
-description: >
-  Bypass Windows User Account Control to escalate from medium to high
-  integrity.
+description: "Bypasses Windows UAC using fodhelper, eventvwr, silentcleanup, COM hijacking, and auto-elevate binary abuse to escalate from medium to high integrity. Use when you have a local admin account but are running at medium integrity and need high-integrity or elevated access."
 keywords:
   - bypass UAC
   - UAC bypass

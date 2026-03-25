@@ -1,10 +1,6 @@
 ---
 name: acl-abuse
-description: >
-  Exploits misconfigured Active Directory ACLs for privilege escalation.
-  Covers GenericAll, GenericWrite, WriteDACL, WriteOwner, ForceChangePassword,
-  targeted Kerberoasting via SPN manipulation, shadow credentials
-  (msDS-KeyCredentialLink → PKINIT), and AdminSDHolder persistence.
+description: "Exploits misconfigured Active Directory ACLs by abusing GenericAll, GenericWrite, WriteDACL, WriteOwner, ForceChangePassword, SPN-based targeted Kerberoasting, shadow credentials, and AdminSDHolder persistence. Use when BloodHound or manual enumeration reveals exploitable ACEs on user, group, or computer objects."
 keywords:
   - ACL abuse
   - ACE abuse

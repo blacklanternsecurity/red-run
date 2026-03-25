@@ -1,12 +1,6 @@
 ---
 name: gpo-abuse
-description: >
-  Exploits Group Policy Objects for code execution, privilege escalation, and
-  lateral movement in Active Directory. Covers GPO enumeration (GPOHound,
-  BloodHound, PowerView), exploitation via immediate tasks, logon scripts, and
-  registry modifications (SharpGPOAbuse, PowerGPOAbuse, pyGPOAbuse,
-  GroupPolicyBackdoor), SYSVOL/NETLOGON logon script poisoning, and GPP
-  password extraction.
+description: "Exploits writable Group Policy Objects for code execution, privilege escalation, and lateral movement via immediate tasks, logon scripts, registry modifications, SYSVOL/NETLOGON script poisoning, and GPP password extraction. Use when BloodHound or GPOHound identifies writable GPOs linked to high-value OUs or when GPP credentials exist in SYSVOL."
 keywords:
   - GPO abuse
   - group policy

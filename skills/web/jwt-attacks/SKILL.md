@@ -1,8 +1,6 @@
 ---
 name: jwt-attacks
-description: >
-  Exploit JWT (JSON Web Token) vulnerabilities during authorized penetration
-  testing.
+description: "Forge and manipulate JSON Web Tokens via algorithm confusion (RS256-to-HS256), alg:none bypass, kid injection, JWK/JKU spoofing, and weak secret brute-forcing. Use when the application uses JWTs for authentication or session management."
 keywords:
   - JWT attack
   - JWT bypass

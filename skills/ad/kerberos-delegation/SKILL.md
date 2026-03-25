@@ -1,11 +1,6 @@
 ---
 name: kerberos-delegation
-description: >
-  Exploits Kerberos delegation misconfigurations for privilege escalation and
-  lateral movement in Active Directory. Covers Unconstrained Delegation (TGT
-  harvesting via coercion), Constrained Delegation (S4U2Self + S4U2Proxy with
-  SPN swapping), and Resource-Based Constrained Delegation (RBCD via writable
-  machine accounts).
+description: "Exploits Kerberos delegation misconfigurations including Unconstrained Delegation TGT harvesting, Constrained Delegation S4U2Self/S4U2Proxy with SPN swapping, and Resource-Based Constrained Delegation via writable machine accounts. Use when enumeration reveals accounts with delegation flags set or when you can write msDS-AllowedToActOnBehalfOfOtherIdentity on a target computer."
 keywords:
   - delegation
   - unconstrained delegation

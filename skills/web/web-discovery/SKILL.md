@@ -1,8 +1,6 @@
 ---
 name: web-discovery
-description: >
-  Discover web application injection points and route to the correct
-  exploitation skill during authorized penetration testing.
+description: "Enumerate web application attack surface through content discovery, parameter fuzzing, technology fingerprinting, and injection point identification across endpoints. Use when beginning web application testing to map parameters, hidden paths, and potential vulnerabilities before selecting exploitation skills."
 keywords:
   - find vulns
   - fuzz the target

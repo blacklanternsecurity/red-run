@@ -1,8 +1,6 @@
 ---
 name: linux-sudo-suid-capabilities
-description: >
-  Exploit sudo misconfigurations, SUID/SGID binaries, and Linux capabilities
-  for privilege escalation.
+description: "Exploits sudo misconfigurations (NOPASSWD, LD_PRELOAD, env_keep), SUID/SGID binaries via GTFOBins techniques, and Linux capabilities (cap_setuid, cap_dac_override) for privilege escalation. Use when sudo -l, find -perm, or getcap reveals exploitable binaries or permissions."
 keywords:
   - exploit sudo
   - abuse suid

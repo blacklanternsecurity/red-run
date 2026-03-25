@@ -1,10 +1,6 @@
 ---
 name: av-edr-evasion
-description: >
-  Bypass antivirus and EDR detection for payload delivery during exploitation.
-  Covers custom payload compilation (mingw C, Go), AMSI bypass, shellcode
-  alternatives, and ETW patching. Route here when an agent reports a payload
-  was quarantined, blocked, or detected by endpoint protection.
+description: "Compiles custom payloads (mingw C, Go), patches AMSI and ETW, encodes shellcode, and applies obfuscation to bypass antivirus and EDR detection. Use when a payload is quarantined, blocked, or detected by endpoint protection during exploitation."
 keywords:
   - AMSI bypass
   - antivirus evasion

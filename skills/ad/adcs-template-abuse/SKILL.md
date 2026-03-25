@@ -1,10 +1,6 @@
 ---
 name: adcs-template-abuse
-description: >
-  Exploits misconfigured AD CS certificate templates to impersonate any domain
-  user via SAN manipulation or enrollment agent abuse. Covers ESC1 (enrollee
-  supplies subject), ESC2 (any-purpose/no EKU), ESC3 (enrollment agent), ESC6
-  (EDITF_ATTRIBUTESUBJECTALTNAME2 CA flag).
+description: "Exploits misconfigured AD CS certificate templates to impersonate any domain user via ESC1 enrollee-supplied SAN, ESC2 any-purpose/no-EKU templates, ESC3 enrollment agent abuse, and ESC6 EDITF_ATTRIBUTESUBJECTALTNAME2 CA flag exploitation. Use when Certipy or Certify finds templates with enrollee-controlled SANs, overly permissive EKUs, or enrollment agent configurations."
 keywords:
   - ESC1
   - ESC2

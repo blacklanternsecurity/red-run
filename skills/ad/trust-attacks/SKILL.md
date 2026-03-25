@@ -1,15 +1,6 @@
 ---
 name: trust-attacks
-description: >
-  Enumerates Active Directory trust relationships and exploits them for
-  cross-domain and cross-forest privilege escalation. Covers trust enumeration
-  (nltest, PowerView, BloodHound), SID history injection (child domain to
-  forest root via golden/diamond ticket with extra SIDs), inter-realm TGT
-  forging using trust keys, TGT delegation coercion capture (Rubeus monitor +
-  SpoolSample/DFSCoerce across forest trusts with ENABLE_TGT_DELEGATION),
-  cross-forest trust abuse (SID filtering bypass, RBCD, Kerberoasting via
-  trust account), and PAM trust exploitation (shadow principals in bastion
-  forests).
+description: "Enumerates AD trust relationships and exploits them for cross-domain and cross-forest privilege escalation via SID history injection, inter-realm TGT forging, TGT delegation coercion, SID filtering bypass, cross-forest RBCD/Kerberoasting, and PAM trust exploitation. Use when you have compromised a child domain and need to escalate to the forest root, or when cross-forest trusts are present and exploitable."
 keywords:
   - trust attacks
   - domain trust

@@ -1,11 +1,6 @@
 ---
 name: smb-enumeration
-description: >
-  SMB share enumeration, access testing, password policy extraction, and
-  content searching. Enumerates shares via null session, guest, and
-  authenticated access. Covers share listing, per-share access testing,
-  MANSPIDER content search, and SMB vulnerability detection (signing,
-  EternalBlue). Use after network-recon identifies SMB ports (139/445).
+description: "Enumerates SMB shares via null session, guest, and authenticated access, tests per-share permissions, extracts password policies, searches share content with MANSPIDER, and detects SMB vulnerabilities (signing, EternalBlue). Use after network-recon identifies SMB ports (139/445)."
 keywords:
   - SMB shares
   - null session

@@ -1,8 +1,6 @@
 ---
 name: sql-injection-stacked
-description: >
-  Guide stacked query SQL injection and second-order injection exploitation
-  during authorized penetration testing.
+description: "Execute stacked SQL queries to run multiple statements (xp_cmdshell, COPY TO PROGRAM, write webshells) and exploit second-order injection where stored payloads trigger in later queries. Use when the injection point supports multi-statement execution or when payloads are stored and executed in a different context."
 keywords:
   - stacked queries
   - multi-statement injection

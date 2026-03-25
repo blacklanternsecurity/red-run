@@ -1,10 +1,6 @@
 ---
 name: remote-access-enumeration
-description: >
-  Enumeration of remote access services: FTP, SSH, RDP, VNC, and WinRM.
-  Checks anonymous access, default credentials, version vulnerabilities,
-  and authentication methods. Use after network-recon identifies remote
-  access ports.
+description: "Enumerates FTP, SSH, RDP, VNC, and WinRM services by checking anonymous access, default credentials, version vulnerabilities, and authentication methods. Use after network-recon identifies remote access ports."
 keywords:
   - FTP anonymous
   - SSH version

@@ -1,8 +1,6 @@
 ---
 name: ldap-injection
-description: >
-  Exploit LDAP injection vulnerabilities during authorized penetration
-  testing.
+description: "Inject LDAP filter syntax to bypass authentication, extract directory attributes, and enumerate users via wildcard and blind injection techniques. Use when user input is concatenated into LDAP search filters or bind operations."
 keywords:
   - ldap injection
   - ldap filter injection

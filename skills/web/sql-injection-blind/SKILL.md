@@ -1,8 +1,6 @@
 ---
 name: sql-injection-blind
-description: >
-  Guide blind SQL injection exploitation (boolean-based, time-based, and
-  out-of-band) during authorized penetration testing.
+description: "Extract database contents through boolean-based, time-based (SLEEP, WAITFOR DELAY, pg_sleep), and out-of-band blind SQL injection when query output is not directly visible. Use when SQL injection is confirmed but the application does not display query results or error messages."
 keywords:
   - blind SQLi
   - boolean-based

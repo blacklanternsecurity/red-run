@@ -1,11 +1,6 @@
 ---
 name: php-code-injection
-description: >
-  Exploit PHP code evaluation injection via eval(), assert(), preg_replace /e,
-  create_function(), call_user_func(), usort() callbacks, and runtime function
-  creation (runkit, uopz). Distinct from OS command injection (shell operators)
-  and SSTI (template engines) — this targets direct PHP code evaluation of user
-  input.
+description: "Exploit PHP code evaluation injection via eval(), assert(), preg_replace /e, create_function(), and callback functions to execute arbitrary PHP code. Use when user input reaches PHP code evaluation functions rather than shell commands or template engines."
 keywords:
   - php eval injection
   - eval() exploit

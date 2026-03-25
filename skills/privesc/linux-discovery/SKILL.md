@@ -1,7 +1,6 @@
 ---
 name: linux-discovery
-description: >
-  Linux local privilege escalation enumeration and attack surface mapping.
+description: "Runs LinPEAS, LinEnum, and pspy to enumerate sudo rules, SUID binaries, capabilities, cron jobs, writable paths, kernel version, and running processes for privilege escalation vectors. Use when you have a low-privilege shell on a Linux host and need to identify escalation paths."
 keywords:
   - enumerate linux privesc
   - check for privilege escalation

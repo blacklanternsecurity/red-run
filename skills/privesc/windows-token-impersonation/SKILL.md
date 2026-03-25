@@ -1,7 +1,6 @@
 ---
 name: windows-token-impersonation
-description: >
-  Exploit Windows token privileges for local privilege escalation to SYSTEM.
+description: "Exploits SeImpersonatePrivilege and SeDebugPrivilege using potato attacks (JuicyPotato, PrintSpoofer, GodPotato, RoguePotato) and token manipulation for escalation to SYSTEM. Use when whoami /priv shows SeImpersonate, SeAssignPrimaryToken, or SeDebug on a service account."
 keywords:
   - potato exploit
   - juicypotato

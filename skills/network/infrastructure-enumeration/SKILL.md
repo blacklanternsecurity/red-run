@@ -1,11 +1,6 @@
 ---
 name: infrastructure-enumeration
-description: >
-  Enumeration of infrastructure services: DNS, SMTP, SNMP, IPMI, NFS,
-  TFTP, RPC/MSRPC, and HTTP/HTTPS surface detection. Checks zone
-  transfers, open relays, default community strings, cipher zero, NFS
-  exports, and web technology fingerprinting. Use after network-recon
-  identifies infrastructure ports.
+description: "Enumerates DNS, SMTP, SNMP, IPMI, NFS, TFTP, RPC/MSRPC, and HTTP/HTTPS services by checking zone transfers, open relays, default community strings, cipher zero, NFS exports, and web technology fingerprints. Use after network-recon identifies infrastructure ports."
 keywords:
   - DNS zone transfer
   - SMTP relay

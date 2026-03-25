@@ -1,8 +1,6 @@
 ---
 name: deserialization-php
-description: >
-  Exploit PHP deserialization vulnerabilities during authorized penetration
-  testing.
+description: "Exploit PHP object injection via unserialize() and phar:// deserialization using PHPGGC gadget chains targeting __wakeup, __destruct, and __toString magic methods. Use when user input reaches unserialize() or phar stream wrappers in PHP applications."
 keywords:
   - php deserialization
   - php object injection

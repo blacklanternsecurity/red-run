@@ -1,11 +1,6 @@
 ---
 name: credential-dumping
-description: >
-  Extracts credentials from Active Directory: DCSync replication, NTDS.dit
-  database extraction, SAM hive dump, Azure AD Connect (ADSync) credential
-  extraction, LAPS passwords (legacy + Windows LAPS), gMSA passwords (KDS
-  root key + GoldenGMSA), dMSA exploitation (BadSuccessor CVE-2025-21293),
-  and DSRM credentials.
+description: "Extracts credentials from Active Directory via DCSync replication, NTDS.dit extraction, SAM hive dumps, Azure AD Connect secrets, LAPS/gMSA/dMSA password retrieval, and DSRM credential recovery. Use when you have domain admin, replication rights, or delegated access to credential stores and need to harvest hashes or plaintext passwords."
 keywords:
   - DCSync
   - secretsdump

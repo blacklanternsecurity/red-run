@@ -1,10 +1,6 @@
 ---
 name: database-enumeration
-description: >
-  Database service enumeration and quick-win access checks for MSSQL,
-  MySQL, PostgreSQL, Oracle, MongoDB, and Redis. Checks default/empty
-  passwords, unauthenticated access, and command execution capabilities.
-  Use after network-recon identifies database ports.
+description: "Enumerates MSSQL, MySQL, PostgreSQL, Oracle, MongoDB, and Redis services by checking default/empty passwords, unauthenticated access, and command execution capabilities. Use after network-recon identifies database ports."
 keywords:
   - MSSQL
   - MySQL

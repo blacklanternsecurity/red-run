@@ -1,11 +1,6 @@
 ---
 name: tomcat-manager-deploy
-description: >
-  Deploy WAR files via Apache Tomcat Manager for remote code execution.
-  Use when Tomcat Manager is accessible with valid credentials (manager-script
-  or manager-gui role). Covers WAR generation, deployment via text API and HTML
-  interface, reverse shell delivery, and cleanup. Common initial access vector
-  after credential discovery via LFI, default creds, or config file exposure.
+description: "Deploy malicious WAR files via Apache Tomcat Manager text API and HTML interface for remote code execution and reverse shell delivery. Use when Tomcat Manager is accessible with valid credentials (manager-script or manager-gui role)."
 keywords:
   - tomcat manager
   - WAR deploy

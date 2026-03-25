@@ -1,8 +1,6 @@
 ---
 name: ad-discovery
-description: >
-  Enumerates Active Directory domains and maps attack surface for penetration
-  testing.
+description: "Enumerates Active Directory domains by collecting users, groups, computers, trusts, GPOs, ACLs, and attack paths via BloodHound, PowerView, and LDAP queries. Use when you have domain credentials or a foothold and need to map the AD attack surface before exploitation."
 keywords:
   - enumerate domain
   - AD recon

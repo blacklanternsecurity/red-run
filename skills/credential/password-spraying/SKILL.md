@@ -1,10 +1,6 @@
 ---
 name: password-spraying
-description: >
-  Performs password spraying against authentication services with lockout-safe
-  techniques. Works against AD (SMB/Kerberos/LDAP), SSH, web login forms, OWA,
-  and any service with username/password auth. Service-agnostic — the
-  orchestrator passes target services and spray intensity tier.
+description: "Performs lockout-safe password spraying against AD (SMB/Kerberos/LDAP), SSH, web login forms, OWA, and other username/password services. Use when valid usernames are available and you need to test common or known passwords across multiple accounts."
 keywords:
   - password spray
   - spray passwords

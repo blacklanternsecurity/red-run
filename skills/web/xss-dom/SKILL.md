@@ -1,7 +1,6 @@
 ---
 name: xss-dom
-description: >
-  Guide DOM-based XSS exploitation during authorized penetration testing.
+description: "Exploit DOM-based XSS by identifying JavaScript sources (location.hash, postMessage, document.referrer) that flow into dangerous sinks (innerHTML, eval, document.write) without sanitization. Use when user-controlled input is processed client-side by JavaScript DOM manipulation."
 keywords:
   - DOM XSS
   - DOM-based XSS

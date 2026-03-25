@@ -1,7 +1,6 @@
 ---
 name: container-escapes
-description: >
-  Container escape, Docker breakout, and Kubernetes exploitation.
+description: "Escapes Docker containers via socket mounts, privileged mode, and kernel exploits, and exploits Kubernetes misconfigurations including pod escapes and service account abuse. Use when you have a shell inside a container or pod and need to reach the host or cluster resources."
 keywords:
   - container escape
   - docker breakout

@@ -1,10 +1,6 @@
 ---
 name: adcs-access-and-relay
-description: >
-  Exploits ADCS through ACL abuse on templates/CA objects and NTLM relay to
-  enrollment endpoints. Covers ESC4 (template ACL → modify to ESC1), ESC5 (PKI
-  object ACLs), ESC7 (ManageCA/ManageCertificates abuse), ESC8 (NTLM relay to
-  HTTP enrollment), ESC11 (NTLM relay to ICPR RPC).
+description: "Exploits AD CS enrollment endpoints and PKI object ACLs via ESC4 template modification, ESC5 PKI object abuse, ESC7 ManageCA/ManageCertificates escalation, ESC8 NTLM relay to HTTP enrollment, and ESC11 NTLM relay to ICPR RPC. Use when Certipy or Certify identifies vulnerable CA configurations, writable template ACLs, or unauthenticated enrollment endpoints."
 keywords:
   - ESC4
   - ESC5

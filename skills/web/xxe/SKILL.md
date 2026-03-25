@@ -1,8 +1,6 @@
 ---
 name: xxe
-description: >
-  Guide XML External Entity (XXE) injection exploitation during authorized
-  penetration testing.
+description: "Inject XML external entities to read server files, perform SSRF, and exfiltrate data via out-of-band (OOB) and error-based XXE techniques using DTD declarations. Use when the application parses user-supplied XML input or accepts XML content types."
 keywords:
   - XXE
   - XML injection

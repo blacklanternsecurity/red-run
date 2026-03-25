@@ -1,8 +1,6 @@
 ---
 name: deserialization-dotnet
-description: >
-  Exploit .NET deserialization vulnerabilities during authorized penetration
-  testing.
+description: "Exploit .NET deserialization via BinaryFormatter, ViewState, JSON.NET TypeNameHandling, and SoapFormatter gadget chains using ysoserial.net payloads. Use when the target accepts serialized .NET objects, encrypted ViewState with known machine keys, or JSON with type metadata."
 keywords:
   - .net deserialization
   - ysoserial.net

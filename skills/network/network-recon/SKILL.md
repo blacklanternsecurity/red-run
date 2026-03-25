@@ -1,9 +1,6 @@
 ---
 name: network-recon
-description: >
-  Network reconnaissance, host discovery, port scanning, and OS
-  fingerprinting. Produces a port/service map that the orchestrator uses
-  to route to service-specific enumeration skills.
+description: "Performs host discovery, port scanning, and OS fingerprinting to produce a port/service map for the target network. Use when starting an engagement or when new subnets are discovered and need initial reconnaissance."
 keywords:
   - scan this network
   - nmap

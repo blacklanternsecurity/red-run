@@ -1,7 +1,6 @@
 ---
 name: file-upload-bypass
-description: >
-  Guide file upload restriction bypass during authorized penetration testing.
+description: "Bypass file upload restrictions using extension manipulation, content-type spoofing, magic byte prepending, double extensions, and null byte injections to upload webshells. Use when the application has a file upload feature with client-side or server-side filtering."
 keywords:
   - file upload bypass
   - upload shell

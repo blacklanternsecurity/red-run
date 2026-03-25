@@ -1,9 +1,6 @@
 ---
 name: ajp-ghostcat
-description: >
-  Exploit Apache JServ Protocol (AJP) misconfigurations and Ghostcat
-  (CVE-2020-1938) for file read and remote code execution on Apache Tomcat.
-  Use when port 8009 is open or AJP connector is exposed.
+description: "Exploit Apache JServ Protocol (AJP) misconfigurations and Ghostcat (CVE-2020-1938) for file read and remote code execution on Apache Tomcat. Use when port 8009 is open or AJP connector is exposed."
 keywords:
   - AJP
   - Apache JServ Protocol

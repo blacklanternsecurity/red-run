@@ -1,9 +1,6 @@
 ---
 name: python-code-injection
-description: >
-  Exploit Python eval(), exec(), and compile() injection in web applications.
-  Distinct from OS command injection (shell operators) and SSTI (template
-  engines) — this targets direct Python code evaluation of user input.
+description: "Exploit Python eval(), exec(), and compile() injection to execute arbitrary Python code, escape sandboxes, and import dangerous modules. Use when user input reaches Python code evaluation functions rather than shell commands or template engines."
 keywords:
   - python eval injection
   - eval() exploit

@@ -1,8 +1,6 @@
 ---
 name: 2fa-bypass
-description: >
-  Bypass two-factor authentication (2FA/MFA) during authorized penetration
-  testing.
+description: "Bypass two-factor authentication by brute-forcing OTP codes, exploiting backup code weaknesses, manipulating step-up authentication flows, and abusing session token reuse. Use when a login form presents 2FA/MFA after valid credentials are obtained."
 keywords:
   - 2fa bypass
   - mfa bypass

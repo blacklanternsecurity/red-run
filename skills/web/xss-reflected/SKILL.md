@@ -1,7 +1,6 @@
 ---
 name: xss-reflected
-description: >
-  Guide reflected XSS exploitation during authorized penetration testing.
+description: "Inject JavaScript payloads into server responses via reflected parameters, bypassing WAF filters, CSP policies, and HTML encoding to achieve session hijacking or credential theft. Use when user input is echoed in the HTTP response without proper output encoding."
 keywords:
   - reflected XSS
   - XSS filter bypass

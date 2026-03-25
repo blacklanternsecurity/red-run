@@ -1,7 +1,6 @@
 ---
 name: nosql-injection
-description: >
-  Guide NoSQL injection exploitation during authorized penetration testing.
+description: "Inject NoSQL operators ($ne, $gt, $regex, $where) into MongoDB, CouchDB, and other NoSQL queries to bypass authentication, extract data, and achieve code execution. Use when the application passes user input to NoSQL query operators or JavaScript evaluation contexts."
 keywords:
   - nosql injection
   - mongodb injection

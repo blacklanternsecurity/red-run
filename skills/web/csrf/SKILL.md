@@ -1,8 +1,6 @@
 ---
 name: csrf
-description: >
-  Exploit Cross-Site Request Forgery (CSRF) vulnerabilities during authorized
-  penetration testing.
+description: "Forge cross-site requests to perform state-changing actions by bypassing anti-CSRF tokens, SameSite cookie restrictions, and content-type validations. Use when a state-changing endpoint lacks proper CSRF protections or when existing protections can be circumvented."
 keywords:
   - csrf
   - cross-site request forgery

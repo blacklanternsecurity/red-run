@@ -1,11 +1,6 @@
 ---
 name: adcs-persistence
-description: >
-  Establishes persistence and exploits weak certificate mapping in AD CS.
-  Covers ESC9 (no security extension), ESC10 (weak certificate mapping),
-  ESC12-15 (YubiHSM, issuance policy, altSecIdentities, application policies),
-  Golden Certificate (forge with stolen CA key), certificate theft
-  (DPAPI/CAPI/CNG), and account persistence via certificate mapping.
+description: "Establishes AD CS persistence and exploits weak certificate mapping via ESC9-ESC15, Golden Certificate forgery with stolen CA keys, certificate theft from DPAPI/CAPI/CNG stores, and account persistence through certificate mapping. Use when you have CA-level access or need to maintain persistence through certificate-based authentication."
 keywords:
   - ESC9
   - ESC10

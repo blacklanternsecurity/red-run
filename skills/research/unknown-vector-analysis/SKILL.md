@@ -1,15 +1,6 @@
 ---
 name: unknown-vector-analysis
-description: >
-  Analyze custom applications, scripts, and binaries that standard technique
-  skills could not exploit. Performs source code review, attack surface mapping,
-  CVE research, and PoC adaptation. Route here when ANY technique agent returns
-  saying standard patterns do not match, the target uses a custom/unknown
-  application, or no existing technique skill covers the vector. Trigger
-  phrases: "standard patterns don't match", "custom script", "unknown binary",
-  "no matching technique", "unrecognized application". Do NOT use for known
-  vulnerability classes that have dedicated technique skills — route to those
-  instead.
+description: "Performs source code review, binary analysis, attack surface mapping, CVE research, and PoC adaptation for custom applications, scripts, and binaries that standard technique skills cannot exploit. Use when technique agents report that standard patterns do not match or the target uses a custom/unknown application."
 keywords:
   - custom application
   - unknown binary

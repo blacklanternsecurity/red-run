@@ -1,11 +1,6 @@
 ---
 name: xmpp-enumeration
-description: >
-  XMPP/Jabber service enumeration for Openfire, ejabberd, Prosody, and other
-  XMPP servers. Trigger when ports 5222 (client), 5223 (legacy TLS), or 5269
-  (server-to-server) are found open. Covers authentication testing, user
-  enumeration, MUC room discovery, and server fingerprinting. Do NOT use for
-  AD enumeration or credential spraying — route those to the appropriate skills.
+description: "Enumerates XMPP/Jabber servers (Openfire, ejabberd, Prosody) by testing authentication, enumerating users, discovering MUC rooms, and fingerprinting server versions. Use when ports 5222, 5223, or 5269 are found open."
 keywords:
   - xmpp
   - jabber

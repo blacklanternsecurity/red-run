@@ -1,8 +1,6 @@
 ---
 name: password-reset-poisoning
-description: >
-  Exploit password reset vulnerabilities during authorized penetration
-  testing.
+description: "Poison password reset links via Host header injection, manipulate reset tokens through predictable generation or reuse, and bypass account recovery flows. Use when the application has a password reset or account recovery feature."
 keywords:
   - password reset poisoning
   - password reset bypass

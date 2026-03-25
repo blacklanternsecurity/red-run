@@ -1,8 +1,6 @@
 ---
 name: deserialization-java
-description: >
-  Exploit Java deserialization vulnerabilities during authorized penetration
-  testing.
+description: "Exploit Java deserialization via ysoserial gadget chains (CommonsCollections, JNDI injection, Log4Shell) targeting T3, IIOP, HTTP, and JMX endpoints. Use when the target accepts serialized Java objects or JNDI lookups in user-controlled input."
 keywords:
   - java deserialization
   - ysoserial

@@ -1,8 +1,6 @@
 ---
 name: ssti-twig
-description: >
-  Guide Twig/PHP server-side template injection exploitation during authorized
-  penetration testing.
+description: "Exploit PHP template injection in Twig, Smarty, Blade, and Latte templates to achieve RCE via filter chains, sandbox escapes, and PHP function calls. Use when user input is rendered by a PHP-based template engine and expression evaluation is confirmed."
 keywords:
   - Twig SSTI
   - PHP template injection

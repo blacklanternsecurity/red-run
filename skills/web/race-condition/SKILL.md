@@ -1,8 +1,6 @@
 ---
 name: race-condition
-description: >
-  Exploit race conditions and TOCTOU vulnerabilities in web applications
-  during authorized penetration testing.
+description: "Exploit race conditions via single-packet attacks, HTTP/2 concurrent requests, and Turbo Intruder to trigger TOCTOU flaws like limit overruns, double-spends, and coupon reuse. Use when the application has time-sensitive operations such as balance checks, vote limits, or resource allocation."
 keywords:
   - race condition
   - TOCTOU

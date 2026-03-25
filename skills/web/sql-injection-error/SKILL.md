@@ -1,8 +1,6 @@
 ---
 name: sql-injection-error
-description: >
-  Guide error-based SQL injection exploitation during authorized penetration
-  testing.
+description: "Extract database contents via error-based SQL injection using EXTRACTVALUE, UPDATEXML, CONVERT/CAST type coercion, and database-specific error functions. Use when the application displays verbose SQL error messages containing query output."
 keywords:
   - error-based SQLi
   - EXTRACTVALUE

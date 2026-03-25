@@ -1,8 +1,6 @@
 ---
 name: kerberos-roasting
-description: >
-  Extracts and cracks Kerberos service tickets (Kerberoasting) and AS-REP
-  hashes (AS-REP Roasting) for offline password recovery.
+description: "Requests Kerberos service tickets for SPN-enabled accounts and AS-REP hashes for accounts without pre-authentication, then cracks them offline for password recovery. Use when you have domain credentials and want to target service accounts or accounts with DONT_REQ_PREAUTH set."
 keywords:
   - kerberoast
   - kerberoasting

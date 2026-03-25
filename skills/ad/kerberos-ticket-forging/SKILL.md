@@ -1,10 +1,6 @@
 ---
 name: kerberos-ticket-forging
-description: >
-  Forges Kerberos tickets for domain persistence and privilege escalation.
-  Covers Golden Ticket (krbtgt hash → forged TGT), Silver Ticket (service hash
-  → forged TGS), Diamond Ticket (decrypt/modify/re-encrypt legitimate TGT for
-  stealth), Sapphire Ticket (U2U PAC swap), and Pass-the-Ticket injection.
+description: "Forges Kerberos tickets for domain persistence and privilege escalation using Golden Ticket, Silver Ticket, Diamond Ticket, Sapphire Ticket, and Pass-the-Ticket techniques. Use when you have the krbtgt hash, service account hash, or AES keys and need to forge TGTs/TGS for impersonation or stealth persistence."
 keywords:
   - golden ticket
   - silver ticket

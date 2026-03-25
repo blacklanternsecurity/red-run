@@ -1,8 +1,6 @@
 ---
 name: lfi
-description: >
-  Guide Local File Inclusion (LFI) and Remote File Inclusion (RFI)
-  exploitation during authorized penetration testing.
+description: "Read arbitrary server files and achieve code execution via path traversal, PHP wrappers (php://filter, php://input, data://), log poisoning, and remote file inclusion. Use when a parameter controls a file path used in include(), require(), or similar file operations."
 keywords:
   - LFI
   - lfi

@@ -1,8 +1,6 @@
 ---
 name: command-injection
-description: >
-  Guide OS command injection exploitation during authorized penetration
-  testing.
+description: "Inject OS commands through shell metacharacters, backticks, pipes, and subshells in web application parameters that pass user input to system(), exec(), or similar functions. Use when user-controlled input is concatenated into shell commands on the server."
 keywords:
   - command injection
   - OS injection

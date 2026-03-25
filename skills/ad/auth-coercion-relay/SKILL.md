@@ -1,12 +1,6 @@
 ---
 name: auth-coercion-relay
-description: >
-  Forces remote systems to authenticate back to attacker-controlled listeners
-  and relays captured authentication to escalate privileges or move laterally.
-  Covers authentication coercion (PetitPotam, PrinterBug, DFSCoerce,
-  ShadowCoerce, CheeseOunce), NTLM relay (ntlmrelayx to LDAP/SMB/AD CS/MSSQL),
-  Kerberos relay (krbrelayx, mitm6), and name resolution poisoning
-  (LLMNR/NBNS/WPAD via Responder).
+description: "Coerces remote systems into authenticating to attacker-controlled listeners via PetitPotam, PrinterBug, DFSCoerce, ShadowCoerce, and CheeseOunce, then relays captured NTLM/Kerberos authentication to LDAP, SMB, AD CS, or MSSQL endpoints. Use when you need to escalate privileges or move laterally by exploiting coercible services and relay-vulnerable endpoints."
 keywords:
   - petitpotam
   - printerbug

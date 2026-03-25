@@ -1,8 +1,6 @@
 ---
 name: pivoting-tunneling
-description: >
-  Network pivoting, port forwarding, and tunneling through compromised hosts
-  to reach internal networks.
+description: "Sets up SOCKS proxies, SSH tunnels, port forwards, and tool-based tunnels (ligolo, chisel, sshuttle) through compromised hosts to reach internal networks. Use when you have a foothold and need to route traffic to unreachable subnets or services."
 keywords:
   - pivot
   - tunnel

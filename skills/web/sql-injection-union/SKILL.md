@@ -1,8 +1,6 @@
 ---
 name: sql-injection-union
-description: >
-  Guide UNION-based SQL injection exploitation during authorized penetration
-  testing.
+description: "Extract database contents via UNION SELECT injection by determining column count, identifying displayed columns, and exfiltrating data from other tables. Use when SQL injection is confirmed and query output is directly visible in the HTTP response."
 keywords:
   - UNION SELECT
   - union injection

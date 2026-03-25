@@ -1,8 +1,6 @@
 ---
 name: ssrf
-description: >
-  Guide server-side request forgery (SSRF) exploitation during authorized
-  penetration testing.
+description: "Exploit server-side request forgery to access cloud metadata endpoints (169.254.169.254/IMDS), scan internal networks, read local files via file:// and gopher:// protocols, and pivot through backend services. Use when user input controls a URL or hostname that the server fetches."
 keywords:
   - SSRF
   - server-side request forgery

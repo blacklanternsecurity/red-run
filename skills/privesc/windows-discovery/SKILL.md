@@ -1,7 +1,6 @@
 ---
 name: windows-discovery
-description: >
-  Windows local privilege escalation enumeration and attack surface mapping.
+description: "Runs WinPEAS, PowerUp, Seatbelt, and WES-NG to enumerate services, scheduled tasks, token privileges, missing patches, registry keys, and installed software for privilege escalation vectors. Use when you have a low-privilege shell on a Windows host and need to identify escalation paths."
 keywords:
   - enumerate privesc
   - check for privilege escalation

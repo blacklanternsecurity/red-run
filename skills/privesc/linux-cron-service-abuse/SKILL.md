@@ -1,8 +1,6 @@
 ---
 name: linux-cron-service-abuse
-description: >
-  Exploit cron jobs, systemd timers/services, D-Bus services, and Unix sockets
-  for privilege escalation.
+description: "Exploits writable cron jobs, wildcard injections, systemd timer/service misconfigurations, D-Bus policy weaknesses, and Unix socket permissions for privilege escalation. Use when pspy or enumeration reveals root-owned scheduled tasks, writable service files, or exploitable D-Bus interfaces."
 keywords:
   - cron privesc
   - wildcard injection

@@ -1,8 +1,6 @@
 ---
 name: ssti-jinja2
-description: >
-  Guide Jinja2/Python server-side template injection exploitation during
-  authorized penetration testing.
+description: "Exploit Python template injection in Jinja2, Mako, Tornado, and Django templates to achieve RCE via MRO traversal, sandbox escapes, and __import__ chains. Use when user input is rendered by a Python-based template engine and expression evaluation is confirmed (e.g. {{7*7}} returns 49)."
 keywords:
   - Jinja2 SSTI
   - Flask SSTI

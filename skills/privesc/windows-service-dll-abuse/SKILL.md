@@ -1,8 +1,6 @@
 ---
 name: windows-service-dll-abuse
-description: >
-  Exploit Windows service misconfigurations and DLL hijacking for local
-  privilege escalation.
+description: "Exploits unquoted service paths, writable service binaries (binpath replacement), weak service DACLs, and DLL search-order hijacking for local privilege escalation on Windows. Use when PowerUp or accesschk reveals misconfigured services or writable directories in the DLL search path."
 keywords:
   - unquoted service path
   - dll hijacking

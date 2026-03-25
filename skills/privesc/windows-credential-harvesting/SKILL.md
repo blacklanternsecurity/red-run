@@ -1,8 +1,6 @@
 ---
 name: windows-credential-harvesting
-description: >
-  Harvest stored credentials from a Windows system for privilege escalation or
-  lateral movement.
+description: "Extracts stored credentials from DPAPI vaults, registry (autologon, VNC, putty), browser password stores, unattend.xml, SAM/SYSTEM hives, and cmdkey saved entries on Windows systems. Use when you have local access and need credentials for privilege escalation or lateral movement."
 keywords:
   - credential harvesting
   - DPAPI
