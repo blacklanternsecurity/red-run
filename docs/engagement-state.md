@@ -39,7 +39,7 @@ The database has 10 tables:
 | `ports` | Per-target open ports (1:many from targets) | port, protocol, service, banner |
 | `credentials` | Username/secret pairs | username, secret, secret_type, domain |
 | `credential_access` | Where each credential has been tested | credential_id, target_id, service, works |
-| `access` | Active footholds and sessions | host, access_type, username, privilege |
+| `access` | Active footholds and sessions | ip, access_type, username, privilege, via_credential_id, via_access_id, via_vuln_id |
 | `vulns` | Confirmed vulnerabilities | title, host, vuln_type, severity, status |
 | `pivot_map` | Directed edges — what leads where | source, destination, method, status |
 | `blocked` | Failed techniques with reasons | technique, reason, host, retry |

@@ -288,7 +288,7 @@ When a teammate messages that a task is complete:
    - [add-target] / [add-port] for new hosts/ports
    - [add-cred] with via_access_id, via_vuln_id for provenance
    - [add-access] with via_credential_id, via_access_id, via_vuln_id for chain links
-   - [add-vuln] with via_access_id for confirmed vulns
+   - [add-vuln] with via_access_id, via_credential_id for confirmed vulns
    - [add-pivot] for new paths
    - [add-blocked] for failed techniques (see retry policy)
    State-mgr handles dedup judgment and responds with IDs.

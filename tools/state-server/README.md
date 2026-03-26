@@ -110,13 +110,13 @@ writer, contention is minimal.
 | `add_target` | `ip` (required), `hostname`, `os`, `role`, `notes`, `ports` (JSON) | Add or update a target (upserts on ip) |
 | `update_target` | `ip` (required), `hostname`, `os`, `role`, `notes` | Update fields on an existing target |
 | `add_port` | `ip` (required), `port` (required), `protocol`, `service`, `banner` | Add port to target (upserts on target+port+protocol) |
-| `add_credential` | `username`, `secret`, `secret_type`, `domain`, `source` | Record a credential (deduplicates on username+type+secret) |
+| `add_credential` | `username`, `secret`, `secret_type`, `domain`, `source`, `via_access_id`, `via_vuln_id`, `discovered_by` | Record a credential (deduplicates on username+type+secret) |
 | `update_credential` | `id` (required), `cracked`, `secret`, `notes`, `via_vuln_id`, `in_graph` | Update credential (e.g., mark hash as cracked, hide superseded hash from graph) |
 | `test_credential` | `credential_id`, `ip`, `service`, `works` (all required) | Record whether a credential works against a target/service |
-| `add_access` | `ip` (required), `access_type`, `username`, `privilege`, `method`, `via_credential_id`, `via_access_id`, `via_vuln_id` | Record a new foothold on a target (chain provenance via credential, access, or vuln) |
-| `update_access` | `id` (required), `active`, `privilege`, `notes`, `via_credential_id`, `via_access_id`, `via_vuln_id` | Update access record (e.g., revoke, fix provenance). Restores pruned sibling vulns on revocation |
-| `add_vuln` | `title` (required), `ip` (required), `vuln_type`, `severity`, `details`, `via_access_id`, `via_credential_id` | Record a vulnerability (deduplicates on target+title) |
-| `update_vuln` | `id` (required), `status`, `severity`, `details`, `in_graph` | Update vulnerability status (found/exploited/blocked). Auto-prunes sibling found vulns on exploit, restores on block |
+| `add_access` | `ip` (required), `access_type`, `username`, `privilege`, `method`, `session_ref`, `via_credential_id`, `via_access_id`, `via_vuln_id`, `technique_id`, `chain_order`, `discovered_by` | Record a new foothold on a target (chain provenance via credential, access, or vuln) |
+| `update_access` | `id` (required), `active`, `privilege`, `notes`, `via_credential_id`, `via_access_id`, `via_vuln_id`, `technique_id`, `in_graph` | Update access record (e.g., revoke, fix provenance). Restores pruned sibling vulns on revocation |
+| `add_vuln` | `title` (required), `ip` (required), `vuln_type`, `severity`, `status`, `details`, `evidence_path`, `via_access_id`, `via_credential_id`, `technique_id`, `chain_order`, `discovered_by` | Record a vulnerability (deduplicates on target+title) |
+| `update_vuln` | `id` (required), `status`, `severity`, `details`, `in_graph`, `via_access_id`, `via_credential_id`, `technique_id` | Update vulnerability status (found/exploited/blocked). Auto-prunes sibling found vulns on exploit, restores on block |
 | `add_pivot` | `source`, `destination` (required), `method`, `status` | Record a pivot path |
 | `update_pivot` | `id` (required), `status`, `notes` | Update pivot path status |
 | `add_blocked` | `technique`, `reason` (required), `ip`, `retry`, `notes` | Record a blocked/failed technique |
