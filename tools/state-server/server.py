@@ -27,12 +27,41 @@ from schema import init_db
 # ---------------------------------------------------------------------------
 _VALID_ENUMS: dict[str, tuple[str, ...]] = {
     "secret_type": (
-        "password", "ntlm_hash", "net_ntlm", "aes_key", "kerberos_tgt",
-        "kerberos_tgs", "dcc2", "ssh_key", "token", "certificate",
-        "webapp_hash", "dpapi", "other",
+        "password",
+        "ntlm_hash",
+        "net_ntlm",
+        "aes_key",
+        "kerberos_tgt",
+        "kerberos_tgs",
+        "dcc2",
+        "ssh_key",
+        "token",
+        "certificate",
+        "webapp_hash",
+        "dpapi",
+        "other",
     ),
-    "access_type": ("shell", "ssh", "winrm", "rdp", "web_shell", "smb", "db", "token", "vpn", "other"),
-    "privilege": ("user", "admin", "root", "system", "service", "domain_admin", "other"),
+    "access_type": (
+        "shell",
+        "ssh",
+        "winrm",
+        "rdp",
+        "web_shell",
+        "smb",
+        "db",
+        "token",
+        "vpn",
+        "other",
+    ),
+    "privilege": (
+        "user",
+        "admin",
+        "root",
+        "system",
+        "service",
+        "domain_admin",
+        "other",
+    ),
     "vuln_status": ("found", "exploited", "blocked"),
     "severity": ("info", "low", "medium", "high", "critical"),
     "pivot_status": ("identified", "exploited", "blocked"),
@@ -251,7 +280,9 @@ def create_server() -> FastMCP:
                 "WHERE cracked = 0 AND secret_type IN ('net_ntlm', 'kerberos_tgs', 'dcc2', 'webapp_hash')"
             ).fetchone()["cnt"]
             if hidden:
-                sections.append(f"_({hidden} uncracked hash(es) hidden — use get_credentials() to view)_")
+                sections.append(
+                    f"_({hidden} uncracked hash(es) hidden — use get_credentials() to view)_"
+                )
             sections.append("")
 
             # Access
@@ -456,7 +487,9 @@ def create_server() -> FastMCP:
             active_only: Only return active sessions (default true).
         """
         with _get_db() as conn:
-            query = "SELECT a.*, t.ip FROM access a JOIN targets t ON a.target_id = t.id"
+            query = (
+                "SELECT a.*, t.ip FROM access a JOIN targets t ON a.target_id = t.id"
+            )
             conditions = []
             params: list = []
 
@@ -482,9 +515,7 @@ def create_server() -> FastMCP:
             target: Filter by target host (empty = all).
         """
         with _get_db() as conn:
-            query = (
-                "SELECT v.*, t.ip FROM vulns v LEFT JOIN targets t ON v.target_id = t.id"
-            )
+            query = "SELECT v.*, t.ip FROM vulns v LEFT JOIN targets t ON v.target_id = t.id"
             conditions = []
             params: list = []
 
@@ -623,13 +654,24 @@ def create_server() -> FastMCP:
                 visited_creds.add(cid)
                 c = creds[cid]
                 step_num += 1
-                label = c["domain"] + "\\" + c["username"] if c["domain"] else c["username"]
+                label = (
+                    c["domain"] + "\\" + c["username"] if c["domain"] else c["username"]
+                )
                 label += f" ({c['secret_type']})"
-                steps.append({
-                    "step": step_num, "type": "credential", "id": cid,
-                    "label": label, "depth": depth,
-                    **({"via": {"type": via_type, "id": via_id}} if via_type else {}),
-                })
+                steps.append(
+                    {
+                        "step": step_num,
+                        "type": "credential",
+                        "id": cid,
+                        "label": label,
+                        "depth": depth,
+                        **(
+                            {"via": {"type": via_type, "id": via_id}}
+                            if via_type
+                            else {}
+                        ),
+                    }
+                )
                 # Follow: access records that used this credential
                 for a in accesses.values():
                     if a.get("via_credential_id") == cid:
@@ -645,12 +687,21 @@ def create_server() -> FastMCP:
                 visited_vulns.add(vid)
                 v = vulns_by_id[vid]
                 step_num += 1
-                steps.append({
-                    "step": step_num, "type": "vuln", "id": vid,
-                    "label": f"{v['title']} [{v['severity']}]",
-                    "depth": depth, "status": v["status"],
-                    **({"via": {"type": via_type, "id": via_id}} if via_type else {}),
-                })
+                steps.append(
+                    {
+                        "step": step_num,
+                        "type": "vuln",
+                        "id": vid,
+                        "label": f"{v['title']} [{v['severity']}]",
+                        "depth": depth,
+                        "status": v["status"],
+                        **(
+                            {"via": {"type": via_type, "id": via_id}}
+                            if via_type
+                            else {}
+                        ),
+                    }
+                )
                 # Follow: access gained by exploiting this vuln
                 for a in accesses.values():
                     if a.get("via_vuln_id") == vid:
@@ -667,13 +718,24 @@ def create_server() -> FastMCP:
                 visited_access.add(aid)
                 a = accesses[aid]
                 step_num += 1
-                label = f"{a['username']}@{a['ip']} [{a['privilege']}] {a['access_type']}"
-                steps.append({
-                    "step": step_num, "type": "access", "id": aid,
-                    "label": label, "depth": depth,
-                    "active": bool(a.get("active")),
-                    **({"via": {"type": via_type, "id": via_id}} if via_type else {}),
-                })
+                label = (
+                    f"{a['username']}@{a['ip']} [{a['privilege']}] {a['access_type']}"
+                )
+                steps.append(
+                    {
+                        "step": step_num,
+                        "type": "access",
+                        "id": aid,
+                        "label": label,
+                        "depth": depth,
+                        "active": bool(a.get("active")),
+                        **(
+                            {"via": {"type": via_type, "id": via_id}}
+                            if via_type
+                            else {}
+                        ),
+                    }
+                )
                 # Follow: credentials found via this access
                 for c in creds.values():
                     if c.get("via_access_id") == aid:
@@ -694,8 +756,11 @@ def create_server() -> FastMCP:
 
             # Root accesses: no via_credential_id, no via_access_id, no via_vuln_id
             for aid, a in accesses.items():
-                if (not a.get("via_credential_id") and not a.get("via_access_id")
-                        and not a.get("via_vuln_id")):
+                if (
+                    not a.get("via_credential_id")
+                    and not a.get("via_access_id")
+                    and not a.get("via_vuln_id")
+                ):
                     add_access(aid, 0)
 
             # Root vulns: no via_access_id (unauthenticated/recon-discovered)
@@ -703,31 +768,40 @@ def create_server() -> FastMCP:
             for vid, v in vulns_by_id.items():
                 if vid not in visited_vulns and not v.get("via_access_id"):
                     # Only add as root if it has downstream links
-                    has_downstream = (
-                        any(a.get("via_vuln_id") == vid for a in accesses.values())
-                        or any(c.get("via_vuln_id") == vid for c in creds.values())
-                    )
+                    has_downstream = any(
+                        a.get("via_vuln_id") == vid for a in accesses.values()
+                    ) or any(c.get("via_vuln_id") == vid for c in creds.values())
                     if has_downstream:
                         add_vuln(vid, 0)
 
             # Orphans: records not reached by BFS
             orphan_creds = [
-                {"type": "credential", "id": cid, "label": f"{c['username']} ({c['secret_type']})"}
-                for cid, c in creds.items() if cid not in visited_creds
+                {
+                    "type": "credential",
+                    "id": cid,
+                    "label": f"{c['username']} ({c['secret_type']})",
+                }
+                for cid, c in creds.items()
+                if cid not in visited_creds
             ]
             orphan_access = [
                 {"type": "access", "id": aid, "label": f"{a['username']}@{a['ip']}"}
-                for aid, a in accesses.items() if aid not in visited_access
+                for aid, a in accesses.items()
+                if aid not in visited_access
             ]
             orphan_vulns = [
                 {"type": "vuln", "id": vid, "label": f"{v['title']} [{v['severity']}]"}
-                for vid, v in vulns_by_id.items() if vid not in visited_vulns
+                for vid, v in vulns_by_id.items()
+                if vid not in visited_vulns
             ]
 
-            return json.dumps({
-                "chain": steps,
-                "orphans": orphan_creds + orphan_access + orphan_vulns,
-            }, indent=2)
+            return json.dumps(
+                {
+                    "chain": steps,
+                    "orphans": orphan_creds + orphan_access + orphan_vulns,
+                },
+                indent=2,
+            )
 
     @mcp.tool()
     def poll_events(since_id: int = 0, limit: int = 50) -> str:
@@ -1197,7 +1271,9 @@ def create_server() -> FastMCP:
             )
             result_str = "works" if works else "fails"
             _emit_event(
-                conn, "credential_test", credential_id,
+                conn,
+                "credential_test",
+                credential_id,
                 f"cred #{credential_id} {result_str} on {ip}:{service}",
                 tested_by,
             )
@@ -1285,7 +1361,9 @@ def create_server() -> FastMCP:
             )
             access_id = cursor.lastrowid
             _emit_event(
-                conn, "access", access_id,
+                conn,
+                "access",
+                access_id,
                 f"{username}@{ip} [{privilege}] via {access_type}",
                 discovered_by,
             )
@@ -1458,8 +1536,7 @@ def create_server() -> FastMCP:
             type_match = None
             if vuln_type:
                 type_match = conn.execute(
-                    "SELECT id, title FROM vulns "
-                    "WHERE target_id = ? AND vuln_type = ?",
+                    "SELECT id, title FROM vulns WHERE target_id = ? AND vuln_type = ?",
                     (target_id, vuln_type),
                 ).fetchone()
 
@@ -1527,7 +1604,9 @@ def create_server() -> FastMCP:
         count = cursor.rowcount
         if count:
             _emit_event(
-                conn, "vuln_prune", exploited_vuln_id,
+                conn,
+                "vuln_prune",
+                exploited_vuln_id,
                 f"Pruned {count} sibling vuln(s) (vuln #{exploited_vuln_id} exploited)",
             )
         return count
@@ -1562,7 +1641,9 @@ def create_server() -> FastMCP:
         count = cursor.rowcount
         if count:
             _emit_event(
-                conn, "vuln_restore", vuln_id,
+                conn,
+                "vuln_restore",
+                vuln_id,
                 f"Restored {count} sibling vuln(s) (vuln #{vuln_id} path abandoned)",
             )
         return count

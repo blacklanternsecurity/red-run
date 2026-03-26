@@ -442,13 +442,19 @@ def _migrate_v12_to_v13(conn: sqlite3.Connection) -> None:
     for table in ("access", "vulns"):
         cols = [r[1] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()]
         if "technique_id" not in cols:
-            conn.execute(f"ALTER TABLE {table} ADD COLUMN technique_id TEXT NOT NULL DEFAULT ''")
+            conn.execute(
+                f"ALTER TABLE {table} ADD COLUMN technique_id TEXT NOT NULL DEFAULT ''"
+            )
         if "in_graph" not in cols:
-            conn.execute(f"ALTER TABLE {table} ADD COLUMN in_graph INTEGER NOT NULL DEFAULT 1")
+            conn.execute(
+                f"ALTER TABLE {table} ADD COLUMN in_graph INTEGER NOT NULL DEFAULT 1"
+            )
     # credentials gets in_graph only (no technique_id — creds are assets, not actions)
     cols = [r[1] for r in conn.execute("PRAGMA table_info(credentials)").fetchall()]
     if "in_graph" not in cols:
-        conn.execute("ALTER TABLE credentials ADD COLUMN in_graph INTEGER NOT NULL DEFAULT 1")
+        conn.execute(
+            "ALTER TABLE credentials ADD COLUMN in_graph INTEGER NOT NULL DEFAULT 1"
+        )
     conn.commit()
 
 
@@ -521,9 +527,7 @@ def _migrate_v8_to_v9(conn: sqlite3.Connection) -> None:
     """Migrate schema from v8 to v9: add hostname column, rename host to ip."""
     cols = [r[1] for r in conn.execute("PRAGMA table_info(targets)").fetchall()]
     if "hostname" not in cols:
-        conn.execute(
-            "ALTER TABLE targets ADD COLUMN hostname TEXT NOT NULL DEFAULT ''"
-        )
+        conn.execute("ALTER TABLE targets ADD COLUMN hostname TEXT NOT NULL DEFAULT ''")
     if "host" in cols:
         conn.execute("ALTER TABLE targets RENAME COLUMN host TO ip")
     conn.commit()
