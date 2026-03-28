@@ -102,34 +102,26 @@ Assessment: retry-later (skill works after clock sync)
 
 ## Shell Access via shell-mgr
 
-All shell lifecycle operations go through the shell-mgr teammate. You do NOT
-call shell-server tools directly for setup — message shell-mgr instead.
+**You do NOT call `start_listener` or `start_process` directly** — shell-mgr
+is the sole owner of listeners and session setup.
 
-For reverse shells (GPO abuse, SCCM, coercion callbacks):
+For code execution (GPO abuse, SCCM, coercion callbacks):
 ```
-Message shell-mgr: [setup-listener] port=<N> label="<label>"
-Wait for [listener-ready] with payloads → deliver payload through vuln →
-Wait for [session-live] from shell-mgr with session_id and MCP instructions →
-Use the MCP tool specified in handoff to send commands
+1. Message shell-mgr: [setup-listener] ip=<target> platform=<linux|windows> label="<label>"
+2. shell-mgr replies [listener-ready] with payloads + check instructions
+3. Deliver payload, check listener directly, adjust and retry as needed
+4. Connection confirmed → message shell-mgr: [session-caught] listener_id=<id>
+5. shell-mgr finalizes → [session-live] with session_id and MCP instructions
 ```
 
-For interactive tools (evil-winrm, ssh, psexec.py):
+For credential-based access (evil-winrm, ssh, psexec.py):
 ```
 Message shell-mgr: [setup-process] command="<cmd>" label="<label>"
   privileged=<bool> startup_delay=<N>
-Wait for [session-live] from shell-mgr with session_id and MCP instructions
+Wait for [session-live] from shell-mgr
 ```
 
-For shell upgrade (raw shell → PTY):
-```
-Message shell-mgr: [upgrade-shell] session_id=<id>
-Wait for [session-upgraded]
-```
-
-When done with a session:
-```
-Message shell-mgr: [close-session] session_id=<id> save_transcript=true
-```
+When done: `Message shell-mgr: [close-session] session_id=<id> save_transcript=true`
 
 If shell-mgr is not responding, message the lead.
 

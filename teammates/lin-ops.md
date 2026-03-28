@@ -67,46 +67,35 @@ Batch multiple writes in one message when possible.
 
 ## Shell Access via shell-mgr
 
-All shell lifecycle operations go through the shell-mgr teammate. You do NOT
-call shell-server tools directly for setup — message shell-mgr instead.
+**You do NOT call `start_listener` or `start_process` directly** — shell-mgr
+is the sole owner of listeners and session setup.
 
 The lead provides your access method in the task. This determines interaction:
-- **Interactive reverse shell**: commands via the MCP tool specified in shell-mgr's handoff
+- **Interactive shell**: commands via the MCP tool specified in shell-mgr's handoff
 - **SSH session**: commands via Bash with SSH context
-- **Limited shell**: report that you need a stable interactive shell — don't attempt exploitation
+- **Limited shell**: report that you need a stable interactive shell
 
 If shell is unstable (drops, no TTY), report this immediately.
 
-For privesc techniques that spawn new shells (PwnKit, kernel techniques, sudo abuse):
+For privesc techniques that spawn new shells (PwnKit, kernel, sudo abuse):
 ```
-Message shell-mgr: [setup-listener] port=<N> label="<label>"
-Wait for [listener-ready] with payloads → execute technique with reverse shell callback →
-Wait for [session-live] from shell-mgr with session_id and MCP instructions →
-Use the MCP tool specified in handoff to send commands
-```
-
-For interactive tools (ssh):
-```
-Message shell-mgr: [setup-process] command="<cmd>" label="<label>"
-  privileged=<bool> startup_delay=<N>
-Wait for [session-live] from shell-mgr with session_id and MCP instructions
+1. Message shell-mgr: [setup-listener] ip=<target> platform=linux label="<label>"
+2. shell-mgr replies [listener-ready] with payloads + check instructions
+3. Execute privesc technique with callback payload, check listener directly
+4. Connection confirmed → message shell-mgr: [session-caught] listener_id=<id>
+5. shell-mgr finalizes → [session-live]
 ```
 
-For shell upgrade (raw shell → PTY):
+For credential-based access (ssh):
 ```
-Message shell-mgr: [upgrade-shell] session_id=<id>
-Wait for [session-upgraded]
+Message shell-mgr: [setup-process] command="ssh user@target" label="<label>"
+  privileged=false
+Wait for [session-live] from shell-mgr
 ```
 
-When done with a session:
-```
-Message shell-mgr: [close-session] session_id=<id> save_transcript=true
-```
+When done: `Message shell-mgr: [close-session] session_id=<id> save_transcript=true`
 
 If shell-mgr is not responding, message the lead.
-
-**Critical for privesc** — many techniques spawn new interactive root shells that
-need a listener to catch.
 
 ## Tool Execution
 

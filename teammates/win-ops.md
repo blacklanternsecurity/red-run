@@ -63,40 +63,31 @@ Batch multiple writes in one message when possible.
 
 ## Shell Access via shell-mgr
 
-All shell lifecycle operations go through the shell-mgr teammate. You do NOT
-call shell-server tools directly for setup — message shell-mgr instead.
+**You do NOT call `start_listener` or `start_process` directly** — shell-mgr
+is the sole owner of listeners and session setup.
 
 The lead provides your access method in the task:
-- **Interactive reverse shell**: commands via the MCP tool specified in shell-mgr's handoff
+- **Interactive shell**: commands via the MCP tool specified in shell-mgr's handoff
 - **Evil-WinRM / PSExec / WMI**: commands via session set up by shell-mgr
-- **SSH/RDP**: commands via appropriate session tool
 - **Limited shell**: report that you need stable interactive shell
 
-For reverse shells:
+For privesc techniques that spawn new shells:
 ```
-Message shell-mgr: [setup-listener] port=<N> label="<label>"
-Wait for [listener-ready] with payloads → execute technique with reverse shell callback →
-Wait for [session-live] from shell-mgr with session_id and MCP instructions →
-Use the MCP tool specified in handoff to send commands
+1. Message shell-mgr: [setup-listener] ip=<target> platform=windows label="<label>"
+2. shell-mgr replies [listener-ready] with payloads + check instructions
+3. Execute privesc technique with callback payload, check listener directly
+4. Connection confirmed → message shell-mgr: [session-caught] listener_id=<id>
+5. shell-mgr finalizes → [session-live]
 ```
 
-For interactive tools (evil-winrm, ssh, psexec.py):
+For credential-based access (evil-winrm, psexec.py, ssh):
 ```
 Message shell-mgr: [setup-process] command="<cmd>" label="<label>"
   privileged=<bool> startup_delay=<N>
-Wait for [session-live] from shell-mgr with session_id and MCP instructions
+Wait for [session-live] from shell-mgr
 ```
 
-For shell upgrade (raw shell → PTY):
-```
-Message shell-mgr: [upgrade-shell] session_id=<id>
-Wait for [session-upgraded]
-```
-
-When done with a session:
-```
-Message shell-mgr: [close-session] session_id=<id> save_transcript=true
-```
+When done: `Message shell-mgr: [close-session] session_id=<id> save_transcript=true`
 
 If shell-mgr is not responding, message the lead.
 

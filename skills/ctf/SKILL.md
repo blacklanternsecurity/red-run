@@ -417,17 +417,12 @@ Options: Confirm | Cancel
 
 If Cancel → stop immediately.
 
-### Shell-Server Health Check
+### Shell Backend Health
 
-**Immediately after CTF acknowledgement**, verify shell-server is reachable:
-```
-Call list_sessions() from shell-server MCP.
-If it returns a result → shell-server is running, continue.
-If it errors or tool is not available → HARD STOP:
-  "shell-server MCP is not connected. It must be running before Claude Code
-   starts. Kill this session, then relaunch with: ./run.sh"
-  Do NOT proceed — teammates cannot catch shells without it.
-```
+shell-mgr owns backend health checks — it verifies shell-server (and Sliver
+if configured) on activation and reports issues to the lead. The orchestrator
+does NOT check shell-server directly. If shell-mgr reports a backend problem,
+notify the operator and block shell-dependent tasks until resolved.
 
 ### Engagement Configuration
 
@@ -680,15 +675,13 @@ This is the most important state change in an engagement. Do NOT wait for
 the reporting teammate's current task to complete. Do NOT wait for other
 decision logic items. Act on this THE MOMENT it arrives.
 
-1. SHELL SETUP (message shell-mgr):
-   - Reverse shell: message shell-mgr [setup-listener] port=<N> label="<host>"
-     Wait for [listener-ready], deliver payload through vuln, wait for [session-live]
-   - Credential-based: message shell-mgr [setup-process] command="evil-winrm ..."
-     label="<host>" privileged=true startup_delay=30
-     Wait for [session-live] with session_id and MCP instructions
-   - Shell upgrade: message shell-mgr [upgrade-shell] session_id=<id>
-   Do NOT enumerate through curl, web APIs, or command injection one-liners.
-   A proper shell is faster, richer, and cheaper on tokens.
+1. SHELL IS ALREADY LIVE — the teammate that found the RCE messaged
+   shell-mgr directly via [setup-listener]. By the time you see
+   [new-access] from state-mgr or [new-session] from shell-mgr, the
+   session exists. You do NOT manage shell setup — shell-mgr does.
+   For credential-based access where no teammate is in the loop yet,
+   message shell-mgr: [setup-process] command="evil-winrm ..." and
+   include the session_id in the enum teammate's task assignment.
 
 2. SPAWN HOST ENUM (parallel with everything else):
    Windows → win-enum-<host> from teammates/win-enum.md

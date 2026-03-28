@@ -61,37 +61,29 @@ Discipline:
 
 ## Shell Access via shell-mgr
 
-All shell lifecycle operations go through the shell-mgr teammate. You do NOT
-call shell-server tools directly for setup — message shell-mgr instead.
+**You do NOT call `start_listener` or `start_process` directly** — shell-mgr
+is the sole owner of listeners and session setup.
 
 Lead provides access method. If shell is unstable or limited, report immediately.
 Deep analysis requires interactive shell to examine artifacts.
 
-For reverse shells (exploitation producing new shells):
+For exploitation producing new shells:
 ```
-Message shell-mgr: [setup-listener] port=<N> label="<label>"
-Wait for [listener-ready] with payloads → execute exploit →
-Wait for [session-live] from shell-mgr with session_id and MCP instructions →
-Use the MCP tool specified in handoff to send commands
+1. Message shell-mgr: [setup-listener] ip=<target> platform=<linux|windows> label="<label>"
+2. shell-mgr replies [listener-ready] with payloads + check instructions
+3. Deliver payload, check listener directly, retry as needed
+4. Connection confirmed → message shell-mgr: [session-caught] listener_id=<id>
+5. shell-mgr finalizes → [session-live]
 ```
 
-For interactive tools (ssh):
+For credential-based access:
 ```
 Message shell-mgr: [setup-process] command="<cmd>" label="<label>"
-  privileged=<bool> startup_delay=<N>
-Wait for [session-live] from shell-mgr with session_id and MCP instructions
+  privileged=<bool>
+Wait for [session-live] from shell-mgr
 ```
 
-For shell upgrade (raw shell → PTY):
-```
-Message shell-mgr: [upgrade-shell] session_id=<id>
-Wait for [session-upgraded]
-```
-
-When done with a session:
-```
-Message shell-mgr: [close-session] session_id=<id> save_transcript=true
-```
+When done: `Message shell-mgr: [close-session] session_id=<id> save_transcript=true`
 
 If shell-mgr is not responding, message the lead.
 
