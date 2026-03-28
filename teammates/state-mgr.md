@@ -175,6 +175,11 @@ password spray (confirmatory — tests known passwords, not extraction).
 3. Same username + different secret or type → write both. Both are legitimate
    DB entries. Message lead `[new-cred]`.
 4. New username → write. Message lead `[new-cred]`.
+5. **Password reuse** — same secret works for a different username or service.
+   This is a **vuln** (`vuln_type=password-reuse`), not just a credential.
+   Write the cred with `via_vuln_id` pointing to a password-reuse vuln whose
+   `via_credential_id` traces back to the original credential that was sprayed.
+   Chain: original cred discovered → recovered/sprayed → reuse found.
 
 For every `[update-cred]` with `cracked=true`:
 - Call `update_credential(id=N, cracked=true, notes="Cracked plaintext: <pw>")`
