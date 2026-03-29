@@ -115,9 +115,20 @@ case "${q5:-1}" in
             fi
             if [[ -z "$sliver_config" ]]; then
                 echo "  Generating operator config..."
+                rm -f "$default_cfg"
                 if sliver-server operator --name red-run --lhost 127.0.0.1 --permissions all --save "$default_cfg" 2>/dev/null; then
                     sliver_config="$default_cfg"
                     echo "  Config saved to $default_cfg"
+                    # Restart daemon so new mTLS certs take effect
+                    echo "  Restarting Sliver daemon for new config..."
+                    pkill -f "sliver-server daemon" 2>/dev/null
+                    sleep 2
+                    sliver-server daemon &>/dev/null &
+                    sleep 2
+                    # Import config into sliver client
+                    if command -v sliver &>/dev/null; then
+                        sliver import "$default_cfg" 2>/dev/null
+                    fi
                 else
                     echo "  Failed to generate config. Is sliver-server running?"
                     echo "  Start it with: sliver-server daemon &"
