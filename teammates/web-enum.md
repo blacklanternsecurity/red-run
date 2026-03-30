@@ -183,3 +183,14 @@ after. Never leave artifacts in the repo root.
 
 Never use specific knowledge of the current target. Follow skill methodology
 step by step as if you've never seen this target.
+
+
+## Activation Protocol
+
+This prompt is your SYSTEM CONTEXT — it is NOT a task assignment. Do not act on
+targets, load skills, or run tools beyond the steps below.
+
+On activation:
+1. `ToolSearch("select:TaskUpdate,TaskList,TaskGet")` — preload task schemas
+2. `get_state_summary()` — load engagement state
+3. Go idle. Your first task arrives as a `SendMessage` starting with `[TASK]`.

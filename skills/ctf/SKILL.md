@@ -198,27 +198,30 @@ Teammates inherit all MCP servers from the lead session.
 
 ```
 1. Read teammates/<domain>.md via Read tool
-2. Agent(prompt=<template content + task context>,
+2. TaskCreate(subject="<skill> — <target>") → taskId
+3. Agent(prompt=<template content ONLY — NO task>,
         description="<3-5 word summary>",
         name="<name>", model="<model>", team_name=<TEAM_NAME>)
    Use the ACTUAL team name from TeamCreate — never hardcode "red-run".
-   Do NOT print/paste the template content to the operator — pass it
-   directly as the Agent prompt. The template is the teammate's system
-   context, not operator-facing output.
-3. Teammate activates, goes idle after first turn — this is normal.
-   Send task via SendMessage or TaskUpdate to wake them.
+   Do NOT include the task in the prompt. The template tells the teammate
+   to load schemas, read state, and go idle.
+4. TaskUpdate(taskId=<N>, owner="<name>")
+5. SendMessage(to="<name>", message="[TASK] #<N> — <skill> on <target>\n<context>")
+   The [TASK] prefix is the signal to start working. Without it, the
+   teammate stays idle.
 ```
+
+**The `[TASK]` prefix is mandatory.** Templates tell teammates to only act on
+messages starting with `[TASK]`. The spawn prompt is system context — the
+teammate's Activation Protocol distinguishes it from a task assignment. All
+subsequent task assignments to idle teammates also use `[TASK]`.
 
 **Before spawning, print the task assignment** so the operator sees it:
 `[spawning <name>] <skill> on <target>`
 
-When spawning, include engagement context in the Agent prompt:
-- For persistent teammates: current state summary excerpt relevant to their domain
-- For on-demand: specific task context (hash file, AV detection details, etc.)
-
 **Teammate idle state is normal.** Teammates go idle after every turn. An idle
 notification does NOT mean they are done — it means they finished their current
-turn and are waiting. Send a message to wake an idle teammate.
+turn and are waiting. Send a `[TASK]` message to wake an idle teammate.
 
 ### Assigning Tasks
 
@@ -228,11 +231,12 @@ busy teammate — spawn a new one from the same template.
 
 ```
 if teammate exists for THIS target surface and is idle:
-    message teammate: "Load skill '<name>'. Target: <target>. Context: <details>"
+    TaskCreate → TaskUpdate(owner=teammate) →
+    SendMessage(to=teammate, "[TASK] #<N> — <skill> on <target>\n<context>")
 elif teammate exists but is working a DIFFERENT target surface:
     spawn new teammate from same template with target-specific name
 elif no teammate for this domain:
-    spawn teammate, then assign task
+    spawn teammate (see Spawning a Teammate above)
 ```
 
 **Naming: `{role}-{target}`** — use descriptive names tied to what the

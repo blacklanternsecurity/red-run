@@ -45,6 +45,14 @@ SSE on `127.0.0.1:8023` (configurable via `SLIVER_SSE_PORT`).
 | `ifconfig(session_id)` | List target network interfaces |
 | `kill_session(session_id)` | Terminate session |
 
+### SOCKS5 Proxy
+
+| Tool | Description |
+|------|-------------|
+| `start_socks_proxy(session_id)` | Start local SOCKS5 proxy tunneled through session's C2 channel. Returns endpoint and proxychains config line. Runs as persistent sliver console subprocess |
+| `stop_socks_proxy(session_id)` | Stop SOCKS5 proxy for a session |
+| `list_socks_proxies()` | List active proxies with endpoints and PIDs |
+
 ### Pivot Management
 
 | Tool | Description |

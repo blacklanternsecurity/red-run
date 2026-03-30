@@ -174,7 +174,7 @@ After each task completes, the lead runs a **post-task checkpoint** and decision
 2. **New access (shell/login)?** → **Execution Achieved** hard stop (see below)
 3. **Untested credentials?** → Spawn per-user credential context enum teammate + password reuse spray
 4. **Unrecovered hashes?** → Hashes Found hard stop
-5. **Pivot paths?** → Spawn pivoting teammate, then recon the new subnet
+5. **Pivot paths?** → Message shell-mgr `[setup-pivot]`, then recon the new subnet
 6. **Blocked items?** → Retry with context, or move on
 7. **Objectives met?** → Post-access and wrap-up
 

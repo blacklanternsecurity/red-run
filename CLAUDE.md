@@ -102,7 +102,7 @@ Agent source files live in `agents/` (version controlled), installed to `~/.clau
 | state | `tools/state-server/` | Full read/write engagement state (all agents + orchestrator) |
 | browser-server | `tools/browser-server/` | Headless browser automation (web agents) |
 | rdp-server | `tools/rdp-server/` | Headless RDP automation via aardwolf (windows-privesc-agent) |
-| sliver-server | `tools/sliver-server/` | Sliver C2 gRPC wrapper — implants, sessions, pivots (optional) |
+| sliver-server | `tools/sliver-server/` | Sliver C2 gRPC wrapper — implants, sessions, SOCKS5 proxy, pivots (optional) |
 | state-viewer | `operator/state-viewer/` | Read-only web dashboard for state.db (operator use, not MCP) |
 
 The state server runs as a single instance. In the agent teams orchestrator
@@ -237,7 +237,6 @@ red-run/
     lin-ops.md             # Linux privesc techniques (sonnet)
     win-enum.md            # Windows host discovery (sonnet)
     win-ops.md             # Windows privesc techniques (sonnet)
-    pivot.md               # Tunneling (sonnet, on-demand)
     bypass.md              # AV/EDR bypass (sonnet, on-demand)
     spray.md               # Password spraying (haiku, on-demand)
     recover.md             # Offline hash recovery (haiku, on-demand)

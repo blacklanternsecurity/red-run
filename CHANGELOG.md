@@ -33,6 +33,10 @@ All notable changes to red-run will be documented in this file. Format follows [
   spawns use the actual returned team name instead of hardcoding `"red-run"`.
   Workaround for `TeamCreate` silent-rename bug that split lead and teammates
   across different teams.
+- **`[TASK]` activation protocol** — teammates no longer receive tasks in their
+  spawn prompt. Templates end with an Activation Protocol (load schemas, read
+  state, go idle). Tasks arrive via `SendMessage` with a `[TASK]` prefix.
+  Prevents teammates from starting work before the task is formally created.
 
 ### Changed
 

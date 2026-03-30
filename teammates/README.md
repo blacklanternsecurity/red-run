@@ -45,7 +45,6 @@ or agent definitions — they're prompt templates.
 
 | File | Name | Domain | Model |
 |------|------|--------|-------|
-| `pivot.md` | pivot | Network tunneling | sonnet |
 | `bypass.md` | bypass | AV/EDR bypass | sonnet |
 | `spray.md` | spray | Password spraying | haiku |
 | `recover.md` | recover | Offline hash recovery | haiku |
@@ -65,6 +64,9 @@ or agent definitions — they're prompt templates.
   teammates call send_command directly on the MCP after session handoff
 - Teammates read state directly (get_state_summary, get_vulns, etc.)
 - All teammates message the lead on task completion — never self-claim new tasks
+- Non-infrastructure templates end with an Activation Protocol: load schemas,
+  read state, go idle. Teammates only start work on `[TASK]`-prefixed messages.
+  The spawn prompt is system context, NOT a task assignment.
 
 ## Relationship to v1 agent definitions
 

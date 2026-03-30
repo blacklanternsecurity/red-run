@@ -76,7 +76,7 @@ See [dependencies](docs/dependencies.md) for the full list of required tools.
 
 ## Agent Teams
 
-red-run uses [Claude Code agent teams](https://code.claude.com/docs/en/agent-teams) to coordinate multiple Claude Code sessions working together. The orchestrator runs as the team lead, spawning persistent domain teammates that each get their own tmux pane. Teammates are split into enumeration (net-enum, web-enum, ad-enum, lin-enum, win-enum) and operations (web-ops, ad-ops, lin-ops, win-ops) pairs for parallel discovery and technique execution, plus on-demand specialists (pivot, bypass, spray, recover, research). Benefits over the legacy subagent model:
+red-run uses [Claude Code agent teams](https://code.claude.com/docs/en/agent-teams) to coordinate multiple Claude Code sessions working together. The orchestrator runs as the team lead, spawning persistent domain teammates that each get their own tmux pane. Teammates are split into enumeration (net-enum, web-enum, ad-enum, lin-enum, win-enum) and operations (web-ops, ad-ops, lin-ops, win-ops) pairs for parallel discovery and technique execution, plus on-demand specialists (bypass, spray, recover, research). Benefits over the legacy subagent model:
 
 - **Persistent context** — teammates accumulate knowledge across tasks instead of starting fresh each time
 - **Teammate messaging** — teammates report findings to the lead who routes to the right specialist (e.g., web teammate finds domain creds → lead routes to AD teammate)

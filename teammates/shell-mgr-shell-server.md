@@ -57,6 +57,24 @@ In [session-ready] messages, include:
   Use mcp__shell-server__read_output(session_id="<id>") for buffered output.
 ```
 
+## [setup-pivot] Implementation — Skill-Based
+
+shell-server has no native tunneling. Load the pivoting-tunneling skill:
+
+```
+1. ToolSearch("select:mcp__skill-router__get_skill")
+2. mcp__skill-router__get_skill(name="pivoting-tunneling")
+3. Follow skill methodology — tool preference:
+   SSH (-D, -L) > sshuttle > ligolo-ng > chisel > socat
+4. Verify connectivity through tunnel
+5. Message state-mgr: [add-tunnel] tunnel_type=<type> remote_host=<ip>
+   remote_network=<cidr> local_port=<port> via_access_id=<N>
+6. Send [pivot-ready] to lead
+```
+
+**Sudo handoff:** Some tools need root on the attackbox (sshuttle, ligolo TUN).
+Present commands to the operator with explanation, wait for confirmation.
+
 ## Callback IP Resolution
 
 shell-server auto-resolves callback IP from: config.yaml `callback_ip` >
