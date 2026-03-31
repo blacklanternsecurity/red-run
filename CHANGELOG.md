@@ -27,16 +27,12 @@ All notable changes to red-run will be documented in this file. Format follows [
 - **via_vuln_id on vulns** — vuln-to-vuln provenance (schema v21)
 - **Agent teams integration** — `TeamCreate` at engagement start, `team_name`
   on all teammate spawns, `TaskCreate`/`TaskUpdate` for coordination
-- **Team name collision handling** — orchestrator detects pre-existing `red-run`
-  team before `TeamCreate` and offers operator a choice: delete and recreate,
-  use `red-run-2` alongside the existing team, or abort. All subsequent Agent
-  spawns use the actual returned team name instead of hardcoding `"red-run"`.
-  Workaround for `TeamCreate` silent-rename bug that split lead and teammates
-  across different teams.
-- **`[TASK]` activation protocol** — teammates no longer receive tasks in their
-  spawn prompt. Templates end with an Activation Protocol (load schemas, read
-  state, go idle). Tasks arrive via `SendMessage` with a `[TASK]` prefix.
-  Prevents teammates from starting work before the task is formally created.
+- **Team name collision handling** — orchestrator detects pre-existing teams
+  and offers operator a choice: delete and recreate, use a new name alongside,
+  or abort. Prevents the silent-rename bug that split lead and teammates.
+- **`[TASK]` activation protocol** — teammates initialize and go idle on spawn,
+  then receive tasks via `SendMessage` with a `[TASK]` prefix. Prevents
+  premature execution before task is formally created.
 
 ### Changed
 
@@ -46,12 +42,12 @@ All notable changes to red-run will be documented in this file. Format follows [
   templates, and docs (schema migration v19→v20)
 - **Terminology**: `exploitable` → `actionable`, `exploitation` → `exercise`
   in teammate templates and docs
-- **state-mgr auto-exercises vulns** when any write includes `via_vuln_id`,
-  traces provenance recursively. Refuses orphaned writes with missing links.
+- **state-mgr auto-exercises vulns** on provenance-linked writes and
+  refuses orphaned writes with missing chain links.
 - **Teammates establish shells directly** via shell-server, then hand off to
   shell-mgr (reversed from earlier design where shell-mgr established)
 - **Skill loading enforced** — teammates must call `get_skill()` directly,
-  never via subagent. Explicit `ToolSearch` syntax in all templates.
+  never via subagent.
 - **Research teammate prohibited from target interaction** — analyzes local
   files only, lead ensures sources are downloaded first
 - **Task assignments include active sessions** — lead lists all shell-server
@@ -72,11 +68,10 @@ All notable changes to red-run will be documented in this file. Format follows [
 - shell-server `send_command` on PowerShell iex shells (PS-native wrapper)
 - Exercised vulns render as blue action nodes (stale `EXPLOITED` label fixed)
 - Exercised vuln routing extended to `via_credential_id` (not just access)
-- sliver-server `execute` args splitting (now JSON array + `shell_cmd`)
-- sliver-server `generate_implant` uses CLI subprocess (protobuf mismatch)
-- `sliver console --rc` hangs fixed with `exit` command
+- sliver-server `execute` args splitting and `generate_implant` reliability
+- `sliver console --rc` hang on exit
 - Config wizard re-asking scan type and proxy when config.yaml has values
-- Debug logging in shell-server listener thread for connection diagnosis
+- Debug logging in shell-server listener for connection diagnosis
 
 ## [2.0.3] — 2026-03-27
 
@@ -256,7 +251,8 @@ sanitization pass to reduce AUP filter sensitivity.
 - **Shell-server connectivity check** in all 7 teammate templates — message
   lead and stop if MCP unavailable.
 - **RunasCs.exe** added to preflight check and dependencies.
-- **All MCP servers** added to permission allow list in settings.json.
+- **All MCP servers** added to permission allow list in settings.json
+  (sliver-server added dynamically by `config.sh` only when selected).
 - **1M context for sonnet teammates** — `ANTHROPIC_DEFAULT_SONNET_MODEL` set
   to `claude-sonnet-4-6[1m]` in project settings so all sonnet teammates
   spawn with extended context by default.
