@@ -490,7 +490,11 @@ def create_server() -> FastMCP:
                     continue
 
                 # Got a connection
-                print(f"[listener {listener.listener_id}] accept() from {addr[0]}:{addr[1]}", file=sys.stderr, flush=True)
+                print(
+                    f"[listener {listener.listener_id}] accept() from {addr[0]}:{addr[1]}",
+                    file=sys.stderr,
+                    flush=True,
+                )
                 session_id = str(uuid.uuid4())[:8]
                 session = Session(
                     session_id=session_id,
@@ -517,7 +521,11 @@ def create_server() -> FastMCP:
                 sessions[session_id] = session
                 listener.session_id = session_id
                 listener.status = "connected"
-                print(f"[listener {listener.listener_id}] session {session_id} registered from {addr[0]}:{addr[1]}", file=sys.stderr, flush=True)
+                print(
+                    f"[listener {listener.listener_id}] session {session_id} registered from {addr[0]}:{addr[1]}",
+                    file=sys.stderr,
+                    flush=True,
+                )
 
                 # Close the listener socket — one connection per listener
                 try:
@@ -542,7 +550,11 @@ def create_server() -> FastMCP:
         except Exception as e:
             listener.status = "error"
             listener.error_msg = str(e)
-            print(f"[listener {listener.listener_id}] EXCEPTION in _listener_thread: {e}", file=sys.stderr, flush=True)
+            print(
+                f"[listener {listener.listener_id}] EXCEPTION in _listener_thread: {e}",
+                file=sys.stderr,
+                flush=True,
+            )
             try:
                 listener.sock.close()
             except Exception:

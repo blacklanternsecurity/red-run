@@ -772,7 +772,11 @@ def create_server() -> FastMCP:
             # Root vulns: no via_access_id and no via_vuln_id (unauthenticated/
             # recon-discovered) that have downstream links
             for vid, v in vulns_by_id.items():
-                if vid not in visited_vulns and not v.get("via_access_id") and not v.get("via_vuln_id"):
+                if (
+                    vid not in visited_vulns
+                    and not v.get("via_access_id")
+                    and not v.get("via_vuln_id")
+                ):
                     # Only add as root if it has downstream links
                     has_downstream = (
                         any(a.get("via_vuln_id") == vid for a in accesses.values())

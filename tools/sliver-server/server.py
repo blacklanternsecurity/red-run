@@ -39,8 +39,7 @@ _NOT_CONFIGURED = (
 )
 
 _NOT_CONNECTED = (
-    "ERROR: Failed to connect to Sliver daemon. "
-    "Ensure sliver-server daemon is running."
+    "ERROR: Failed to connect to Sliver daemon. Ensure sliver-server daemon is running."
 )
 
 
@@ -71,9 +70,8 @@ def create_server() -> FastMCP:
                 return None
             try:
                 import sliver
-                config = sliver.SliverClientConfig.parse_config_file(
-                    str(config_path)
-                )
+
+                config = sliver.SliverClientConfig.parse_config_file(str(config_path))
                 client = sliver.SliverClient(config)
                 await client.connect()
                 _client = client
@@ -108,13 +106,15 @@ def create_server() -> FastMCP:
         try:
             client = await _get_client()
             listener = await client.start_mtls_listener(host=host, port=port)
-            return json.dumps({
-                "status": "listening",
-                "job_id": listener.JobID,
-                "host": host,
-                "port": port,
-                "protocol": "mtls",
-            })
+            return json.dumps(
+                {
+                    "status": "listening",
+                    "job_id": listener.JobID,
+                    "host": host,
+                    "port": port,
+                    "protocol": "mtls",
+                }
+            )
         except Exception as e:
             return f"ERROR: Failed to start mTLS listener: {e}"
 
@@ -138,13 +138,15 @@ def create_server() -> FastMCP:
             listener = await client.start_https_listener(
                 host=host, port=port, domain=domain
             )
-            return json.dumps({
-                "status": "listening",
-                "job_id": listener.JobID,
-                "host": host,
-                "port": port,
-                "protocol": "https",
-            })
+            return json.dumps(
+                {
+                    "status": "listening",
+                    "job_id": listener.JobID,
+                    "host": host,
+                    "port": port,
+                    "protocol": "https",
+                }
+            )
         except Exception as e:
             return f"ERROR: Failed to start HTTPS listener: {e}"
 
@@ -158,12 +160,14 @@ def create_server() -> FastMCP:
             jobs = await client.jobs()
             result = []
             for job in jobs:
-                result.append({
-                    "job_id": job.ID,
-                    "name": job.Name,
-                    "protocol": job.Protocol,
-                    "port": job.Port,
-                })
+                result.append(
+                    {
+                        "job_id": job.ID,
+                        "name": job.Name,
+                        "protocol": job.Protocol,
+                        "port": job.Port,
+                    }
+                )
             return json.dumps({"jobs": result, "count": len(result)})
         except Exception as e:
             return f"ERROR: {e}"
@@ -227,9 +231,7 @@ def create_server() -> FastMCP:
         evidence_dir = _PROJECT_ROOT / "engagement" / "evidence"
         evidence_dir.mkdir(parents=True, exist_ok=True)
 
-        ext = {"linux": "", "windows": ".exe", "darwin": ""}.get(
-            target_os, ""
-        )
+        ext = {"linux": "", "windows": ".exe", "darwin": ""}.get(target_os, "")
         implant_name = name or f"implant-{int(time.time())}"
         filename = f"{implant_name}{ext}"
         filepath = evidence_dir / filename
@@ -255,7 +257,9 @@ def create_server() -> FastMCP:
 
             result = subprocess.run(
                 [sliver_bin, "console", "--rc", str(rc_file)],
-                capture_output=True, text=True, timeout=600,
+                capture_output=True,
+                text=True,
+                timeout=600,
                 env={**os.environ, "SLIVER_CONFIG": str(config_path)},
             )
 
@@ -272,17 +276,19 @@ def create_server() -> FastMCP:
             sha256 = hashlib.sha256(filepath.read_bytes()).hexdigest()
             filepath.chmod(0o755)
 
-            return json.dumps({
-                "status": "generated",
-                "name": filename,
-                "path": str(filepath),
-                "size": file_size,
-                "sha256": sha256,
-                "os": target_os,
-                "arch": arch,
-                "format": format,
-                "callback": f"mtls://{mtls_host}:{mtls_port}",
-            })
+            return json.dumps(
+                {
+                    "status": "generated",
+                    "name": filename,
+                    "path": str(filepath),
+                    "size": file_size,
+                    "sha256": sha256,
+                    "os": target_os,
+                    "arch": arch,
+                    "format": format,
+                    "callback": f"mtls://{mtls_host}:{mtls_port}",
+                }
+            )
         except Exception as e:
             return f"ERROR: Implant generation failed: {e}"
 
@@ -298,24 +304,28 @@ def create_server() -> FastMCP:
             sessions = await client.sessions()
             result = []
             for s in sessions:
-                result.append({
-                    "session_id": str(s.ID),
-                    "name": s.Name,
-                    "remote_address": s.RemoteAddress,
-                    "hostname": s.Hostname,
-                    "username": s.Username,
-                    "os": s.OS,
-                    "arch": s.Arch,
-                    "transport": s.Transport,
-                    "pid": s.PID,
-                    "filename": s.Filename,
-                    "active_c2": s.ActiveC2,
-                    "alive": not s.IsDead,
-                })
-            return json.dumps({
-                "sessions": result,
-                "count": len(result),
-            })
+                result.append(
+                    {
+                        "session_id": str(s.ID),
+                        "name": s.Name,
+                        "remote_address": s.RemoteAddress,
+                        "hostname": s.Hostname,
+                        "username": s.Username,
+                        "os": s.OS,
+                        "arch": s.Arch,
+                        "transport": s.Transport,
+                        "pid": s.PID,
+                        "filename": s.Filename,
+                        "active_c2": s.ActiveC2,
+                        "alive": not s.IsDead,
+                    }
+                )
+            return json.dumps(
+                {
+                    "sessions": result,
+                    "count": len(result),
+                }
+            )
         except Exception as e:
             return f"ERROR: {e}"
 
@@ -359,14 +369,18 @@ def create_server() -> FastMCP:
                 args or [],
                 output,
             )
-            return json.dumps({
-                "status": "executed",
-                "stdout": result.Stdout.decode("utf-8", errors="replace")
-                if result.Stdout else "",
-                "stderr": result.Stderr.decode("utf-8", errors="replace")
-                if result.Stderr else "",
-                "exit_code": result.Status,
-            })
+            return json.dumps(
+                {
+                    "status": "executed",
+                    "stdout": result.Stdout.decode("utf-8", errors="replace")
+                    if result.Stdout
+                    else "",
+                    "stderr": result.Stderr.decode("utf-8", errors="replace")
+                    if result.Stderr
+                    else "",
+                    "exit_code": result.Status,
+                }
+            )
         except Exception as e:
             return f"ERROR: Command execution failed: {e}"
 
@@ -399,11 +413,13 @@ def create_server() -> FastMCP:
                 return f"ERROR: Session {session_id} not found or dead."
             data = local.read_bytes()
             result = await session.upload(remote_path, data)
-            return json.dumps({
-                "status": "uploaded",
-                "remote_path": result.Path,
-                "size": len(data),
-            })
+            return json.dumps(
+                {
+                    "status": "uploaded",
+                    "remote_path": result.Path,
+                    "size": len(data),
+                }
+            )
         except Exception as e:
             return f"ERROR: Upload failed: {e}"
 
@@ -441,12 +457,14 @@ def create_server() -> FastMCP:
             with open(local_path, "wb") as f:
                 f.write(result.Data)
 
-            return json.dumps({
-                "status": "downloaded",
-                "remote_path": remote_path,
-                "local_path": local_path,
-                "size": len(result.Data),
-            })
+            return json.dumps(
+                {
+                    "status": "downloaded",
+                    "remote_path": remote_path,
+                    "local_path": local_path,
+                    "size": len(result.Data),
+                }
+            )
         except Exception as e:
             return f"ERROR: Download failed: {e}"
 
@@ -472,11 +490,13 @@ def create_server() -> FastMCP:
             result = await session.ifconfig()
             interfaces = []
             for iface in result.NetInterfaces:
-                interfaces.append({
-                    "name": iface.Name,
-                    "mac": iface.MAC,
-                    "addresses": list(iface.IPAddresses),
-                })
+                interfaces.append(
+                    {
+                        "name": iface.Name,
+                        "mac": iface.MAC,
+                        "addresses": list(iface.IPAddresses),
+                    }
+                )
             return json.dumps({"interfaces": interfaces})
         except Exception as e:
             return f"ERROR: {e}"
@@ -496,10 +516,12 @@ def create_server() -> FastMCP:
         try:
             client = await _get_client()
             await client.kill_session(session_id)
-            return json.dumps({
-                "status": "killed",
-                "session_id": session_id,
-            })
+            return json.dumps(
+                {
+                    "status": "killed",
+                    "session_id": session_id,
+                }
+            )
         except Exception as e:
             return f"ERROR: {e}"
 
@@ -527,14 +549,16 @@ def create_server() -> FastMCP:
             p = _socks_proxies[session_id]
             # Verify process is still alive
             if p["proc"].returncode is None:
-                return json.dumps({
-                    "status": "already_running",
-                    "session_id": session_id,
-                    "port": p["port"],
-                    "endpoint": f"socks5://127.0.0.1:{p['port']}",
-                    "proxychains_line": f"socks5 127.0.0.1 {p['port']}",
-                    "hint": "Use stop_socks_proxy first to restart.",
-                })
+                return json.dumps(
+                    {
+                        "status": "already_running",
+                        "session_id": session_id,
+                        "port": p["port"],
+                        "endpoint": f"socks5://127.0.0.1:{p['port']}",
+                        "proxychains_line": f"socks5 127.0.0.1 {p['port']}",
+                        "hint": "Use stop_socks_proxy first to restart.",
+                    }
+                )
             else:
                 # Stale entry — clean up
                 _socks_proxies.pop(session_id, None)
@@ -567,14 +591,15 @@ def create_server() -> FastMCP:
             pass
 
         # RC script: connect, use session, start socks5 proxy
-        rc_file = (
-            _PROJECT_ROOT / "engagement" / f".sliver-socks5-{session_id[:8]}.rc"
-        )
+        rc_file = _PROJECT_ROOT / "engagement" / f".sliver-socks5-{session_id[:8]}.rc"
         rc_file.write_text(f"use {session_id}\nsocks5\n")
 
         try:
             proc = await asyncio.create_subprocess_exec(
-                sliver_bin, "console", "--rc", str(rc_file),
+                sliver_bin,
+                "console",
+                "--rc",
+                str(rc_file),
                 stdout=asyncio.subprocess.DEVNULL,
                 stderr=asyncio.subprocess.DEVNULL,
                 env={**os.environ, "SLIVER_CONFIG": str(config_path)},
@@ -592,7 +617,8 @@ def create_server() -> FastMCP:
                     )
                 try:
                     ss_proc = await asyncio.create_subprocess_exec(
-                        "ss", "-tln",
+                        "ss",
+                        "-tln",
                         stdout=asyncio.subprocess.PIPE,
                         stderr=asyncio.subprocess.DEVNULL,
                     )
@@ -627,18 +653,20 @@ def create_server() -> FastMCP:
                 "pid": proc.pid,
             }
 
-            return json.dumps({
-                "status": "started",
-                "session_id": session_id,
-                "port": port,
-                "endpoint": f"socks5://127.0.0.1:{port}",
-                "pid": proc.pid,
-                "proxychains_line": f"socks5 127.0.0.1 {port}",
-                "hint": (
-                    "Add to /etc/proxychains4.conf or use: "
-                    "proxychains4 nmap -sT ..."
-                ),
-            })
+            return json.dumps(
+                {
+                    "status": "started",
+                    "session_id": session_id,
+                    "port": port,
+                    "endpoint": f"socks5://127.0.0.1:{port}",
+                    "pid": proc.pid,
+                    "proxychains_line": f"socks5 127.0.0.1 {port}",
+                    "hint": (
+                        "Add to /etc/proxychains4.conf or use: "
+                        "proxychains4 nmap -sT ..."
+                    ),
+                }
+            )
         except Exception as e:
             rc_file.unlink(missing_ok=True)
             return f"ERROR: Failed to start SOCKS5 proxy: {e}"
@@ -655,10 +683,12 @@ def create_server() -> FastMCP:
         if not session_id:
             return "ERROR: session_id is required."
         if session_id not in _socks_proxies:
-            return json.dumps({
-                "status": "not_running",
-                "session_id": session_id,
-            })
+            return json.dumps(
+                {
+                    "status": "not_running",
+                    "session_id": session_id,
+                }
+            )
 
         proxy = _socks_proxies.pop(session_id)
         port = proxy["port"]
@@ -673,11 +703,13 @@ def create_server() -> FastMCP:
 
         Path(proxy["rc"]).unlink(missing_ok=True)
 
-        return json.dumps({
-            "status": "stopped",
-            "session_id": session_id,
-            "port": port,
-        })
+        return json.dumps(
+            {
+                "status": "stopped",
+                "session_id": session_id,
+                "port": port,
+            }
+        )
 
     @mcp.tool()
     async def list_socks_proxies() -> str:
@@ -691,12 +723,14 @@ def create_server() -> FastMCP:
             if proxy["proc"].returncode is not None:
                 stale.append(sid)
                 continue
-            result.append({
-                "session_id": sid,
-                "port": proxy["port"],
-                "endpoint": f"socks5://127.0.0.1:{proxy['port']}",
-                "pid": proxy["pid"],
-            })
+            result.append(
+                {
+                    "session_id": sid,
+                    "port": proxy["port"],
+                    "endpoint": f"socks5://127.0.0.1:{proxy['port']}",
+                    "pid": proxy["pid"],
+                }
+            )
         # Clean stale entries
         for sid in stale:
             p = _socks_proxies.pop(sid)
@@ -725,11 +759,13 @@ def create_server() -> FastMCP:
             pivots = await session.pivot_listeners()
             result = []
             for p in pivots:
-                result.append({
-                    "id": p.ID,
-                    "type": str(p.Type),
-                    "bind_address": p.BindAddress,
-                })
+                result.append(
+                    {
+                        "id": p.ID,
+                        "type": str(p.Type),
+                        "bind_address": p.BindAddress,
+                    }
+                )
             return json.dumps({"pivots": result, "count": len(result)})
         except Exception as e:
             return f"ERROR: {e}"
@@ -751,7 +787,9 @@ def create_server() -> FastMCP:
                     body = json.dumps({"status": "disconnected", "sessions": 0})
                 else:
                     sessions = await client.sessions()
-                    body = json.dumps({"status": "connected", "sessions": len(sessions)})
+                    body = json.dumps(
+                        {"status": "connected", "sessions": len(sessions)}
+                    )
         except Exception:
             body = json.dumps({"status": "error", "sessions": 0})
         return Response(content=body, media_type="application/json")
