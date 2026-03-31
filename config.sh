@@ -103,7 +103,9 @@ case "${q5:-1}" in
             # Unpack Sliver assets (Go toolchain, implant templates) on first run
             if [[ ! -d "${HOME}/.sliver" ]] || [[ ! -d "${HOME}/.sliver/go" ]]; then
                 echo "  Unpacking Sliver assets (first run, may take a moment)..."
-                sliver-server unpack --force 2>/dev/null
+                if ! sliver-server unpack --force 2>/dev/null; then
+                    echo "  Warning: sliver-server unpack failed (may already be unpacked)."
+                fi
             fi
             echo "  Sliver operator config setup:"
             if [[ -f "$default_cfg" ]]; then
