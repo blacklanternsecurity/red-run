@@ -637,7 +637,8 @@ def create_server() -> FastMCP:
                 dict(r)
                 for r in conn.execute(
                     "SELECT v.id, v.title, v.vuln_type, v.status, v.severity, "
-                    "v.via_access_id, t.ip FROM vulns v "
+                    "v.via_access_id, v.via_credential_id, v.via_vuln_id, "
+                    "t.ip FROM vulns v "
                     "LEFT JOIN targets t ON v.target_id = t.id"
                 ).fetchall()
             ]
@@ -711,6 +712,10 @@ def create_server() -> FastMCP:
                 for c in creds.values():
                     if c.get("via_vuln_id") == vid:
                         add_cred(c["id"], depth + 1, "vuln", vid)
+                # Follow: vuln-to-vuln chains (e.g., SSRF → RCE escalation)
+                for v2 in vulns:
+                    if v2.get("via_vuln_id") == vid and v2["id"] not in visited_vulns:
+                        add_vuln(v2["id"], depth + 1, "vuln", vid)
 
             def add_access(aid: int, depth: int, via_type: str = "", via_id: int = 0):
                 nonlocal step_num
@@ -764,14 +769,16 @@ def create_server() -> FastMCP:
                 ):
                     add_access(aid, 0)
 
-            # Root vulns: no via_access_id (unauthenticated/recon-discovered)
-            # that have downstream links (access or creds via_vuln_id)
+            # Root vulns: no via_access_id and no via_vuln_id (unauthenticated/
+            # recon-discovered) that have downstream links
             for vid, v in vulns_by_id.items():
-                if vid not in visited_vulns and not v.get("via_access_id"):
+                if vid not in visited_vulns and not v.get("via_access_id") and not v.get("via_vuln_id"):
                     # Only add as root if it has downstream links
-                    has_downstream = any(
-                        a.get("via_vuln_id") == vid for a in accesses.values()
-                    ) or any(c.get("via_vuln_id") == vid for c in creds.values())
+                    has_downstream = (
+                        any(a.get("via_vuln_id") == vid for a in accesses.values())
+                        or any(c.get("via_vuln_id") == vid for c in creds.values())
+                        or any(v2.get("via_vuln_id") == vid for v2 in vulns)
+                    )
                     if has_downstream:
                         add_vuln(vid, 0)
 
@@ -1189,8 +1196,10 @@ def create_server() -> FastMCP:
         cracked: bool | None = None,
         secret: str = "",
         notes: str = "",
+        via_access_id: int | None = None,
         via_vuln_id: int | None = None,
         in_graph: int | None = None,
+        chain_order: int | None = None,
     ) -> str:
         """Update a credential (e.g., mark as cracked, add provenance).
 
@@ -1199,10 +1208,14 @@ def create_server() -> FastMCP:
             cracked: Set to true when the hash has been cracked.
             secret: Updated secret value (e.g., cracked plaintext).
             notes: Additional notes.
+            via_access_id: Link credential to the access that discovered it
+                          (settable post-creation for provenance fixes).
             via_vuln_id: Link credential to the vuln that produced it
                         (settable post-creation for provenance fixes).
             in_graph: Override graph visibility (1=show, 0=hide). Use to
                      suppress hash rows when a cracked plaintext exists.
+            chain_order: Explicit column position in the flow graph (1-based,
+                        left-to-right). 0 = auto-compute via BFS.
         """
         with _get_db() as conn:
             updates = []
@@ -1216,12 +1229,18 @@ def create_server() -> FastMCP:
             if notes:
                 updates.append("notes = ?")
                 params.append(notes)
+            if via_access_id is not None:
+                updates.append("via_access_id = ?")
+                params.append(via_access_id)
             if via_vuln_id is not None:
                 updates.append("via_vuln_id = ?")
                 params.append(via_vuln_id)
             if in_graph is not None:
                 updates.append("in_graph = ?")
                 params.append(in_graph)
+            if chain_order is not None:
+                updates.append("chain_order = ?")
+                params.append(chain_order)
 
             if not updates:
                 return "No fields to update."
@@ -1392,6 +1411,7 @@ def create_server() -> FastMCP:
         via_vuln_id: int | None = None,
         technique_id: str = "",
         in_graph: int | None = None,
+        chain_order: int | None = None,
     ) -> str:
         """Update access record (e.g., revoke, fix provenance, toggle graph).
 
@@ -1411,6 +1431,8 @@ def create_server() -> FastMCP:
             via_vuln_id: Fix vuln provenance post-creation.
             technique_id: Set ATT&CK technique ID.
             in_graph: Override graph visibility (1=show, 0=hide).
+            chain_order: Explicit column position in the flow graph (1-based,
+                        left-to-right). 0 = auto-compute via BFS.
         """
         with _get_db() as conn:
             updates = []
@@ -1445,6 +1467,9 @@ def create_server() -> FastMCP:
             if in_graph is not None:
                 updates.append("in_graph = ?")
                 params.append(in_graph)
+            if chain_order is not None:
+                updates.append("chain_order = ?")
+                params.append(chain_order)
 
             if not updates:
                 return "No fields to update."
@@ -1685,6 +1710,7 @@ def create_server() -> FastMCP:
         via_credential_id: int | None = None,
         via_vuln_id: int | None = None,
         technique_id: str = "",
+        chain_order: int | None = None,
     ) -> str:
         """Update vulnerability (e.g., change status, fix provenance, toggle graph).
 
@@ -1704,6 +1730,8 @@ def create_server() -> FastMCP:
             via_credential_id: Fix credential provenance post-creation.
             via_vuln_id: Set parent vuln for vuln-to-vuln provenance.
             technique_id: Set ATT&CK technique ID.
+            chain_order: Explicit column position in the flow graph (1-based,
+                        left-to-right). 0 = auto-compute via BFS.
         """
         if status:
             err = _validate_enum("status", status, "vuln_status")
@@ -1740,6 +1768,9 @@ def create_server() -> FastMCP:
             if technique_id:
                 updates.append("technique_id = ?")
                 params.append(technique_id)
+            if chain_order is not None:
+                updates.append("chain_order = ?")
+                params.append(chain_order)
 
             if not updates:
                 return "No fields to update."

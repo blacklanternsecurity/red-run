@@ -679,15 +679,20 @@ function renderFlowGraph() {
   // action-style (the vuln IS the technique). Both use the same `vuln:N` id,
   // so provenance edges (via_vuln_id) connect without special routing.
   const sevColors = { critical: '#bc8cff', high: '#f85149', medium: '#d29922', low: '#8b949e' };
-  // Collect flag vulns to render as badges on parent access, not chain nodes
-  const flagsByAccess = {};  // access_id → [{title, details}]
+  // Collect flag vulns to render as badges on the node that produced them.
+  // via_vuln_id → attach to the vuln that captured the flag (end of chain).
+  // via_access_id → attach to the access node (fallback).
+  const flagsByNode = {};  // node_id → [{title, details}]
   for (const v of state.vulns) {
     if (v.in_graph === 0) continue;
     if (v.severity === 'info') continue;
     if (v.vuln_type === 'flag') {
-      const key = v.via_access_id || 'orphan';
-      if (!flagsByAccess[key]) flagsByAccess[key] = [];
-      flagsByAccess[key].push({ title: v.title, details: v.details || '' });
+      const parentId = v.via_vuln_id ? `vuln:${v.via_vuln_id}`
+        : v.via_access_id ? `access:${v.via_access_id}` : null;
+      if (parentId) {
+        if (!flagsByNode[parentId]) flagsByNode[parentId] = [];
+        flagsByNode[parentId].push({ title: v.title, details: v.details || '' });
+      }
       continue;  // don't create a chain node for flags
     }
     const techniqueLabel = v.technique_id ? `[${v.technique_id}] ` : '';
@@ -768,8 +773,14 @@ function renderFlowGraph() {
     if (credNode && nodeById[credNode]) {
       edges.push({ from: credNode, to: `access:${a.id}`, color: '#3fb950' });
     }
-    if (a.via_access_id && nodeById[`access:${a.via_access_id}`]) {
-      // Route through intermediate exercised vuln if one exists on the parent access
+    // vuln → access: if via_vuln_id is set, that vuln specifically produced this
+    // access. Use it directly — don't rely on the exercisedVulnByAccess heuristic
+    // which breaks when multiple exercised vulns share the same via_access_id.
+    if (a.via_vuln_id && nodeById[`vuln:${a.via_vuln_id}`]) {
+      edges.push({ from: `vuln:${a.via_vuln_id}`, to: `access:${a.id}`, color: '#3fb950' });
+    } else if (a.via_access_id && nodeById[`access:${a.via_access_id}`]) {
+      // No explicit via_vuln_id — try the exercisedVulnByAccess heuristic for
+      // routing through the intermediate technique, or fall back to direct access→access
       const ivuln = exercisedVulnByAccess[a.via_access_id];
       if (ivuln && nodeById[ivuln]) {
         edges.push({ from: ivuln, to: `access:${a.id}`, color: '#3fb950' });
@@ -839,11 +850,14 @@ function renderFlowGraph() {
     }
   }
 
-  // access/credential → vuln (found/exercised vuln) — direct edge (vuln IS the finding)
+  // access/credential/vuln → vuln (found/exercised vuln) — direct edge (vuln IS the finding)
   for (const v of state.vulns) {
     if (v.in_graph === 0) continue;
     if (v.severity === 'info') continue;
-    if (v.via_access_id && nodeById[`access:${v.via_access_id}`] && nodeById[`vuln:${v.id}`]) {
+    // access → vuln: only draw when the vuln has no more specific provenance
+    // (via_vuln_id chain). When via_vuln_id is set, the vuln→vuln edge tells
+    // the story; the access edge is just "during this session" noise.
+    if (v.via_access_id && !v.via_vuln_id && nodeById[`access:${v.via_access_id}`] && nodeById[`vuln:${v.id}`]) {
       edges.push({ from: `access:${v.via_access_id}`, to: `vuln:${v.id}`, color: '#e3b341' });
     }
     // credential → vuln (credential-sourced finding, e.g., password reuse)
@@ -853,16 +867,17 @@ function renderFlowGraph() {
         edges.push({ from: credDst, to: `vuln:${v.id}`, color: '#e3b341' });
       }
     }
+    // vuln → vuln (vuln chain, e.g., SSRF → RCE escalation)
+    if (v.via_vuln_id && nodeById[`vuln:${v.via_vuln_id}`] && nodeById[`vuln:${v.id}`]) {
+      edges.push({ from: `vuln:${v.via_vuln_id}`, to: `vuln:${v.id}`, color: '#e3b341' });
+    }
   }
 
   // --- Assign columns (left-to-right flow) ---
-  // Use chain_order if set, else BFS depth from roots
-  const hasOrder = nodes.some(n => n.chain_order > 0);
-  if (hasOrder) {
-    for (const n of nodes) {
-      n.col = n.chain_order || 999;
-    }
-  } else {
+  // Always BFS first for natural layout, then override with chain_order where set.
+  // This allows state-mgr to gradually reposition specific nodes without needing
+  // to assign chain_order to every node in the graph.
+  {
     const incoming = new Set();
     for (const e of edges) incoming.add(e.to);
     const roots = nodes.filter(n => !incoming.has(n.id));
@@ -880,14 +895,16 @@ function renderFlowGraph() {
         }
       }
     }
+    // Override: chain_order > 0 takes precedence over BFS depth
+    for (const n of nodes) {
+      if (n.chain_order > 0) n.col = n.chain_order;
+    }
   }
 
-  // Attach flag badges to access nodes (adds height for flag rows)
+  // Attach flag badges to parent nodes (adds height for flag rows)
   const FLAG_ROW_H = 16;
   for (const n of nodes) {
-    const m = n.id.match(/^access:(\d+)$/);
-    if (!m) continue;
-    const flags = flagsByAccess[parseInt(m[1])];
+    const flags = flagsByNode[n.id];
     if (flags) n.flags = flags;
   }
 

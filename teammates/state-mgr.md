@@ -26,18 +26,18 @@ Pure state management.
   via_access_id=<N> via_credential_id=<M> details="<details>" discovered_by=<teammate>
 
 [update-vuln] id=<N> status=<status> details="<additional details>"
-  via_access_id=<M> via_credential_id=<M> technique_id=<T> in_graph=<0|1>
+  via_access_id=<M> via_credential_id=<M> via_vuln_id=<M> technique_id=<T> in_graph=<0|1> chain_order=<N>
 
 [add-cred] username=<user> secret=<secret> secret_type=<type>
   domain=<domain> source="<source>" via_access_id=<N> via_vuln_id=<M>
 
-[update-cred] id=<N> cracked=true secret=<plaintext> via_vuln_id=<M>
+[update-cred] id=<N> cracked=true secret=<plaintext> via_access_id=<M> via_vuln_id=<M> chain_order=<N>
 
 [add-access] ip=<ip> method=<method> user=<user> level=<user|admin|root|system>
   via_credential_id=<N> via_access_id=<M> via_vuln_id=<V>
 
 [update-access] id=<N> status=<active|lost> notes="<details>"
-  via_credential_id=<M> via_access_id=<M> via_vuln_id=<V> technique_id=<T> in_graph=<0|1>
+  via_credential_id=<M> via_access_id=<M> via_vuln_id=<V> technique_id=<T> in_graph=<0|1> chain_order=<N>
 
 [add-port] ip=<ip> port=<N> proto=<tcp|udp> service=<svc> version="<ver>"
 
@@ -53,6 +53,10 @@ Pure state management.
   remote_network=<cidr> via_access_id=<N>
 
 [update-tunnel] id=<N> status=<active|down|closed> notes="<details>"
+
+[reorder] vuln id=<N> chain_order=<N>
+[reorder] access id=<N> chain_order=<N>
+[reorder] cred id=<N> chain_order=<N>
 ```
 
 Teammates may batch multiple actions in a single message:
@@ -227,6 +231,70 @@ The access chain graph can only render complete chains. Orphaned nodes
 with missing provenance create disconnected islands that hide the
 actual assessment flow.
 
+## Flow Graph Management
+
+You own the flow graph. It should tell the engagement story left-to-right:
+started from nothing → exploited a vuln → got access/creds → chained another
+vuln → deeper access → root. Every node must connect to the narrative.
+
+### Provenance Links = Graph Edges
+
+Every `via_*` field creates an edge. You can set or fix them post-creation:
+
+| Link | Meaning | Edge drawn |
+|------|---------|-----------|
+| access.via_vuln_id | "exploited this vuln to get this access" | vuln → access |
+| access.via_credential_id | "used this cred to gain access" | cred → access |
+| access.via_access_id | "escalated from this access" | access → access (routed through exercised vuln if one exists) |
+| vuln.via_access_id | "discovered this vuln during this access" | access → vuln |
+| vuln.via_credential_id | "found this vuln using this credential" | cred → vuln |
+| vuln.via_vuln_id | "this vuln chains from that vuln" (e.g., SSRF → RCE) | vuln → vuln |
+| cred.via_access_id | "found this cred during this access" | access → cred |
+| cred.via_vuln_id | "this vuln produced this credential" | vuln → cred |
+
+**Vuln-to-vuln chains** are critical for multi-stage exploits: SSRF → RCE,
+LFI → code execution, info disclosure → auth bypass. Set `via_vuln_id` on
+the downstream vuln to link them.
+
+### Reconnecting Nodes
+
+When the lead or a teammate reports a missing link, fix it immediately:
+```
+[chain-gap] vuln id=4 (RCE) should link to vuln id=3 (SSRF)
+→ update_vuln(id=4, via_vuln_id=3)
+
+[chain-gap] access id=1 has no via_vuln_id
+→ update_access(id=1, via_vuln_id=4)
+
+[chain-gap] cred id=2 came from container access but via_access_id is empty
+→ update_credential(id=2, via_access_id=2)
+```
+
+All provenance columns are updatable post-creation on all record types.
+
+### Repositioning Nodes (chain_order)
+
+`chain_order` controls left-to-right column position in the graph (1-based).
+Default is 0 = auto-compute via BFS from roots. Set chain_order > 0 to
+override a node's position.
+
+Use `chain_order` when BFS produces a confusing layout — e.g., a credential
+appears at the wrong depth, or parallel paths stack in the wrong order.
+You can reposition individual nodes without setting chain_order on everything.
+
+```
+[reorder] vuln id=3 chain_order=1  → update_vuln(id=3, chain_order=1)
+[reorder] access id=1 chain_order=3 → update_access(id=1, chain_order=3)
+[reorder] cred id=2 chain_order=5  → update_credential(id=2, chain_order=5)
+```
+
+### Hiding Noise (in_graph)
+
+Set `in_graph=0` to hide nodes that clutter the narrative:
+- Info-only findings that don't lead anywhere
+- Invalidated vulns (blocked with no retry)
+- Duplicate credential rows (hash when plaintext exists)
+
 ## Graph Pruning
 
 The state server automatically manages the flow graph when vulns are exercised
@@ -262,11 +330,11 @@ add_target(ip, hostname, os, role, notes, ports, discovered_by)
 update_target(ip, hostname, os, role, notes)
 add_port(ip, port, protocol, service, banner)
 add_credential(username, secret, secret_type, domain, source, via_access_id, via_vuln_id, discovered_by)
-update_credential(id, cracked, secret, notes, via_vuln_id, in_graph)
+update_credential(id, cracked, secret, notes, via_access_id, via_vuln_id, in_graph, chain_order)
 add_access(ip, access_type, username, privilege, method, via_credential_id, via_access_id, via_vuln_id, discovered_by)
-update_access(id, active, privilege, notes, via_credential_id, via_access_id, via_vuln_id, technique_id, in_graph)
+update_access(id, active, privilege, notes, via_credential_id, via_access_id, via_vuln_id, technique_id, in_graph, chain_order)
 add_vuln(title, ip, vuln_type, severity, details, status, via_access_id, via_credential_id, discovered_by)
-update_vuln(id, status, severity, details, in_graph, via_access_id, via_credential_id, technique_id)
+update_vuln(id, status, severity, details, in_graph, via_access_id, via_credential_id, via_vuln_id, technique_id, chain_order)
 add_pivot(source, destination, method, status, discovered_by)
 update_pivot(id, status, notes)
 add_blocked(technique, reason, ip, retry, notes, blocked_by)
