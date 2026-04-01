@@ -76,11 +76,14 @@ esac
 echo ""
 echo "Q5 — Shell backend"
 echo "  1) shell-server  (raw TCP/PTY, always available)"
-if command -v sliver-server &>/dev/null || command -v sliver &>/dev/null; then
-    echo "  2) sliver        (Sliver C2 — detected)"
+if pgrep -f "sliver-server daemon" &>/dev/null; then
+    echo "  2) sliver        (Sliver C2 — daemon running)"
+    has_sliver=1
+elif [[ -f "engagement/sliver.cfg" ]]; then
+    echo "  2) sliver        (Sliver C2 — config found, daemon not running)"
     has_sliver=1
 else
-    echo "  2) sliver        (not installed)"
+    echo "  2) sliver        (not configured)"
     has_sliver=0
 fi
 echo "  3) custom        (your own C2 + MCP server)"
@@ -93,50 +96,59 @@ custom_ref=""
 
 case "${q5:-1}" in
     2)
-        if [[ "$has_sliver" -eq 0 ]]; then
-            echo "  Sliver not detected. Install sliver-server first."
-            echo "  Falling back to shell-server."
-        else
+        default_cfg="engagement/sliver.cfg"
+        if [[ -f "$default_cfg" ]]; then
+            echo "  Found operator config: $default_cfg"
             shell_backend="sliver"
-            default_cfg="engagement/sliver.cfg"
+            sliver_config="$default_cfg"
+        else
             echo ""
-            # Unpack Sliver assets (Go toolchain, implant templates) on first run
-            if [[ ! -d "${HOME}/.sliver" ]] || [[ ! -d "${HOME}/.sliver/go" ]]; then
-                echo "  Unpacking Sliver assets (first run, may take a moment)..."
-                sliver-server unpack --force 2>/dev/null
-            fi
-            echo "  Sliver operator config setup:"
-            if [[ -f "$default_cfg" ]]; then
-                echo "  Found existing config: $default_cfg"
-                read -rp "  Use this config? [Y/n] " use_existing
-                if [[ "${use_existing,,}" != "n" ]]; then
-                    sliver_config="$default_cfg"
-                fi
-            fi
-            if [[ -z "$sliver_config" ]]; then
-                echo "  Generating operator config..."
-                rm -f "$default_cfg"
-                if sliver-server operator --name red-run --lhost 127.0.0.1 --permissions all --save "$default_cfg" 2>/dev/null; then
-                    sliver_config="$default_cfg"
-                    echo "  Config saved to $default_cfg"
-                    # Restart daemon so new mTLS certs take effect
-                    echo "  Restarting Sliver daemon for new config..."
-                    pkill -f "sliver-server daemon" 2>/dev/null
-                    sleep 2
-                    sliver-server daemon &>/dev/null &
-                    sleep 2
-                    # Import config into sliver client
-                    if command -v sliver &>/dev/null; then
-                        sliver import "$default_cfg" 2>/dev/null
+            echo "  No operator config found at $default_cfg."
+            echo ""
+            echo "  1) Generate now (local daemon — sliver-server must be running)"
+            echo "  2) Provide path to existing config (local or from remote C2)"
+            echo "  3) Cancel — fall back to shell-server"
+            read -rp "  Choice [3]: " sliver_setup
+            case "${sliver_setup:-3}" in
+                1)
+                    if ! pgrep -f "sliver-server daemon" &>/dev/null; then
+                        echo "  Sliver daemon not running."
+                        echo "  Start it first:  sliver-server daemon &"
+                        echo "  Then re-run ./config.sh."
+                        echo "  Falling back to shell-server."
+                    elif ! command -v sliver-server &>/dev/null; then
+                        echo "  sliver-server not found on PATH."
+                        echo "  See docs/installation.md for install steps."
+                        echo "  Falling back to shell-server."
+                    else
+                        echo "  Generating operator config..."
+                        if sliver-server operator --name red-run --lhost 127.0.0.1 \
+                            --permissions all --save "$default_cfg" 2>&1; then
+                            echo "  Config saved to $default_cfg"
+                            shell_backend="sliver"
+                            sliver_config="$default_cfg"
+                        else
+                            echo "  Failed to generate config."
+                            echo "  Falling back to shell-server."
+                        fi
                     fi
-                else
-                    echo "  Failed to generate config. Is sliver-server running?"
-                    echo "  Start it with: sliver-server daemon &"
-                    echo "  Then re-run this setup."
+                    ;;
+                2)
+                    read -rp "  Path to operator config: " cfg_path
+                    if [[ -f "$cfg_path" ]]; then
+                        cp "$cfg_path" "$default_cfg"
+                        echo "  Copied to $default_cfg"
+                        shell_backend="sliver"
+                        sliver_config="$default_cfg"
+                    else
+                        echo "  File not found: $cfg_path"
+                        echo "  Falling back to shell-server."
+                    fi
+                    ;;
+                *)
                     echo "  Falling back to shell-server."
-                    shell_backend="shell-server"
-                fi
-            fi
+                    ;;
+            esac
         fi
         ;;
     3)

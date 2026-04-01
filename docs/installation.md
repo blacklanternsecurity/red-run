@@ -18,17 +18,66 @@ red-run works out of the box with shell-server (raw TCP reverse shells + interac
 
 | C2 | Components | Install |
 |----|-----------|---------|
-| [Sliver](https://github.com/BishopFox/sliver) | Server + Client (both required) | See below |
+| [Sliver](https://github.com/BishopFox/sliver) | Server + Client | See below |
 
-**Sliver install** (both binaries needed — server for the daemon, client for implant generation):
+**Sliver install** — two deployment models depending on whether the Sliver
+server runs on the same box as red-run or on a dedicated C2 host.
+
+#### Local (server + client on the same box)
+
+**Step 1 — Download binaries:**
 ```bash
-# Server (~260MB)
+# Server (~260MB) — runs the daemon, generates operator configs
 curl -L https://github.com/BishopFox/sliver/releases/latest/download/sliver-server_linux-amd64 \
   -o ~/.local/bin/sliver-server && chmod +x ~/.local/bin/sliver-server
-# Client (~38MB)
+
+# Client (~38MB) — implant generation, interactive console
 curl -L https://github.com/BishopFox/sliver/releases/latest/download/sliver-client_linux-amd64 \
   -o ~/.local/bin/sliver && chmod +x ~/.local/bin/sliver
 ```
+
+**Step 2 — Unpack assets** (downloads Go toolchain + implant templates, ~1–2 min on first run):
+```bash
+sliver-server unpack --force
+```
+
+**Step 3 — Start the daemon:**
+```bash
+sliver-server daemon &
+```
+Wait a few seconds for it to initialize. Verify with `pgrep -f "sliver-server daemon"`.
+
+**Step 4 — Run config.sh** and select sliver as the shell backend:
+```bash
+cd /path/to/red-run
+./config.sh
+```
+It will prompt you to generate an operator config (how the red-run MCP server
+authenticates to the daemon). If the daemon is running, it handles everything.
+
+#### Remote (server on a dedicated C2 host)
+
+Only the sliver client is needed on the red-run box. The server runs elsewhere.
+
+**On the red-run box** — install the client:
+```bash
+curl -L https://github.com/BishopFox/sliver/releases/latest/download/sliver-client_linux-amd64 \
+  -o ~/.local/bin/sliver && chmod +x ~/.local/bin/sliver
+```
+
+**On the C2 host** — generate an operator config for red-run:
+```bash
+sliver-server operator --name red-run --lhost <C2_IP> \
+  --permissions all --save red-run.cfg
+```
+
+**Copy** `red-run.cfg` to the red-run box as `engagement/sliver.cfg`, then run `./config.sh`.
+
+#### Notes
+
+Both setups need the sliver client on the red-run box for implant generation.
+The `sliver-server` binary is only needed where the daemon runs.
+`config.sh` detects `engagement/sliver.cfg` automatically — no manual config edits needed.
 
 More C2 frameworks (Mythic, Havoc) planned. Custom C2 integration is supported via operator-provided MCP servers and reference docs.
 
