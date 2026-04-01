@@ -2,6 +2,32 @@
 
 All notable changes to red-run will be documented in this file. Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## 2026-04-01
+
+### Changed
+
+- **config.sh sliver setup** — removed daemon lifecycle management (unpack,
+  start, restart, operator config generation). config.sh now checks for an
+  existing operator config and offers interactive options: generate from local
+  daemon, provide path to existing config (local or remote C2), or skip.
+- **config.sh sliver detection** — detects running daemon or existing config
+  instead of checking for client/server binaries on PATH
+
+### Fixed
+
+- **config.sh silent exit** — `sliver-server unpack --force` returning non-zero
+  killed the script silently due to `set -e` with stderr suppressed
+
+### Added
+
+- **Sliver remote C2 support** — config.sh and installation docs now cover
+  running sliver-server on a separate host with only the client on the red-run
+  box
+- **sliver-server MCP pre-registered** — `.mcp.json` and `.claude/settings.json`
+  include sliver-server entries by default
+- **Installation docs** — step-by-step Sliver setup for both local and remote
+  deployment models
+
 ## 2026-03-31
 
 ### Added
