@@ -452,7 +452,8 @@ Previous teammates are gone (new session) — create a fresh team and spawn as n
 ```
 # Handle team name collision (see Team Lifecycle — team name collision)
 # TeamCreate → store returned name as TEAM_NAME
-# Then spawn state-mgr + shell-mgr with team_name=<TEAM_NAME>
+# Spawn state-mgr first (alone), then proceed to routing
+# Defer shell-mgr until after the first domain teammate is working
 ```
 
 ## Step 1: Scope & Engagement Setup
@@ -483,12 +484,21 @@ notify the operator and block shell-dependent tasks until resolved.
 
 ### Engagement Configuration
 
+**Run this Bash command now:**
+
+```bash
+ls engagement/config.yaml 2>/dev/null && echo "EXISTS" || echo "NONE"
 ```
-1. Bash: ls engagement/config.yaml 2>/dev/null && echo "EXISTS" || echo "NONE"
-2. If EXISTS → Read engagement/config.yaml, print values, skip to Initialize Engagement.
-   Do NOT ask config questions. Do NOT call AskUserQuestion.
-3. If NONE → call AskUserQuestion with all 5 questions below.
-```
+
+**If EXISTS** → Read `engagement/config.yaml`, print the values to the operator,
+and skip directly to **Initialize Engagement**. Do NOT ask config questions.
+
+**If NONE** → Ask the operator all 5 config questions below using AskUserQuestion,
+then write `engagement/config.yaml` from their answers. Omit keys where operator
+chose "Ask each time/when needed". If web proxy enabled, generate persistence
+files immediately.
+
+Config questions (only when config.yaml does not exist):
 
 ```
 Q1 — Scan type: Quick (recommended) | Full | Ask each time
@@ -497,10 +507,6 @@ Q3 — Spray intensity: Light ~30 (recommended) | Medium ~10k | Heavy ~100k | Sk
 Q4 — Recovery method: Local (recommended) | Export | Skip | Ask each time
 Q5 — Shell backend: shell-server (recommended) | Sliver (if RED_RUN_SLIVER_AVAILABLE=1) | Custom
 ```
-
-Write `engagement/config.yaml` from operator answers.
-Omit keys where operator chose "Ask each time/when needed".
-If web proxy enabled, generate persistence files immediately.
 
 `callback_ip`/`callback_interface` in config.yaml are manual overrides — if set,
 resolve once and include `Callback IP: <ip>` in every shell-related task.
@@ -515,37 +521,30 @@ Write `engagement/scope.md`. Call `init_engagement(name="...")`.
 Copy dump-state script (use Bash `cp`, do NOT read the file):
 `cp operator/templates/dump-state.sh engagement/dump-state.sh && chmod +x engagement/dump-state.sh`
 
-### Create Team and Spawn Infrastructure Teammates
+### Create Team and Spawn state-mgr
 
-**Immediately after init_engagement**, create the team and spawn the two
-infrastructure teammates. The team must exist before any teammate can be
-spawned. state-mgr must be alive before any writes, and shell-mgr must be
-alive before any shell operations.
+**Immediately after init_engagement**, create the team and spawn state-mgr.
+The team must exist before any teammate can be spawned. state-mgr must be
+alive before any state writes. **Do NOT spawn shell-mgr yet** — it is
+deferred to reduce startup time (see below).
+
+Print: "Spawning state-mgr — the first teammate takes ~2 minutes to initialize.
+Subsequent teammates spawn faster."
 
 ```
 1. Handle team name collision (see Team Lifecycle — team name collision).
 2. TeamCreate → store returned name as TEAM_NAME.
-3. Spawn state-mgr:
+3. Spawn state-mgr (alone — do NOT batch with other spawns):
    a. Read teammates/state-mgr.md via Read tool
    b. Agent(prompt=<template content>, description="State management",
             name="state-mgr", model="sonnet", team_name=<TEAM_NAME>)
-4. Spawn shell-mgr:
-   a. Read config.yaml → shell.backend (default: "shell-server" if absent)
-   b. Read teammates/shell-mgr.md (base) + teammates/shell-mgr-<backend>.md (appendix)
-   c. Agent(prompt=<base + appendix>, description="Shell lifecycle management",
-            name="shell-mgr", model="sonnet", team_name=<TEAM_NAME>)
-5. Both go idle after activation — this is normal. They wake on messages.
+4. state-mgr goes idle after activation — this is normal.
 ```
 
 All subsequent state writes from the lead and teammates go through state-mgr
-via structured messages. All shell lifecycle operations (listeners, processes,
-upgrades) go through shell-mgr via structured messages. Teammates call
-`send_command`/`read_output` directly on the MCP after shell-mgr hands off
-session details.
-
-The lead still calls `init_engagement()` and `close_engagement()` directly
-(one-time setup, not a write pattern). The lead still calls all state read
-tools directly.
+via structured messages. The lead still calls `init_engagement()` and
+`close_engagement()` directly (one-time setup, not a write pattern). The lead
+still calls all state read tools directly.
 
 After initialization, remind the operator to start the state dashboard:
 ```
@@ -560,6 +559,9 @@ credentials, and assessment progress update live as teammates work.
 
 ### Network Recon
 
+**Proceed to the routing decision immediately after state-mgr goes idle.**
+Do NOT wait to spawn shell-mgr first — get the first domain teammate working.
+
 ```
 if config.scan_type exists:
   present routing table with pre-selected scan type for approval
@@ -567,9 +569,31 @@ if config.scan_type exists:
 elif config.scan_type omitted:
   AskUserQuestion — Quick | Full | Import | Custom
 
-spawn/message recon teammate:
+spawn/message recon teammate (alone — do NOT batch with other spawns):
   "Load skill 'network-recon'. Target: <IP/range>. Scan type: <type>."
 ```
+
+### Deferred shell-mgr Spawn
+
+**After the first domain teammate is spawned and working**, spawn shell-mgr
+in the background. The domain teammate (usually net-enum running nmap) takes
+minutes — shell-mgr will be ready well before anyone needs a shell.
+
+```
+1. Read config.yaml → shell.backend (default: "shell-server" if absent)
+2. Read teammates/shell-mgr.md (base) + teammates/shell-mgr-<backend>.md (appendix)
+3. Agent(prompt=<base + appendix>, description="Shell lifecycle management",
+         name="shell-mgr", model="sonnet", team_name=<TEAM_NAME>,
+         run_in_background=true)
+```
+
+All shell lifecycle operations (listeners, processes, upgrades) go through
+shell-mgr via structured messages. Teammates call `send_command`/`read_output`
+directly on the MCP after shell-mgr hands off session details.
+
+**If a teammate needs shell-mgr before it's ready** (rare — would require
+RCE during initial recon), the lead spawns shell-mgr immediately and queues
+the shell request.
 
 ### Service Enumeration (after recon returns)
 
