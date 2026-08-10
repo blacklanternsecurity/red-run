@@ -2,6 +2,18 @@
 
 All notable changes to red-run will be documented in this file. Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## 2026-08-10
+
+### Fixed
+
+- **skill-router MCP connection timeout** — `create_server()` built the ChromaDB
+  collection (and with it loaded the `all-MiniLM-L6-v2` sentence-transformers
+  model) before `mcp.run()`, so the server did not answer the MCP `initialize`
+  handshake for ~43 s and the client gave up with `-32001`. Raising `MCP_TIMEOUT`
+  only masked this. The collection is now built lazily and memoised on first tool
+  call: handshake drops from 42.7 s to 1.8 s, with the one-time model load moved
+  to the first `search_skills()`/`get_skill()`/`list_skills()` call (~12 s).
+
 ## 2026-04-01
 
 ### Changed
