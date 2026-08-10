@@ -115,6 +115,18 @@ bash operator/state-viewer/generate-token.sh
 
 See `operator/state-viewer/README.md` for details.
 
+### Exporting findings to DefectDojo
+
+```bash
+python3 operator/defectdojo-export/export.py --out /tmp/findings.json   # inspect
+python3 operator/defectdojo-export/export.py --push --url ... --token ...
+```
+
+Findings only. The access chain, credentials and the `blocked` table (techniques
+attempted and refuted) have no counterpart in DefectDojo and are not exported —
+the tool prints what it left behind. It complements the engagement report, it
+does not replace it. See `operator/defectdojo-export/README.md`.
+
 ## Running
 
 ```bash

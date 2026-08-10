@@ -61,7 +61,14 @@ def create_server(skills_dir: Path, db_dir: Path) -> FastMCP:
             "Use list_skills to browse the inventory."
         ),
     )
-    collection = _get_collection(db_dir)
+    # Lazy: loading the sentence-transformers model takes ~40s, which blocks
+    # the MCP initialize handshake past its timeout. Defer to first tool call.
+    cached: list[chromadb.Collection] = []
+
+    def _collection() -> chromadb.Collection:
+        if not cached:
+            cached.append(_get_collection(db_dir))
+        return cached[0]
 
     @mcp.tool()
     def search_skills(
@@ -83,7 +90,7 @@ def create_server(skills_dir: Path, db_dir: Path) -> FastMCP:
                            Results below this are excluded. Default 0.4.
         """
         where = {"category": category} if category else None
-        results = collection.query(
+        results = _collection().query(
             query_texts=[query],
             n_results=min(n, 20),
             where=where,
@@ -126,10 +133,10 @@ def create_server(skills_dir: Path, db_dir: Path) -> FastMCP:
                   available names.
         """
         # Look up the skill path from ChromaDB metadata
-        results = collection.get(ids=[name], include=["metadatas"])
+        results = _collection().get(ids=[name], include=["metadatas"])
         if not results["ids"]:
             # Fuzzy fallback: search by name
-            search = collection.query(
+            search = _collection().query(
                 query_texts=[name], n_results=3, include=["metadatas"]
             )
             if search["ids"][0]:
@@ -172,7 +179,7 @@ def create_server(skills_dir: Path, db_dir: Path) -> FastMCP:
                       Omit to list all skills.
         """
         where = {"category": category} if category else None
-        results = collection.get(where=where, include=["metadatas"])
+        results = _collection().get(where=where, include=["metadatas"])
 
         if not results["ids"]:
             if category:

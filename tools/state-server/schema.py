@@ -9,7 +9,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 22
+SCHEMA_VERSION = 23
 
 SCHEMA_SQL = """\
 PRAGMA journal_mode=WAL;
@@ -120,6 +120,8 @@ CREATE TABLE IF NOT EXISTS vulns (
                   CHECK (severity IN ('info', 'low', 'medium', 'high', 'critical')),
     details       TEXT NOT NULL DEFAULT '',
     evidence_path TEXT NOT NULL DEFAULT '',
+    cvss_vector   TEXT NOT NULL DEFAULT '',
+    cwe           TEXT NOT NULL DEFAULT '',
     via_access_id    INTEGER REFERENCES access(id) ON DELETE SET NULL,
     via_credential_id INTEGER REFERENCES credentials(id) ON DELETE SET NULL,
     via_vuln_id      INTEGER REFERENCES vulns(id) ON DELETE SET NULL,
@@ -383,6 +385,24 @@ def _migrate_v3_to_v4(conn: sqlite3.Connection) -> None:
             conn.execute(
                 f"ALTER TABLE {table} ADD COLUMN via_access_id INTEGER REFERENCES access(id) ON DELETE SET NULL"
             )
+    conn.commit()
+
+
+def _migrate_v22_to_v23(conn: sqlite3.Connection) -> None:
+    """Migrate v22 to v23: add cvss_vector and cwe columns to vulns.
+
+    Both were previously recorded as free text inside `details`, which made
+    them unusable by anything downstream — an exporter had to recover them by
+    regex. They are first-class fields in every vulnerability-management tool
+    (DefectDojo maps them to `cvssv3` and `cwe`), so they get their own columns.
+    """
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(vulns)").fetchall()]
+    if "cvss_vector" not in cols:
+        conn.execute(
+            "ALTER TABLE vulns ADD COLUMN cvss_vector TEXT NOT NULL DEFAULT ''"
+        )
+    if "cwe" not in cols:
+        conn.execute("ALTER TABLE vulns ADD COLUMN cwe TEXT NOT NULL DEFAULT ''")
     conn.commit()
 
 
@@ -669,6 +689,8 @@ def init_db(db_path: str | Path) -> sqlite3.Connection:
             _migrate_v20_to_v21(conn)
         if current_version <= 21:
             _migrate_v21_to_v22(conn)
+        if current_version <= 22:
+            _migrate_v22_to_v23(conn)
 
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()
