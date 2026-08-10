@@ -4,6 +4,19 @@ All notable changes to red-run will be documented in this file. Format follows [
 
 ## 2026-08-10
 
+### Added
+
+- **DefectDojo export** (`operator/defectdojo-export/`) — turns `vulns` into
+  DefectDojo Findings, either as a Generic Findings Import file (`--out`, no
+  network) or pushed to `/api/v2/import-scan/` (`--push`). `unique_id_from_tool`
+  is stable per vuln, so re-exporting updates rather than duplicates. Info-severity
+  findings are skipped by default: in red-run they are mostly refuted candidates,
+  and importing them makes controls that held look like open issues.
+  Provenance links are flattened into each finding's description because
+  DefectDojo cannot represent the chain; `blocked`, `access`, `credentials` and
+  `pivot_map` have no counterpart at all and are dropped, with a printed count so
+  the loss is visible rather than silent. Standard library only.
+
 ### Changed
 
 - **`vulns.cvss_vector` and `vulns.cwe` are now columns** (schema v23, additive
