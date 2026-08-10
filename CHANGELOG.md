@@ -4,7 +4,28 @@ All notable changes to red-run will be documented in this file. Format follows [
 
 ## 2026-08-10
 
+### Changed
+
+- **`vulns.cvss_vector` and `vulns.cwe` are now columns** (schema v23, additive
+  migration). Both were previously free text inside `details`, which meant any
+  downstream consumer had to recover them by regex — and every vulnerability
+  management tool treats them as first-class fields. `add_vuln` and `update_vuln`
+  accept them; the vector is stored verbatim and not validated or scored.
+
 ### Fixed
+
+- **state-server flow-graph pruning fired on non-transitions** — `update_vuln`
+  called `_prune_sibling_vulns()` whenever `status="actioned"` was *passed*,
+  not when the status actually *changed*. Since the prune query matches on
+  `in_graph = 1`, every redundant re-assert hid whichever siblings were visible
+  at that moment, cascading further with each call. Observed in a live
+  engagement: repeated consolidation writes that re-asserted an already-actioned
+  status hid 15 distinct, independently-scored findings from the dashboard graph
+  with no signal to the caller. Both `update_vuln` and `update_access` now read
+  the prior value first and fire prune/restore only on a genuine transition;
+  redundant writes are a graph no-op and omit `siblings_pruned` /
+  `siblings_restored` from the response. The docstrings already described
+  transition semantics — the code did not implement them.
 
 - **skill-router MCP connection timeout** — `create_server()` built the ChromaDB
   collection (and with it loaded the `all-MiniLM-L6-v2` sentence-transformers
