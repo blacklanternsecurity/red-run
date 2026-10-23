@@ -134,3 +134,9 @@ Send any message (e.g., a target IP) to activate the orchestrator. The orchestra
 - **No OPSEC guarantees.** Agents run with no stealth considerations. Assume all activity is logged and detectable. Do not rely on red-run for covert operations.
 - **Content policy warnings.** red-run's autonomous agents generate and execute offensive security commands. This may trigger Anthropic content policy warnings on your account. We are not responsible for the standing of your Anthropic account — use at your own risk.
 - **No warranty.** red-run is provided as-is. The authors are not liable for any damage, data loss, legal consequences, or other harm resulting from its use.
+
+## License
+
+Copyright (C) 2026 Black Lantern Security
+
+Licensed under the GNU Affero General Public License v3.0 or later (`AGPL-3.0-or-later`). See [LICENSE](LICENSE).
