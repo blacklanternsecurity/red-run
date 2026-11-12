@@ -1,5 +1,7 @@
 # red-run
 
+## **!!! This project is archived and no longer maintained. Use at your own risk. !!!**
+
 Security assessment toolkit for Claude Code.
 
 <p align="center">
