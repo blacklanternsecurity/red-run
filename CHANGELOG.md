@@ -2,6 +2,25 @@
 
 All notable changes to red-run will be documented in this file. Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## 2026-08-18
+
+### Added
+
+- **`session-fixation` skill** (`skills/web/`) — the library had no coverage for
+  a classic technique: determining whether an application rotates its session
+  identifier on authentication, and demonstrating account takeover when it does
+  not. `search_skills("session fixation")` previously returned `csrf` at 0.27
+  similarity, i.e. nothing usable. Beyond the technique itself the skill encodes
+  the three things that make the test easy to get wrong: the frozen cookie jar
+  (curl rewrites a jar on every response, so without a copy taken before the
+  victim authenticates you cannot tell a *retained* identifier from a *freshly
+  issued* one); the mandatory negative control (if a never-authenticated
+  identifier is *accepted*, the finding is not fixation but the worse defect of
+  accepting arbitrary identifiers); and the fact that URL-rewrite suppression is
+  a non-discriminating marker when testing cookie-versus-URL precedence, since
+  servlet containers stop encoding the identifier as soon as any valid session
+  cookie is recognised, whichever session they then act on.
+
 ## 2026-04-01
 
 ### Changed
