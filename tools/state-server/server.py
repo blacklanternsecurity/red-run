@@ -1439,6 +1439,13 @@ def create_server() -> FastMCP:
                         left-to-right). 0 = auto-compute via BFS.
         """
         with _get_db() as conn:
+            row = conn.execute(
+                "SELECT active FROM access WHERE id = ?", (id,)
+            ).fetchone()
+            if row is None:
+                return f"Access #{id} not found."
+            prev_active = bool(row["active"])
+
             updates = []
             params: list = []
             if active is not None:
@@ -1487,9 +1494,11 @@ def create_server() -> FastMCP:
             _emit_event(conn, "access_update", id, f"access #{id} updated")
 
             # When access is revoked, restore sibling vulns that were pruned
-            # when actioned vulns from this access succeeded
+            # when actioned vulns from this access succeeded. Only on an ACTUAL
+            # transition — re-asserting active=False on already-revoked access
+            # should not report a restore it did not perform.
             restored = 0
-            if active is False:
+            if active is False and prev_active:
                 restored = _restore_vulns_for_access(conn, id)
 
             conn.commit()
@@ -1507,6 +1516,8 @@ def create_server() -> FastMCP:
         severity: str = "medium",
         details: str = "",
         evidence_path: str = "",
+        cvss_vector: str = "",
+        cwe: str = "",
         via_access_id: int | None = None,
         via_credential_id: int | None = None,
         via_vuln_id: int | None = None,
@@ -1528,6 +1539,10 @@ def create_server() -> FastMCP:
             severity: Severity: info, low, medium, high, critical.
             details: Technical details.
             evidence_path: Path to evidence file in engagement/evidence/.
+            cvss_vector: CVSS 3.1 base vector, e.g.
+                        "AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:H/A:N". Stored verbatim;
+                        the score is not computed or validated here.
+            cwe: CWE identifier, e.g. "CWE-352". Empty = not classified.
             via_access_id: Access ID that led to finding this vuln
                           (for chain provenance). None = unauthenticated/recon.
             via_credential_id: Credential ID that led to finding this vuln
@@ -1586,9 +1601,10 @@ def create_server() -> FastMCP:
             cursor = conn.execute(
                 "INSERT INTO vulns "
                 "(target_id, title, vuln_type, status, severity, "
-                "details, evidence_path, via_access_id, via_credential_id, "
+                "details, evidence_path, cvss_vector, cwe, "
+                "via_access_id, via_credential_id, "
                 "via_vuln_id, technique_id, chain_order, discovered_by) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     target_id,
                     title,
@@ -1597,6 +1613,8 @@ def create_server() -> FastMCP:
                     severity,
                     details,
                     evidence_path,
+                    cvss_vector,
+                    cwe,
                     via_access_id,
                     via_credential_id,
                     via_vuln_id,
@@ -1709,6 +1727,8 @@ def create_server() -> FastMCP:
         status: str = "",
         severity: str = "",
         details: str = "",
+        cvss_vector: str = "",
+        cwe: str = "",
         in_graph: int | None = None,
         via_access_id: int | None = None,
         via_credential_id: int | None = None,
@@ -1746,6 +1766,13 @@ def create_server() -> FastMCP:
             if err:
                 return err
         with _get_db() as conn:
+            row = conn.execute(
+                "SELECT status FROM vulns WHERE id = ?", (id,)
+            ).fetchone()
+            if row is None:
+                return f"Vuln #{id} not found."
+            prev_status = row["status"]
+
             updates = []
             params: list = []
             if status:
@@ -1757,6 +1784,12 @@ def create_server() -> FastMCP:
             if details:
                 updates.append("details = ?")
                 params.append(details)
+            if cvss_vector:
+                updates.append("cvss_vector = ?")
+                params.append(cvss_vector)
+            if cwe:
+                updates.append("cwe = ?")
+                params.append(cwe)
             if in_graph is not None:
                 updates.append("in_graph = ?")
                 params.append(in_graph)
@@ -1790,13 +1823,19 @@ def create_server() -> FastMCP:
                 summary += f" -> {status}"
             _emit_event(conn, "vuln_update", id, summary)
 
-            # Auto-prune/restore sibling vulns based on status transition
+            # Auto-prune/restore sibling vulns — only on an ACTUAL status
+            # transition. Re-passing the status a vuln already has (common when
+            # a caller re-asserts state for consistency) must be a no-op here:
+            # _prune_sibling_vulns matches on in_graph = 1, so firing it again
+            # hides siblings that were legitimately visible at the time of the
+            # second call, cascading a little further with each redundant write.
             pruned = 0
             restored = 0
-            if status == "actioned":
-                pruned = _prune_sibling_vulns(conn, id)
-            elif status == "blocked":
-                restored = _restore_sibling_vulns(conn, id)
+            if status and status != prev_status:
+                if status == "actioned":
+                    pruned = _prune_sibling_vulns(conn, id)
+                elif status == "blocked":
+                    restored = _restore_sibling_vulns(conn, id)
 
             conn.commit()
             result: dict = {"vuln_id": id, "updated": True}

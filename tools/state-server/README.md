@@ -68,6 +68,14 @@ graph clean:
 - **Manual override**: `update_vuln(id=N, in_graph=0|1)` to force
   visibility. Overrides automatic pruning.
 
+- **Transitions only**: pruning and restoring fire only when the status
+  *actually changes*. Re-passing the status a record already has — common when
+  a caller re-asserts state for consistency — is a no-op for the graph, and the
+  response omits `siblings_pruned`/`siblings_restored`. This matters because
+  `_prune_sibling_vulns` matches on `in_graph = 1`: without the transition
+  guard, each redundant write hid whichever siblings happened to be visible at
+  that moment, cascading further every time and silently emptying the graph.
+
 ### Concurrent writes
 
 SQLite WAL mode + `PRAGMA busy_timeout=30000` handles concurrent writers
@@ -115,8 +123,8 @@ writer, contention is minimal.
 | `test_credential` | `credential_id`, `ip`, `service`, `works` (all required) | Record whether a credential works against a target/service |
 | `add_access` | `ip` (required), `access_type`, `username`, `privilege`, `method`, `session_ref`, `via_credential_id`, `via_access_id`, `via_vuln_id`, `technique_id`, `chain_order`, `discovered_by` | Record a new foothold on a target (chain provenance via credential, access, or vuln) |
 | `update_access` | `id` (required), `active`, `username`, `access_type`, `privilege`, `notes`, `via_credential_id`, `via_access_id`, `via_vuln_id`, `technique_id`, `in_graph`, `chain_order` | Update access record (e.g., revoke, fix provenance, reposition in graph). Restores pruned sibling vulns on revocation |
-| `add_vuln` | `title` (required), `ip` (required), `vuln_type`, `severity`, `status`, `details`, `evidence_path`, `via_access_id`, `via_credential_id`, `via_vuln_id`, `technique_id`, `chain_order`, `discovered_by` | Record a vulnerability (deduplicates on target+title) |
-| `update_vuln` | `id` (required), `status`, `severity`, `details`, `in_graph`, `via_access_id`, `via_credential_id`, `via_vuln_id`, `technique_id`, `chain_order` | Update vulnerability status (found/actioned/blocked). Auto-prunes sibling found vulns on action, restores on block |
+| `add_vuln` | `title` (required), `ip` (required), `vuln_type`, `severity`, `status`, `details`, `evidence_path`, `cvss_vector`, `cwe`, `via_access_id`, `via_credential_id`, `via_vuln_id`, `technique_id`, `chain_order`, `discovered_by` | Record a vulnerability (deduplicates on target+title) |
+| `update_vuln` | `id` (required), `status`, `severity`, `details`, `cvss_vector`, `cwe`, `in_graph`, `via_access_id`, `via_credential_id`, `via_vuln_id`, `technique_id`, `chain_order` | Update vulnerability status (found/actioned/blocked). Auto-prunes sibling found vulns on action, restores on block |
 | `add_pivot` | `source`, `destination` (required), `method`, `status` | Record a pivot path |
 | `update_pivot` | `id` (required), `status`, `notes` | Update pivot path status |
 | `add_blocked` | `technique`, `reason` (required), `ip`, `retry`, `notes` | Record a blocked/failed technique |

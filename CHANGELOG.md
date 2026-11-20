@@ -2,6 +2,52 @@
 
 All notable changes to red-run will be documented in this file. Format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## 2026-08-10
+
+### Added
+
+- **DefectDojo export** (`operator/defectdojo-export/`) — turns `vulns` into
+  DefectDojo Findings, either as a Generic Findings Import file (`--out`, no
+  network) or pushed to `/api/v2/import-scan/` (`--push`). `unique_id_from_tool`
+  is stable per vuln, so re-exporting updates rather than duplicates. Info-severity
+  findings are skipped by default: in red-run they are mostly refuted candidates,
+  and importing them makes controls that held look like open issues.
+  Provenance links are flattened into each finding's description because
+  DefectDojo cannot represent the chain; `blocked`, `access`, `credentials` and
+  `pivot_map` have no counterpart at all and are dropped, with a printed count so
+  the loss is visible rather than silent. Standard library only.
+
+### Changed
+
+- **`vulns.cvss_vector` and `vulns.cwe` are now columns** (schema v23, additive
+  migration). Both were previously free text inside `details`, which meant any
+  downstream consumer had to recover them by regex — and every vulnerability
+  management tool treats them as first-class fields. `add_vuln` and `update_vuln`
+  accept them; the vector is stored verbatim and not validated or scored.
+
+### Fixed
+
+- **state-server flow-graph pruning fired on non-transitions** — `update_vuln`
+  called `_prune_sibling_vulns()` whenever `status="actioned"` was *passed*,
+  not when the status actually *changed*. Since the prune query matches on
+  `in_graph = 1`, every redundant re-assert hid whichever siblings were visible
+  at that moment, cascading further with each call. Observed in a live
+  engagement: repeated consolidation writes that re-asserted an already-actioned
+  status hid 15 distinct, independently-scored findings from the dashboard graph
+  with no signal to the caller. Both `update_vuln` and `update_access` now read
+  the prior value first and fire prune/restore only on a genuine transition;
+  redundant writes are a graph no-op and omit `siblings_pruned` /
+  `siblings_restored` from the response. The docstrings already described
+  transition semantics — the code did not implement them.
+
+- **skill-router MCP connection timeout** — `create_server()` built the ChromaDB
+  collection (and with it loaded the `all-MiniLM-L6-v2` sentence-transformers
+  model) before `mcp.run()`, so the server did not answer the MCP `initialize`
+  handshake for ~43 s and the client gave up with `-32001`. Raising `MCP_TIMEOUT`
+  only masked this. The collection is now built lazily and memoised on first tool
+  call: handshake drops from 42.7 s to 1.8 s, with the one-time model load moved
+  to the first `search_skills()`/`get_skill()`/`list_skills()` call (~12 s).
+
 ## 2026-04-01
 
 ### Changed
